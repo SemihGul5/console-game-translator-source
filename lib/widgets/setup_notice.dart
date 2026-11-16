@@ -1,6 +1,8 @@
 import '../l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
+import '../services/app_links.dart';
+
 const setupNoticeColor = Color(0xFFFFC56D);
 
 class SetupNotice extends StatelessWidget {
@@ -9,11 +11,13 @@ class SetupNotice extends StatelessWidget {
     required this.title,
     required this.message,
     this.icon = Icons.warning_amber_rounded,
+    this.action,
   });
 
   final String title;
   final String message;
   final IconData icon;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -49,10 +53,23 @@ class SetupNotice extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
+              if (action != null) ...[const SizedBox(height: 10), action!],
             ],
           ),
         ),
       ],
+    ),
+  );
+}
+
+class SmartTvBetaNotice extends StatelessWidget {
+  const SmartTvBetaNotice({super.key});
+
+  @override
+  Widget build(BuildContext context) => SetupNotice(
+    title: context.tr('Beta TV desteği'),
+    message: context.tr(
+      'LG webOS ve Samsung Tizen desteği beta aşamasındadır. TV modeline göre bağlantı veya altyazı hataları yaşanabilir.',
     ),
   );
 }
@@ -65,7 +82,13 @@ class TvAppInstallNotice extends StatelessWidget {
     icon: Icons.install_desktop_rounded,
     title: context.tr("Önce TV uygulamasını indir"),
     message: context.tr(
-      "Android TV’ne “AnlaOyna TV” uygulamamızı indirip aç. TV’nin dili Türkçe değilse adı “Console Game Translator TV” olarak görünür. Eşleştirme adresi ve 6 haneli kod bu uygulamada yer alır.",
+      "Android TV’ne “OyunÇevirmeni TV” uygulamamızı indirip aç. TV’nin dili Türkçe değilse adı “Console Game Translator TV” olarak görünür. Eşleştirme adresi ve 6 haneli kod bu uygulamada yer alır.",
+    ),
+    // TODO: Remove the website download action when the TV app is in the store.
+    action: OutlinedButton.icon(
+      onPressed: () => AppLinks.openTvSetup(context, 'android'),
+      icon: const Icon(Icons.download_rounded),
+      label: Text(context.tr('TV uygulamasını indir')),
     ),
   );
 }

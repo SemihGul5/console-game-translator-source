@@ -4,7 +4,7 @@ import 'l10n/app_language.dart';
 
 class AppBranding {
   static const englishName = 'Console Game Translator';
-  static const turkishName = 'AnlaOyna';
+  static const turkishName = 'OyunÇevirmeni';
   static const internationalIcon = 'assets/branding/app_icon_all.png';
   static const turkishIcon = 'assets/branding/app_icon_tr.png';
 

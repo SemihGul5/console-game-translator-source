@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gametranslate/main.dart';
-import 'package:gametranslate/l10n/app_language.dart';
 import 'package:gametranslate/models/subtitle_settings.dart';
 import 'package:gametranslate/services/game_translation_catalog.dart';
 import 'package:gametranslate/widgets/game_cover_card.dart';
@@ -234,8 +233,8 @@ void main() {
       target: 'ar',
       picker: false,
     ),
-    (preference: 'tr', device: const Locale('ar'), target: 'tr', picker: false),
-    (preference: 'en', device: const Locale('ar'), target: 'th', picker: true),
+    (preference: 'tr', device: const Locale('ar'), target: 'ar', picker: false),
+    (preference: 'en', device: const Locale('ar'), target: 'ar', picker: false),
     (
       preference: 'system',
       device: const Locale('en', 'US'),
@@ -244,7 +243,7 @@ void main() {
     ),
   ]) {
     testWidgets(
-      'library follows ${scenario.preference} on ${scenario.device} and overrides stale browsing preference',
+      'library follows device ${scenario.device} with legacy preference ${scenario.preference}',
       (tester) async {
         final commits = <MethodCall>[];
         messenger.setMockMethodCallHandler(native, (call) async {
@@ -335,16 +334,10 @@ void main() {
   );
 
   testWidgets(
-    'changing app preference updates library filtering immediately without switching the active pack',
+    'system language changes update library filtering without switching the active pack',
     (tester) async {
-      var preference = 'system';
       final commits = <MethodCall>[];
       messenger.setMockMethodCallHandler(native, (call) async {
-        if (call.method == 'getAppLanguage') return preference;
-        if (call.method == 'setAppLanguage') {
-          preference = call.arguments as String;
-          return true;
-        }
         if (call.method == 'getSubtitleSettings')
           return const SubtitleSettings().toMap();
         if (call.method == 'getGameLibraryTargetLanguage') return 'tr';
@@ -367,9 +360,6 @@ void main() {
       );
       await tester.runAsync(catalog.loadCatalog);
       await _openLibrary(tester, catalog, systemLocale: const Locale('ar'));
-      final controller = AppLanguageScope.of(
-        tester.element(find.byType(HomeScreen)),
-      );
       expect(
         tester
             .widget<GameCoverCard>(find.byType(GameCoverCard))
@@ -377,13 +367,13 @@ void main() {
             .targetLanguage,
         'ar',
       );
-      await controller.select(AppLanguage.english);
+      tester.platformDispatcher.localesTestValue = const [Locale('en')];
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('game-library-language-tr')),
         findsOneWidget,
       );
-      await controller.select(AppLanguage.turkish);
+      tester.platformDispatcher.localesTestValue = const [Locale('tr')];
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('game-library-language-tr')),

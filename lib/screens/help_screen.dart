@@ -28,7 +28,7 @@ class HelpScreen extends StatelessWidget {
     ),
     _HelpQuestion(
       "Altyazıları PS5’in HDMI görüntüsünde göstermek için ne gerekli?",
-      "Telefon uygulaması, PS5 ve AnlaOyna TV uygulamasını çalıştırabilen bir Android TV gerekir. TV uygulamasına diğer uygulamaların üzerinde gösterim izni ver, telefonu TV ile eşleştir ve telefonda çeviriyi başlat. TV’de altyazı gösterimi açık olmalı. Sonra PS5’in bağlı olduğu HDMI girişine geç. HDMI üzerinde gösterim desteği TV’nin sistemine bağlıdır.",
+      "Telefon uygulaması, PS5 ve OyunÇevirmeni TV uygulamasını çalıştırabilen bir Android TV gerekir. TV uygulamasına diğer uygulamaların üzerinde gösterim izni ver, telefonu TV ile eşleştir ve telefonda çeviriyi başlat. TV’de altyazı gösterimi açık olmalı. Sonra PS5’in bağlı olduğu HDMI girişine geç. HDMI üzerinde gösterim desteği TV’nin sistemine bağlıdır.",
     ),
     _HelpQuestion(
       "Telefon oyun görüntüsünü TV’ye gönderiyor mu?",

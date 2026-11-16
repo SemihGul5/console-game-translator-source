@@ -8,7 +8,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app_branding.dart';
 import 'l10n/app_language.dart';
 import 'l10n/app_localizations.dart';
-import 'widgets/app_language_picker.dart';
 import 'widgets/game_cover_card.dart';
 import 'models/subtitle_settings.dart';
 import 'models/game_catalog_entry.dart';
@@ -53,13 +52,10 @@ class GameTranslateApp extends StatefulWidget {
 
 class _GameTranslateAppState extends State<GameTranslateApp>
     with WidgetsBindingObserver {
-  final _language = AppLanguageController();
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _language.load();
   }
 
   @override
@@ -68,41 +64,35 @@ class _GameTranslateAppState extends State<GameTranslateApp>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _language.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AppLanguageScope(
-      controller: _language,
       systemLocale:
           WidgetsBinding.instance.platformDispatcher.locales.firstOrNull ??
           const Locale('en'),
-      child: ListenableBuilder(
-        listenable: _language,
-        builder: (context, _) => MaterialApp(
-          debugShowCheckedModeBanner: false,
-          onGenerateTitle: AppBranding.nameOf,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            ...GlobalMaterialLocalizations.delegates,
-          ],
-          locale: _language.language.locale,
-          supportedLocales: const [Locale('en'), Locale('tr')],
-          localeResolutionCallback: AppBranding.resolveLocale,
-          theme: ThemeData(
-            useMaterial3: true,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        onGenerateTitle: AppBranding.nameOf,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          ...GlobalMaterialLocalizations.delegates,
+        ],
+        supportedLocales: const [Locale('en'), Locale('tr')],
+        localeResolutionCallback: AppBranding.resolveLocale,
+        theme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: bg,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: purple,
             brightness: Brightness.dark,
-            scaffoldBackgroundColor: bg,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: purple,
-              brightness: Brightness.dark,
-            ),
-            fontFamily: 'Roboto',
           ),
-          home: _SplashGate(gameCatalog: widget.gameCatalog),
+          fontFamily: 'Roboto',
         ),
+        home: _SplashGate(gameCatalog: widget.gameCatalog),
       ),
     );
   }
@@ -1053,7 +1043,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   children: [
                     const Chip(label: Text('Android TV')),
                     ActionChip(
-                      label: const Text('LG webOS'),
+                      label: const Text('LG webOS • Beta'),
                       onPressed: busy
                           ? null
                           : () {
@@ -1062,7 +1052,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             },
                     ),
                     ActionChip(
-                      label: const Text('Samsung Tizen'),
+                      label: const Text('Samsung Tizen • Beta'),
                       onPressed: busy
                           ? null
                           : () {
@@ -3651,11 +3641,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildGamesCard() {
     final languageScope = AppLanguageScope.maybeOf(context);
     // Retain the real system language even when the interface uses English as
-    // its fallback. Explicit English enables manual library language selection.
+    // its fallback. English devices allow manual library language selection.
     final libraryLocale =
-        languageScope?.notifier?.language.locale ??
-        languageScope?.systemLocale ??
-        Localizations.localeOf(context);
+        languageScope?.systemLocale ?? Localizations.localeOf(context);
     final allowLanguageSelection = libraryLocale.languageCode == 'en';
     final languages = <String, GameCatalogEntry>{
       for (final game in _games) game.targetLanguage: game,
@@ -4416,7 +4404,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return SettingsSection(
       title: context.tr("Kişiselleştir"),
       children: [
-        const AppLanguageEntry(),
         SwitchListTile(
           value: _keepScreenAwake,
           onChanged: (value) =>

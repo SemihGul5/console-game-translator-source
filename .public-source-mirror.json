@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "kind": "anlaoyna-public-source-mirror",
-  "snapshot": "anlaoyna-source-v1.0.7-build8-20261116T181943549Z",
-  "sourceInventorySha256": "b11a133cf2a6bea1b8f7f41abaa419fb97248c58b752f27304a452cd28af5153",
+  "snapshot": "console-game-translator-source-v1.0.8-build9-20261116T194507396Z",
+  "sourceInventorySha256": "54001196dc0b0504495fe2920838ad68262e35689cf24a76517dbeeead10d011",
   "files": [
     {
       "path": ".gitignore",
@@ -38,7 +38,7 @@
     },
     {
       "path": "android/app/src/androidTest/kotlin/com/abrebostudio/consolegametranslator/AppUiLanguageResourcesTest.kt",
-      "sha256": "5549eee6d07e59001d73ae0acf9b0c1de306dc41535a7432ffb416412118d562"
+      "sha256": "0f658bcc61e7a215e20c286a2169f87c69658c449613b91275ce713bea8c550c"
     },
     {
       "path": "android/app/src/androidTest/kotlin/com/abrebostudio/consolegametranslator/BackgroundVideoFrameReaderTest.kt",
@@ -130,7 +130,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/AppUiLanguage.kt",
-      "sha256": "625344ff578be86a2cf2787e7d24e865c0d30b3fea7f314fb85f0edced18692c"
+      "sha256": "60ede2ea3e1d0ad69c3ebf10b5b53487070361627eb3fcb67c2c0d46362da6ef"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/BackgroundVideoFrameReader.kt",
@@ -290,7 +290,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RemotePlayController.kt",
-      "sha256": "a96132988ee87c2a3a3b2ca11f02e0d6b57ab098eaf5c9d23574b11348a41ab9"
+      "sha256": "90c0b99013b9f51be5e863518da6bdb4ceda751cdf6ce4d583ed32b68e099ee8"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RemotePlayTrialGate.kt",
@@ -330,7 +330,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/TranslationCacheDocuments.kt",
-      "sha256": "a5d555ed01c0e5c6b54b139ebbd132f3a6ae24ca6f255059333da68056e14237"
+      "sha256": "bf9e8929e68d235589f842136ec24c6193a02e285bb9fd013fcbcdc39b6f3729"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/TranslationCacheFileProvider.kt",
@@ -434,7 +434,7 @@
     },
     {
       "path": "android/app/src/main/res/values-tr/strings.xml",
-      "sha256": "0b48e66367ced0b285d66203b5c449e996ebaa3ef29c22ed0e05525b4a1c475d"
+      "sha256": "f826b5ffc869a7b2c1c93dc45a780392785f2c22629aa28329abbc1c81d005e8"
     },
     {
       "path": "android/app/src/main/res/values-v31/styles.xml",
@@ -20802,11 +20802,11 @@
     },
     {
       "path": "lib/app_branding.dart",
-      "sha256": "53905ba615785b35885c79ffe0998e563d5b51789e030f7a28b6729cfc259050"
+      "sha256": "cd19ee93d65d6abee3277b626aa087c144d0fd1a8295fe0f07c765bb36ef3827"
     },
     {
       "path": "lib/l10n/app_language.dart",
-      "sha256": "8958e1542bce9355bc04f03cc83f15e248b6b9c3bc96a45ddc90d0f46fb6f5ab"
+      "sha256": "36ab3450a1eff584a39797a77165e60d50688718e7ea853aeb9d2f4904f7cb2f"
     },
     {
       "path": "lib/l10n/app_localizations.dart",
@@ -20814,15 +20814,15 @@
     },
     {
       "path": "lib/l10n/messages_en.dart",
-      "sha256": "9c52f81b43298f363f74601838707bbf475bb716876fc3deb8157450bedeced4"
+      "sha256": "b7545a0366e61bf3bae43f2613636b09016c90b176811487038a7743a48f835a"
     },
     {
       "path": "lib/l10n/messages_tv_en.dart",
-      "sha256": "bccde033285b4bd08f6d8a8e70500c5ef4577e4ee7b9e1b51ba87444cefc8fe7"
+      "sha256": "5ca45e3a956bd6824ae43138f8b237285a4f0ae7e961060b9a30b8d8d99d8867"
     },
     {
       "path": "lib/main.dart",
-      "sha256": "e44b93550989fdf97e7e70f504b24a158e9ceb0eaff047d815491dc4f607cf23"
+      "sha256": "04dc59002c02bb977f5bd925640cd3ee63f2754fbe419273fae612ee74f390e2"
     },
     {
       "path": "lib/models/game_catalog_entry.dart",
@@ -20842,7 +20842,7 @@
     },
     {
       "path": "lib/screens/help_screen.dart",
-      "sha256": "ac486aba26a2e4cafbe8c1bb58a0c15cfe3c6190b913069139410768099e4e51"
+      "sha256": "1fe5ecec438f3e6c3a87b4f1fe3ffff20ce4d93e432fef65e026f1680fb54920"
     },
     {
       "path": "lib/screens/profile_tab.dart",
@@ -20961,10 +20961,6 @@
       "sha256": "735c9ee2493512e239c3295b54db67e08894d1091e6fd95821a71e1bfd434eae"
     },
     {
-      "path": "lib/widgets/app_language_picker.dart",
-      "sha256": "a56a5277a30bc78d6504daea98ea33cfa40037aa98c333890239940451d7b1c1"
-    },
-    {
       "path": "lib/widgets/deepl_settings_panel.dart",
       "sha256": "8eeeea057066da4815c64195c6355b0b63ddd7d65127ea945e40039216971c38"
     },
@@ -21002,11 +20998,11 @@
     },
     {
       "path": "lib/widgets/setup_notice.dart",
-      "sha256": "cccf8ec0927fcf0bec1bf113285173f90750fb35b65be2d99ee5c9aa5f32a49f"
+      "sha256": "222f15c27ed307d21c2d4ef20899a86e1d1f44cf82f1f99c4851425f1bbfdf3e"
     },
     {
       "path": "lib/widgets/smart_tv_setup_dialog.dart",
-      "sha256": "15140a8179fb0966d8e9d96e8da1aede41e361a2c0f29de6baad1733740b5f8f"
+      "sha256": "42947d0bd606b43d2bc6447780f955c7c5bdfa1fdced744448cf73adcf3af4fb"
     },
     {
       "path": "lib/widgets/subscription_offer_card.dart",
@@ -21014,15 +21010,15 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "ced8a5ee65f7774bf720e3193f5246ed68d408245be625d73d086430fed035a1"
+      "sha256": "3a5b4b30e4e31bd2387892b55aab8bb0bbea2617593b0d96262aee7bcba320f2"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "99b69334a5f534c8e1a5d6be1de74e37655a1563788f3ba692e597c172a63ed7"
+      "sha256": "c34635c6ad5dccd016b657a99d1102815535e163e8d72f37969ce577346aaa73"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "3db06ab006de450fddcae2581e3fff9f894ee8f50be95af1430e4c930356946f"
+      "sha256": "9619c7dde7001b4ecd8000d7754a061bded9c69f00f40924c57f64f4691a69e4"
     },
     {
       "path": "pubspec.lock",
@@ -21030,11 +21026,11 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "9de30e4d24ca13f95872fb44b5c3c91c1ac8a76233454a8c74f52e4e04c05d93"
+      "sha256": "462a79f54e946d5073d429182ec7008ab416bcbfb0bec95baf3b941173c07d76"
     },
     {
       "path": "README.md",
-      "sha256": "efbb2e3e3cc381e0b274e244e67d1d2da573fd51e666a922ba733c919e15d443"
+      "sha256": "c9bfed642515938e5d68c2e935634b04cf62c7162eb88acca8d9e7072a0c9ceb"
     },
     {
       "path": "release/checks.json",
@@ -21042,7 +21038,7 @@
     },
     {
       "path": "release/manual-sync.json",
-      "sha256": "713aa4fc7dc453604509b3d7af7c5e281604d07bf790b378287e4bad383cd33a"
+      "sha256": "9f4d623021a5e85d544858707720d5e0c19dd21d6f173720192a69bfbb7eeb5b"
     },
     {
       "path": "release/maven-dependencies.json",
@@ -21066,7 +21062,7 @@
     },
     {
       "path": "release/publication.json",
-      "sha256": "6a4ce8ea9625ffe191d8d9dc7d70ccf2a256718f6dd33f204beddbfbdc3ced6a"
+      "sha256": "62be9db11c722cbc202e8e469da70b9ffc600575dd321fabab6d6904aa49cbef"
     },
     {
       "path": "release/receiver-source-check.json",
@@ -21078,23 +21074,23 @@
     },
     {
       "path": "release/SHA256SUMS",
-      "sha256": "b11a133cf2a6bea1b8f7f41abaa419fb97248c58b752f27304a452cd28af5153"
+      "sha256": "54001196dc0b0504495fe2920838ad68262e35689cf24a76517dbeeead10d011"
     },
     {
       "path": "release/snapshot-files.json",
-      "sha256": "42853a63013894e9aa8b4375063b1ee6b257698a95a677233dca3aa76b09cd2c"
+      "sha256": "f29b18d24d3a2505cbe61d40758c714fcc3bf7fd31b30069ca2d35bcc447726d"
     },
     {
       "path": "release/source-sync.json",
-      "sha256": "77947066c35f49be1f246803c29f5a0e2ca8e7dc88cb2b2341f225d24fbfa8cc"
+      "sha256": "162fb5cb9eda51ba72642e0761b1e415b42116e8d07dd21f1341c925ab2b0938"
     },
     {
       "path": "release/validation.json",
-      "sha256": "04ac0b85ae6199140cef05abf4090ae2e93df0f86df99654ceeaf142ad7c5e37"
+      "sha256": "91f1c35588919822ae28aef58af6f4d78bf4c82d98de8fbdadc1840a4c9a9864"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "fffd59a597571f67f3433532c95d9ead8d58c2dae6ff910e5898fce44f1cee8e"
+      "sha256": "3e83885fbf30a3755002a447675e3ac4df3058296b8bdd4e575a31edbc5ff304"
     },
     {
       "path": "samsung_tv/app.js",
@@ -21194,11 +21190,11 @@
     },
     {
       "path": "test/app_branding_test.dart",
-      "sha256": "8e2c4c77d41673866a6596b5241bb2cf7ab5bdff9e797f58a4ebe10bfffe8db8"
+      "sha256": "57d4b4e1ae448dd7fa3bf77484e2f5282e2f5c7210684bfaf09f04a34e67cfdd"
     },
     {
       "path": "test/app_language_test.dart",
-      "sha256": "d8003e33c8e51d5063523493089e006b12abfcd5d3c5cb1349d649a8ac88234e"
+      "sha256": "d73bfc27ac1c93b3921af11763c78ea262dd2bbed3a855dbb7e78f53ea861f61"
     },
     {
       "path": "test/deepl_integration_test.dart",
@@ -21258,11 +21254,11 @@
     },
     {
       "path": "test/multilingual_library_test.dart",
-      "sha256": "d24174b3630fa27cb1e6e1ae09a76e7ff6dffe370777c2c21aa96f9e8764adfd"
+      "sha256": "76578d5d7757a0a1e6a79dd972e6243161305fdb317ce7980f17aad9c97a38e1"
     },
     {
       "path": "test/navigation_test.dart",
-      "sha256": "36d43250068036a6e69bd9df442edaa1fcf6ac7d68a3a390e04f9792fe1f2a76"
+      "sha256": "eed5a46bf616e54895c19295be2ea45375ce03456966753058c269083e1f72db"
     },
     {
       "path": "test/premium_plan_card_test.dart",
@@ -21286,7 +21282,7 @@
     },
     {
       "path": "test/smart_tv_setup_dialog_test.dart",
-      "sha256": "066dee5aa87785fc79c12b65b93b44ceac7056841c3964ce4225ef0fd4b637bf"
+      "sha256": "b18ea9be64dc01509d520a1986b5a567af68a032e671f6e38306f03ee2f33677"
     },
     {
       "path": "test/smart_tv_transport_test.dart",

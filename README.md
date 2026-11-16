@@ -1,8 +1,15 @@
-# Console Game Translator — Android source snapshot
+# Oyun Çevirmeni / Console Game Translator — Android source
+
+<!-- application-links:start -->
+**Türkçe / Turkish:** Oyun Çevirmeni  
+**English:** Console Game Translator
+
+[Google Play'de görüntüle / View on Google Play](https://play.google.com/store/apps/details?id=com.abrebostudio.consolegametranslator)
+<!-- application-links:end -->
 
 This repository contains the Flutter application, Android/Kotlin integration,
 modified Chiaki/chiaki-ng core and JNI bindings used by Console Game Translator.
-It is a source snapshot prepared on **2026-11-16** from version **1.0.7+8** of the
+It is a source snapshot prepared on **2026-11-16** from version **1.0.8+9** of the
 working tree. It is not a copy of the private development repository's history.
 
 **Publication status:** source preparation, not a completed binary compliance
@@ -12,7 +19,7 @@ Do not describe this snapshot as a compliance certificate for an existing APK/AA
 
 ## Latest source synchronization
 
-Manually refreshed on **2026-11-16** for **1.0.7+8**.
+Manually refreshed on **2026-11-16** for **1.0.8+9**.
 See `release/source-sync.json` for changed, added and removed source paths.
 The development checkout and previous snapshots were not modified.
 

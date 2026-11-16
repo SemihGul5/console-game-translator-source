@@ -1,4 +1,8 @@
 const tvEnglishMessages = <String, String>{
+  'Beta TV desteği': 'Beta TV support',
+  'LG webOS ve Samsung Tizen desteği beta aşamasındadır. TV modeline göre bağlantı veya altyazı hataları yaşanabilir.':
+      'LG webOS and Samsung Tizen support is in beta. Connection or subtitle errors may occur depending on your TV model.',
+  'TV uygulamasını indir': 'Download the TV app',
   'TV kurulum rehberini aç': 'Open TV setup guide',
   'TV bağlantısı için destek al': 'Get TV connection support',
   '{0} TV bağlantı desteği': '{0} TV connection support',
@@ -12,7 +16,7 @@ const tvEnglishMessages = <String, String>{
   'TV’ye bağlanılıyor': 'Connecting to TV',
   'TV’ye bağlanılıyor…': 'Connecting to TV…',
   'Başlamak için TV’yi eşleştir': 'Pair your TV to start',
-  'AnlaOyna • TV bağlantı testi':
+  'OyunÇevirmeni • TV bağlantı testi':
       'Console Game Translator • TV connection test',
   'Önce TV bağlantısını kontrol edelim.':
       'Let’s check your TV connection first.',

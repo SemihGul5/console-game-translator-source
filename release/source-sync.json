@@ -1,6 +1,6 @@
 {
   "preparedOn": "2026-11-16",
-  "applicationVersion": "1.0.7+8",
+  "applicationVersion": "1.0.8+9",
   "comparison": "reviewed seed snapshot",
   "added": [
     "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
@@ -93,7 +93,9 @@
   ],
   "changed": [
     "android/app/build.gradle.kts",
+    "android/app/src/androidTest/kotlin/com/abrebostudio/consolegametranslator/AppUiLanguageResourcesTest.kt",
     "android/app/src/main/AndroidManifest.xml",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/AppUiLanguage.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/BackgroundVideoFrameReader.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DialogueOcrFilter.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/FirestoreTrialStore.kt",
@@ -112,7 +114,10 @@
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SubscriptionAccessTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SubtitleSourceSelectorTest.kt",
     "assets/tv/samsung-receiver.zip",
+    "lib/app_branding.dart",
+    "lib/l10n/app_language.dart",
     "lib/l10n/messages_en.dart",
+    "lib/l10n/messages_tv_en.dart",
     "lib/main.dart",
     "lib/models/game_catalog_entry.dart",
     "lib/models/subtitle_settings.dart",
@@ -131,24 +136,30 @@
     "lib/services/subtitle_settings_store.dart",
     "lib/services/tv_subtitle_client.dart",
     "lib/services/tv_subtitle_server.dart",
-    "lib/widgets/app_language_picker.dart",
     "lib/widgets/game_cover_card.dart",
     "lib/widgets/game_subtitle_text.dart",
+    "lib/widgets/setup_notice.dart",
+    "lib/widgets/smart_tv_setup_dialog.dart",
     "pubspec.yaml",
     "samsung_tv/receiver.js",
     "samsung_tv/receiver.test.cjs",
     "test/access_service_test.dart",
     "test/access_status_test.dart",
     "test/account_deletion_test.dart",
+    "test/app_branding_test.dart",
+    "test/app_language_test.dart",
     "test/game_cover_card_test.dart",
     "test/game_fonts_test.dart",
     "test/game_translation_catalog_test.dart",
     "test/navigation_test.dart",
+    "test/smart_tv_setup_dialog_test.dart",
     "test/subtitle_settings_persistence_test.dart",
     "test/support/offline_game_catalog.dart",
     "test/tv_setup_link_test.dart"
   ],
-  "removed": [],
+  "removed": [
+    "lib/widgets/app_language_picker.dart"
+  ],
   "embeddedArchiveChecks": [
     {
       "archive": "assets/tv/samsung-receiver.zip",
@@ -166,6 +177,12 @@
       "reason": "Expose the existing APK assets as unit-test resources; no dependency, SDK, plugin or runtime build change."
     }
   ],
+  "application": {
+    "turkishName": "Oyun Çevirmeni",
+    "englishName": "Console Game Translator",
+    "packageName": "com.abrebostudio.consolegametranslator",
+    "googlePlayUrl": "https://play.google.com/store/apps/details?id=com.abrebostudio.consolegametranslator"
+  },
   "productionAppModified": false,
   "publicRepositoryPublished": false
 }

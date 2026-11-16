@@ -1,18 +1,24 @@
 {
   "schemaVersion": 1,
   "preparedOn": "2026-11-16",
-  "sourceSnapshotVersion": "1.0.7+8",
+  "sourceSnapshotVersion": "1.0.8+9",
   "status": "prepared-not-published",
   "binaryVersionName": null,
   "binaryVersionCode": null,
   "binarySha256": null,
   "publicRepositoryUrl": null,
   "publicCommit": null,
-  "sourceTag": "source-v1.0.7-build8",
+  "sourceTag": "source-v1.0.8-build9",
   "matchingSourceArchiveUrl": null,
   "legalPageUrl": null,
   "mlKitCombinedDistributionBasis": "Compatibility assumed by publisher; not independently established by this script.",
   "legalNoticesVerified": false,
   "binarySourcePairingVerified": false,
-  "intendedSourceReleaseUrl": null
+  "intendedSourceReleaseUrl": null,
+  "application": {
+    "turkishName": "Oyun Çevirmeni",
+    "englishName": "Console Game Translator",
+    "packageName": "com.abrebostudio.consolegametranslator",
+    "googlePlayUrl": "https://play.google.com/store/apps/details?id=com.abrebostudio.consolegametranslator"
+  }
 }

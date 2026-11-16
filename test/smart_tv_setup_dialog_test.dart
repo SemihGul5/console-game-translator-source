@@ -44,7 +44,9 @@ void main() {
     'LG option explains limitations and cannot accept before the physical sample test',
     (tester) async {
       await open(tester, TvOutputKind.lg);
-      expect(find.text('LG webOS'), findsOneWidget);
+      expect(find.text('LG webOS • Beta'), findsOneWidget);
+      expect(find.text('Beta TV desteği'), findsOneWidget);
+      expect(find.textContaining('hataları yaşanabilir'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
       expect(
         tester
@@ -69,7 +71,10 @@ void main() {
     'Samsung option requires a separate receiver and does not claim connected on open',
     (tester) async {
       await open(tester, TvOutputKind.samsung, english: true);
-      expect(find.text('Samsung Tizen'), findsOneWidget);
+      expect(find.text('Samsung Tizen • Beta'), findsOneWidget);
+      expect(find.text('Beta TV support'), findsOneWidget);
+      expect(find.textContaining('errors may occur'), findsOneWidget);
+      expect(find.text('Download the TV app'), findsOneWidget);
       expect(find.text('Get TV connection support'), findsOneWidget);
       expect(find.textContaining('Experimental'), findsNothing);
       expect(
@@ -82,9 +87,7 @@ void main() {
       await tester.tap(find.text('TV app not installed yet?'));
       await tester.pumpAndSettle();
       expect(
-        find.textContaining(
-          'Windows setup assistant on our website',
-        ),
+        find.textContaining('Windows setup assistant on our website'),
         findsOneWidget,
       );
       expect(find.textContaining('unencrypted LAN'), findsOneWidget);

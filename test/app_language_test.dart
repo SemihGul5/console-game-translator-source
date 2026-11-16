@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'support/offline_game_catalog.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gametranslate/l10n/app_language.dart';
 import 'package:gametranslate/l10n/app_localizations.dart';
 import 'package:gametranslate/l10n/messages_en.dart';
 import 'package:gametranslate/main.dart';
 import 'package:gametranslate/widgets/settings_section.dart';
 
-const _native = AppLanguageController.channel;
+const _native = MethodChannel(
+  'com.abrebostudio.consolegametranslator/ps5_registration',
+);
 const _access = MethodChannel('com.abrebostudio.consolegametranslator/access');
 const _events = MethodChannel(
   'com.abrebostudio.consolegametranslator/ps5_events',
@@ -28,27 +29,14 @@ Future<void> _tab(WidgetTester tester, String title) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _chooseLanguage(
-  WidgetTester tester,
-  String title,
-  String selection,
-) async {
-  await tester.tap(find.widgetWithText(SettingsEntry, title));
-  await tester.pumpAndSettle();
-  await tester.tap(find.widgetWithText(ListTile, selection));
-  await tester.pumpAndSettle();
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late String savedLanguage;
-  late bool failSaving;
   late bool keepAwake;
   late List<MethodCall> calls;
 
   setUp(() {
     savedLanguage = 'system';
-    failSaving = false;
     keepAwake = false;
     calls = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -60,7 +48,6 @@ void main() {
             case 'getAppLanguage':
               return savedLanguage;
             case 'setAppLanguage':
-              if (failSaving) throw PlatformException(code: 'SAVE_FAILED');
               savedLanguage = call.arguments as String;
               return true;
             case 'getPersonalizationSettings':
@@ -94,6 +81,7 @@ void main() {
       '$code device gets a fully localized navigation and start action',
       (tester) async {
         addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+        savedLanguage = code == 'tr' ? 'en' : 'tr';
         await _open(tester, Locale(code));
         final turkish = code == 'tr';
         for (final title
@@ -132,88 +120,54 @@ void main() {
   }
 
   testWidgets(
-    'manual choice updates immediately, keeps state and survives restart',
+    'system language changes immediately, ignores legacy preference and keeps state',
     (tester) async {
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      savedLanguage = 'en';
       await _open(tester, const Locale('tr'));
       final home = tester.state(find.byType(HomeScreen));
       await _tab(tester, 'Ayarlar');
+      expect(find.text('Uygulama dili'), findsNothing);
       await tester.tap(find.byType(SwitchListTile));
       await tester.pumpAndSettle();
       expect(keepAwake, isTrue);
-      await _chooseLanguage(tester, 'Uygulama dili', 'English');
-      expect(savedLanguage, 'en');
-      expect(
-        find.widgetWithText(NavigationDestination, 'Settings'),
-        findsOneWidget,
-      );
-      expect(tester.state(find.byType(HomeScreen)), same(home));
-      expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-        isTrue,
-      );
+
+      for (final code in ['en', 'de', 'ar', 'tr']) {
+        tester.platformDispatcher.localesTestValue = [Locale(code)];
+        await tester.pumpAndSettle();
+        expect(
+          find.widgetWithText(
+            NavigationDestination,
+            code == 'tr' ? 'Ayarlar' : 'Settings',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Uygulama dili'), findsNothing);
+        expect(find.text('App language'), findsNothing);
+        expect(tester.state(find.byType(HomeScreen)), same(home));
+        expect(
+          tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+          isTrue,
+        );
+      }
       expect(calls.where((c) => c.method == 'saveSubtitleSettings'), isEmpty);
-      // Launcher branding continues to follow the system, independently of UI.
-      await _tab(tester, 'Home');
-      expect(find.text('AnlaOyna'), findsOneWidget);
+      expect(
+        calls.where(
+          (c) => c.method == 'getAppLanguage' || c.method == 'setAppLanguage',
+        ),
+        isEmpty,
+      );
+      expect(savedLanguage, 'en');
       await tester.pumpWidget(const SizedBox.shrink());
       await _open(tester, const Locale('tr'));
       expect(
-        find.widgetWithText(NavigationDestination, 'Home'),
+        find.widgetWithText(NavigationDestination, 'Ana sayfa'),
         findsOneWidget,
       );
-      await _tab(tester, 'Settings');
-      expect(
-        find.widgetWithText(SettingsEntry, 'App language'),
-        findsOneWidget,
-      );
-      await _chooseLanguage(tester, 'App language', 'System language');
-      expect(savedLanguage, 'system');
-      expect(
-        find.widgetWithText(NavigationDestination, 'Ayarlar'),
-        findsOneWidget,
-      );
-      tester.platformDispatcher.localesTestValue = const [Locale('de')];
-      await tester.pumpAndSettle();
-      expect(
-        find.widgetWithText(NavigationDestination, 'Settings'),
-        findsOneWidget,
-      );
-      await _chooseLanguage(tester, 'App language', 'Türkçe');
-      expect(savedLanguage, 'tr');
-      expect(
-        find.widgetWithText(NavigationDestination, 'Ayarlar'),
-        findsOneWidget,
-      );
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
-
-  testWidgets('failed language save retains previous choice and offers retry', (
-    tester,
-  ) async {
-    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
-    await _open(tester, const Locale('tr'));
-    await _tab(tester, 'Ayarlar');
-    failSaving = true;
-    await _chooseLanguage(tester, 'Uygulama dili', 'English');
-    expect(savedLanguage, 'system');
-    expect(find.byType(AlertDialog), findsOneWidget);
-    expect(
-      find.text('Dil tercihi kaydedilemedi. Tekrar dene.'),
-      findsOneWidget,
-    );
-    expect(
-      find.widgetWithText(NavigationDestination, 'Ayarlar'),
-      findsOneWidget,
-    );
-    failSaving = false;
-    await tester.tap(find.widgetWithText(ListTile, 'English'));
-    await tester.pumpAndSettle();
-    expect(savedLanguage, 'en');
-    expect(find.byType(AlertDialog), findsNothing);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
 
   testWidgets('English settings, FAQ and setup translate stored content', (
     tester,
@@ -263,7 +217,7 @@ void main() {
   });
 
   testWidgets(
-    'English screens and language picker fit a small screen with large text',
+    'English screens fit a small screen with large text without a language picker',
     (tester) async {
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       addTearDown(tester.view.resetPhysicalSize);
@@ -306,12 +260,8 @@ void main() {
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       await _tab(tester, 'Settings');
-      await tester.tap(find.widgetWithText(SettingsEntry, 'App language'));
-      await tester.pumpAndSettle();
-      expect(find.text('System language'), findsWidgets);
-      expect(find.widgetWithText(ListTile, 'English'), findsOneWidget);
-      await tester.tap(find.text('Close'));
-      await tester.pumpAndSettle();
+      expect(find.widgetWithText(SettingsEntry, 'App language'), findsNothing);
+      expect(find.text('System language'), findsNothing);
       await _tab(tester, 'Home');
       await tester.scrollUntilVisible(
         find.text('Set up PS5'),

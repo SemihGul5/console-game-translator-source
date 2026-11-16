@@ -2,19 +2,12 @@ package com.abrebostudio.consolegametranslator
 
 import android.content.Context
 import android.content.res.Configuration
-import android.content.res.Resources
 import java.util.Locale
 
-/** Native dialogs and ongoing notifications share the Flutter language choice. */
+/** Native dialogs and notifications follow the device language, with English as fallback. */
 internal object AppUiLanguage {
-    private fun code(context: Context): String = when (
-        context.getSharedPreferences("personalization_settings", Context.MODE_PRIVATE)
-            .getString("app_language", "system")
-    ) {
-        "tr" -> "tr"
-        "en" -> "en"
-        else -> if (Resources.getSystem().configuration.locales[0].language == "tr") "tr" else "en"
-    }
+    private fun code(context: Context): String =
+        if (context.resources.configuration.locales[0].language == "tr") "tr" else "en"
 
     fun text(context: Context, source: String): String =
         if (code(context) == "tr") source else english[source] ?: source

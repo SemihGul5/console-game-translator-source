@@ -6,6 +6,7 @@ import '../l10n/app_localizations.dart';
 import '../services/app_links.dart';
 import '../services/lg_webos_client.dart';
 import '../services/tv_output_service.dart';
+import 'setup_notice.dart';
 
 class SmartTvSetupDialog extends StatefulWidget {
   const SmartTvSetupDialog({super.key, required this.kind});
@@ -56,7 +57,7 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
       await _lg.connect(_ip.text.trim(), encrypted: _encrypted);
       if (!mounted) return;
       await _lg.testNotification(
-        context.tr('AnlaOyna • TV bağlantı testi'),
+        context.tr('OyunÇevirmeni • TV bağlantı testi'),
       );
       if (mounted) setState(() => _tested = true);
     } catch (_) {
@@ -128,7 +129,7 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
         : _startedSamsung && session.isConnected;
     return AlertDialog(
       backgroundColor: const Color(0xFF131A2B),
-      title: Text(lg ? 'LG webOS' : 'Samsung Tizen'),
+      title: Text(lg ? 'LG webOS • Beta' : 'Samsung Tizen • Beta'),
       content: SizedBox(
         width: 440,
         child: SingleChildScrollView(
@@ -136,6 +137,8 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SmartTvBetaNotice(),
+              const SizedBox(height: 12),
               Text(
                 context.tr('Önce TV bağlantısını kontrol edelim.'),
                 style: const TextStyle(color: Color(0xFF4DE2D0)),
@@ -207,6 +210,12 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
                   context.tr(
                     'Samsung TV’de “Console Game Translator TV” uygulamamızın açık olması gerekiyor. Telefonda oluşturduğun kodu bu TV uygulamasına girerek eşleştireceksin.',
                   ),
+                ),
+                // TODO: Remove the website download action after store release.
+                OutlinedButton.icon(
+                  onPressed: () => AppLinks.openTvSetup(context, 'samsung'),
+                  icon: const Icon(Icons.download_rounded),
+                  label: Text(context.tr('TV uygulamasını indir')),
                 ),
                 const SizedBox(height: 12),
                 ExpansionTile(

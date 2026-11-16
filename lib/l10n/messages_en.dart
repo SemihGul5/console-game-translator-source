@@ -306,7 +306,7 @@ const englishMessages = <String, String>{
   'Konsol: {0}\n': 'Console: {0}\n',
   'Çevrildi · {0} Yerel': 'Translated · {0} Local',
   "Console Game Translator": "Console Game Translator",
-  "AnlaOyna": "Console Game Translator",
+  "OyunÇevirmeni": "Console Game Translator",
   "Oyununu kendi dilinde yaşa": "Experience your game in your language",
   "Ayar kaydedilemedi": "Couldn't save setting",
   "Uygulama dili": "App language",
@@ -1246,7 +1246,7 @@ const englishMessages = <String, String>{
       "The phone receives a live Remote Play stream from your PS5. OCR reads the text inside the areas you select in that picture. On the TV, you watch the PS5 HDMI input; the Android TV app displays translated subtitles over that picture.",
   "Altyazıları PS5’in HDMI görüntüsünde göstermek için ne gerekli?":
       "What do I need to show subtitles over the PS5 HDMI picture?",
-  "Telefon uygulaması, PS5 ve AnlaOyna TV uygulamasını çalıştırabilen bir Android TV gerekir. TV uygulamasına diğer uygulamaların üzerinde gösterim izni ver, telefonu TV ile eşleştir ve telefonda çeviriyi başlat. TV’de altyazı gösterimi açık olmalı. Sonra PS5’in bağlı olduğu HDMI girişine geç. HDMI üzerinde gösterim desteği TV’nin sistemine bağlıdır.":
+  "Telefon uygulaması, PS5 ve OyunÇevirmeni TV uygulamasını çalıştırabilen bir Android TV gerekir. TV uygulamasına diğer uygulamaların üzerinde gösterim izni ver, telefonu TV ile eşleştir ve telefonda çeviriyi başlat. TV’de altyazı gösterimi açık olmalı. Sonra PS5’in bağlı olduğu HDMI girişine geç. HDMI üzerinde gösterim desteği TV’nin sistemine bağlıdır.":
       "You need the phone app, a PS5, and an Android TV that can run Console Game Translator TV. Grant the TV app permission to display over other apps, pair your phone with the TV, and start translation on the phone. Subtitle display must be enabled on the TV. Then switch to the PS5 HDMI input. Overlay support over HDMI depends on the TV system.",
   "Telefon oyun görüntüsünü TV’ye gönderiyor mu?":
       "Does my phone send gameplay video to the TV?",
@@ -1357,6 +1357,6 @@ const englishMessages = <String, String>{
       "Play using your main PSN account and switch the TV to the PS5 HDMI input. The TV app does not need to stay on screen. Translation can continue with the phone app in the background or its screen off; if interrupted, check connections and phone battery restrictions.",
   "Bitirirken telefonda Çeviriyi Durdur’a veya çeviri bildirimindeki Durdur’a bas. Remote Play ve çeviri durur; PS5 kaydı, TV eşleştirmesi ve ayarların korunur.":
       "To finish, tap Stop Translation on the phone or Stop in the translation notification. Remote Play and translation stop; your PS5 registration, TV pairing, and settings are kept.",
-  "Android TV’ne “AnlaOyna TV” uygulamamızı indirip aç. TV’nin dili Türkçe değilse adı “Console Game Translator TV” olarak görünür. Eşleştirme adresi ve 6 haneli kod bu uygulamada yer alır.":
-      "Install and open Console Game Translator TV on your Android TV. If the TV language is Turkish, it appears as “AnlaOyna TV”. The app shows the pairing address and 6-digit code.",
+  "Android TV’ne “OyunÇevirmeni TV” uygulamamızı indirip aç. TV’nin dili Türkçe değilse adı “Console Game Translator TV” olarak görünür. Eşleştirme adresi ve 6 haneli kod bu uygulamada yer alır.":
+      "Install and open Console Game Translator TV on your Android TV. If the TV language is Turkish, it appears as “OyunÇevirmeni TV”. The app shows the pairing address and 6-digit code.",
 };

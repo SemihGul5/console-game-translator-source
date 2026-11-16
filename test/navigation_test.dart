@@ -492,7 +492,7 @@ void main() {
       await _openApp(tester);
       await tester.ensureVisible(find.text('TV’yi eşleştir'));
       expect(find.text('TV'), findsOneWidget);
-      expect(find.text('Samsung Tizen'), findsNothing);
+      expect(find.text('Samsung Tizen • Beta'), findsNothing);
       expect(find.text('Altyazıları TV ekranında göster'), findsOneWidget);
       expect(find.text('Eşleştirme kayıtlı • TV bağlı değil'), findsNothing);
       expect(smartTvPairing, isNull);
@@ -556,7 +556,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TvAppInstallNotice), findsOneWidget);
       expect(find.text('Önce TV uygulamasını indir'), findsOneWidget);
-      expect(find.textContaining('AnlaOyna TV'), findsOneWidget);
+      expect(find.textContaining('OyunÇevirmeni TV'), findsOneWidget);
+      await tester.ensureVisible(find.text('TV uygulamasını indir'));
+      await tester.tap(find.text('TV uygulamasını indir'));
+      await tester.pumpAndSettle();
+      expect(
+        launched.last.toString(),
+        'https://example.com/tv-setup.html?brand=android&lang=tr',
+      );
       await _capture(tester, 'tv-install-notice');
       tester.view.physicalSize = const Size(320, 640);
       tester.platformDispatcher.textScaleFactorTestValue = 1.6;
@@ -579,13 +586,17 @@ void main() {
       await tester.tap(find.text('TV’yi eşleştir'));
       await tester.pumpAndSettle();
       expect(find.byType(TvAppInstallNotice), findsOneWidget);
-      expect(find.text('LG webOS'), findsOneWidget);
-      expect(find.text('Samsung Tizen'), findsOneWidget);
+      expect(find.text('LG webOS • Beta'), findsOneWidget);
+      expect(find.text('Samsung Tizen • Beta'), findsOneWidget);
+      expect(find.text('Android TV’yi eşleştir'), findsOneWidget);
+      expect(find.text('Eşleştir ve bağlan'), findsOneWidget);
+      expect(find.byType(SmartTvBetaNotice), findsNothing);
       await _capture(tester, 'tv-brand-options');
-      await tester.tap(find.text('LG webOS'));
+      await tester.tap(find.text('LG webOS • Beta'));
       await tester.pumpAndSettle();
       expect(find.text('LG TV’nin yerel IPv4 adresi'), findsOneWidget);
       expect(find.byType(TvAppInstallNotice), findsNothing);
+      expect(find.text('Beta TV desteği'), findsOneWidget);
       expect(find.textContaining('Deneysel'), findsNothing);
       await _capture(tester, 'tv-lg-setup');
       await tester.ensureVisible(find.text('TV bağlantısı için destek al'));
@@ -606,9 +617,17 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('TV’yi eşleştir'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Samsung Tizen'));
+      await tester.tap(find.text('Samsung Tizen • Beta'));
       await tester.pumpAndSettle();
       expect(find.text('TV uygulamam kurulu • Eşleştir'), findsOneWidget);
+      expect(find.text('Beta TV desteği'), findsOneWidget);
+      await tester.ensureVisible(find.text('TV uygulamasını indir'));
+      await tester.tap(find.text('TV uygulamasını indir'));
+      await tester.pumpAndSettle();
+      expect(
+        launched.last.toString(),
+        'https://example.com/tv-setup.html?brand=samsung&lang=tr',
+      );
       expect(find.textContaining('README'), findsNothing);
       expect(find.textContaining('receiver.zip'), findsNothing);
       await tester.ensureVisible(find.text('TV kurulum rehberini aç'));
@@ -1495,7 +1514,7 @@ void main() {
         expect(launched.single.path, AppLinks.supportEmail);
         expect(
           launched.single.queryParameters['subject'],
-          'AnlaOyna - Oyun isteği',
+          'OyunÇevirmeni - Oyun isteği',
         );
         final body = launched.single.queryParameters['body']!;
         expect(body, contains('Oyun adı: Yeni Oyun & لعبة'));
@@ -1535,7 +1554,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(launched.single.scheme, 'mailto');
       expect(launched.single.path, AppLinks.supportEmail);
-      expect(launched.single.queryParameters['subject'], 'AnlaOyna Destek');
+      expect(
+        launched.single.queryParameters['subject'],
+        'OyunÇevirmeni Destek',
+      );
       await tester.ensureVisible(find.text('X (Twitter)'));
       expect(find.text('@abreboStudio'), findsOneWidget);
       await tester.tap(find.text('X (Twitter)'));

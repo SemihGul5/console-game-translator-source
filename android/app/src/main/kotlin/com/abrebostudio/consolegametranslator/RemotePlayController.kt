@@ -263,22 +263,6 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                         "privacyUrl" to BuildConfig.PRIVACY_POLICY_URL,
                         "termsUrl" to BuildConfig.TERMS_OF_USE_URL,
                     ))
-                    "getAppLanguage" -> result.success(
-                        personalizationPrefs.getString("app_language", "system"),
-                    )
-                    "setAppLanguage" -> {
-                        val language = call.arguments as? String
-                        if (language !in listOf("system", "tr", "en")) {
-                            result.error("INVALID_APP_LANGUAGE", "Invalid app language.", null)
-                        } else if (!personalizationPrefs.edit()
-                                .putString("app_language", language)
-                                .commit()) {
-                            result.error("APP_LANGUAGE_SAVE_FAILED", "Couldn't save app language.", null)
-                        } else {
-                            TranslationForegroundService.refreshAccessNotification()
-                            result.success(true)
-                        }
-                    }
                     "getPersonalizationSettings" -> result.success(
                         mapOf(
                             "accentIndex" to personalizationPrefs.getInt("accent_index", 0),

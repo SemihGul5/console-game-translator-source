@@ -1,12 +1,13 @@
 TR — Mağaza/indirme ve uygun yasal bilgi sayfası için taslak
 
-Console Game Translator, değiştirilmiş Chiaki/chiaki-ng Remote Play kodu içerir.
+Oyun Çevirmeni (Console Game Translator), değiştirilmiş Chiaki/chiaki-ng Remote Play kodu içerir.
 Özgün yazarların telif hakları ve kaynak dosyalarındaki bildirimleri korunmuştur.
 Kapsanan yazılım GNU AGPL sürüm 3 ve beraberindeki OpenSSL ek izniyle sunulur.
 Lisans uyarınca kopyalama, değiştirme ve yeniden dağıtma haklarınız vardır.
 Yazılım lisansında belirtilen kapsamda garantisizdir; kanuni tüketici hakları saklıdır.
 
-Bu sürüm: 1.0.7+8
+Bu sürüm: 1.0.8+9
+Google Play: https://play.google.com/store/apps/details?id=com.abrebostudio.consolegametranslator
 Bu sürümün ücretsiz kaynakları: MATCHING_SOURCE_RELEASE_URL
 Tam lisans ve üçüncü taraf bildirimleri: PUBLIC_LEGAL_PAGE_URL
 Chiaki-ng: https://github.com/chiaki-ng/chiaki-ng
@@ -22,7 +23,7 @@ permission. You have rights to copy, modify and redistribute it under that licen
 The software is without warranty to the extent stated in the license; statutory
 consumer rights are unaffected.
 
-This version: 1.0.7+8
+This version: 1.0.8+9
 Free source for this version: MATCHING_SOURCE_RELEASE_URL
 Full license and third-party notices: PUBLIC_LEGAL_PAGE_URL
 Chiaki-ng: https://github.com/chiaki-ng/chiaki-ng
