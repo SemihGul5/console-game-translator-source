@@ -4,6 +4,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SubtitleSourceSelectorTest {
+    @Test fun dictionaryMatchKeepsPriorityEvenWhenItsTextLooksLikeATimer() {
+        val memory = GameTranslationMemory.parse("test-game", "en", "tr",
+            """{"schemaVersion":2,"game":"test-game","source":"en","target":"tr","entries":[{"id":"code","sourceText":"VI:00","targetText":"Bilinen kod"}]}""")
+        val selected = selectSubtitleSource("VI:00", .37f, memory) {
+            throw AssertionError("A matched dictionary line must never reach the no-game timer filter")
+        }
+        assertEquals("Bilinen kod", selected.memoryMatch?.target)
+    }
+
     @Test fun repeatedNoisyReadsKeepTheCanonicalJsonTextAndNewDialogueChangesImmediately() {
         val source = "Yeah. I'd come down to the marina, sit on the dock, pour myself a drink, and look at her -"
         val memory = GameTranslationMemory.parse("test-game", "en", "tr", org.json.JSONObject()

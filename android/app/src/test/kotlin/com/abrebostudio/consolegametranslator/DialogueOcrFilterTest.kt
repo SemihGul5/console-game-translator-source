@@ -69,6 +69,23 @@ class DialogueOcrFilterTest {
         }
     }
 
+    @Test fun timerGlyphsCannotBecomeSpeakerLabelsInTheNoGamePath() {
+        for (text in listOf("VI:00", "vI:00", "VI：OO", "I0:II", "00:14 04:59", "00:14 VI:00")) {
+            assertTrue(text, isStandaloneOcrTimer(text))
+            assertTrue(text, filterDialogueOcrLines(listOf(line(text, 0, .5f, .8f)), rejectTimerGlyphs = true).isEmpty())
+        }
+        val oldSelectedGameRead = listOf(line("VI:00", 0, .5f, .8f))
+        assertEquals(oldSelectedGameRead, filterDialogueOcrLines(oldSelectedGameRead))
+    }
+
+    @Test fun realSpeakerLabelsAndSentencesContainingTimesRemainDialogue() {
+        for (text in listOf("VI: Go now!", "VI: Meet me at 00:14.", "We have 00:14 left.", "IV: Open the door!")) {
+            val lines = listOf(line(text, 0, .5f, .8f))
+            assertFalse(text, isStandaloneOcrTimer(text))
+            assertEquals(text, lines, filterDialogueOcrLines(lines, rejectTimerGlyphs = true))
+        }
+    }
+
     private fun line(text: String, block: Int, top: Float, bottom: Float) = OcrLineCandidate(
         rawText = text, text = text, blockIndex = block, confidenceValues = listOf(0.85f),
         left = 0.1f, top = top, right = 0.9f, bottom = bottom,

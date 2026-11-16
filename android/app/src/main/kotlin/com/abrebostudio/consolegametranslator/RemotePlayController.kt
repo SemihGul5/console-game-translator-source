@@ -1148,7 +1148,10 @@ internal class RemotePlayController private constructor(context: Context) : Cont
         val editor = subtitleSettingsPrefs.edit()
         if (gameId.isNullOrBlank()) editor.remove("selected_game_id")
         else editor.putString("selected_game_id", gameId)
-        if (editor.commit()) result.success(true)
+        if (editor.commit()) {
+            if (subtitleOcrDelegate.isInitialized()) subtitleOcr.setGameSelected(!gameId.isNullOrBlank() || selectedGameMemory != null)
+            result.success(true)
+        }
         else result.error("GAME_SELECTION_SAVE_FAILED", "Oyun seçimi kaydedilemedi.", null)
     }
 
@@ -1185,7 +1188,10 @@ internal class RemotePlayController private constructor(context: Context) : Cont
     private fun applyGameMemory(memory: GameTranslationMemory?, key: GameTranslationMemoryKey?) {
         selectedGameMemory = memory
         selectedGameMemoryKey = key
-        if (subtitleOcrDelegate.isInitialized()) subtitleOcr.setGameTranslationMemory(memory)
+        if (subtitleOcrDelegate.isInitialized()) {
+            subtitleOcr.setGameSelected(!subtitleSettingsPrefs.getString("selected_game_id", null).isNullOrBlank() || memory != null)
+            subtitleOcr.setGameTranslationMemory(memory)
+        }
     }
 
     private fun activateCachedGameTranslationMemory(call: MethodCall, result: MethodChannel.Result) {
@@ -1401,6 +1407,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
             readRegionSettings("ocr_region_settings_json").map { OcrRegionSettings.fromMap(it) },
             runCatching { deepLCredentials.read() }.getOrNull().orEmpty(),
             selectedGeminiApiKeys = runCatching { geminiCredentials.readAll() }.getOrDefault(emptyList()),
+            hasSelectedGame = !prefs.getString("selected_game_id", null).isNullOrBlank() || selectedGameMemory != null,
         )
     }
 
@@ -1442,6 +1449,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                 ?.map { OcrRegionSettings.fromMap(it as? Map<*, *>) }.orEmpty(),
             runCatching { deepLCredentials.read() }.getOrNull().orEmpty(),
             selectedGeminiApiKeys = runCatching { geminiCredentials.readAll() }.getOrDefault(emptyList()),
+            hasSelectedGame = !subtitleSettingsPrefs.getString("selected_game_id", null).isNullOrBlank() || selectedGameMemory != null,
         )
     }
 

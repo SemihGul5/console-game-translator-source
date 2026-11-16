@@ -6,7 +6,7 @@ Kapsanan yazılım GNU AGPL sürüm 3 ve beraberindeki OpenSSL ek izniyle sunulu
 Lisans uyarınca kopyalama, değiştirme ve yeniden dağıtma haklarınız vardır.
 Yazılım lisansında belirtilen kapsamda garantisizdir; kanuni tüketici hakları saklıdır.
 
-Bu sürüm: 1.0.6+7
+Bu sürüm: 1.0.7+8
 Bu sürümün ücretsiz kaynakları: MATCHING_SOURCE_RELEASE_URL
 Tam lisans ve üçüncü taraf bildirimleri: PUBLIC_LEGAL_PAGE_URL
 Chiaki-ng: https://github.com/chiaki-ng/chiaki-ng
@@ -22,7 +22,7 @@ permission. You have rights to copy, modify and redistribute it under that licen
 The software is without warranty to the extent stated in the license; statutory
 consumer rights are unaffected.
 
-This version: 1.0.6+7
+This version: 1.0.7+8
 Free source for this version: MATCHING_SOURCE_RELEASE_URL
 Full license and third-party notices: PUBLIC_LEGAL_PAGE_URL
 Chiaki-ng: https://github.com/chiaki-ng/chiaki-ng

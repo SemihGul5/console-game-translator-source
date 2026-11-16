@@ -1,8 +1,9 @@
 {
   "preparedOn": "2026-11-16",
-  "applicationVersion": "1.0.6+7",
+  "applicationVersion": "1.0.7+8",
   "comparison": "reviewed seed snapshot",
   "added": [
+    "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicy.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLClient.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLCredentialStore.kt",
@@ -19,7 +20,9 @@
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GeminiLocalFallback.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GeminiTranslationEngine.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/LatestLocalTranslationQueue.kt",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrCorrectionTable.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrFrameGeometry.kt",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrRecoveryPolicy.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrRegionSettings.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrTextDistance.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrVariantGate.kt",
@@ -52,7 +55,9 @@
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/LatestLocalTranslationQueueTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/LocalLoggedOcrReplayTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/LoggedOcrRegressionTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrCorrectionTableTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrPipelineTimingTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrRecoveryPolicyTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrRegionSettingsTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/RemotePlayTrialGateTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/TranslationCacheRepositoryTest.kt",
@@ -61,6 +66,8 @@
     "android/app/src/test/resources/game-json-display.json",
     "android/app/src/test/resources/gemini-ocr-2026-11-16.json",
     "android/app/src/test/resources/local-ocr-2026-11-16.json",
+    "android/app/src/test/resources/ocr-corrections-2026-11-16-followup.json",
+    "android/app/src/test/resources/ocr-corrections-2026-11-16.json",
     "android/app/src/test/resources/subtitle-source-selector.json",
     "assets/games/languages.json",
     "lib/screens/translation_cache_screen.dart",
@@ -85,6 +92,7 @@
     "test/translation_cache_screen_test.dart"
   ],
   "changed": [
+    "android/app/build.gradle.kts",
     "android/app/src/main/AndroidManifest.xml",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/BackgroundVideoFrameReader.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DialogueOcrFilter.kt",
@@ -148,6 +156,14 @@
       "sourceRoot": "samsung_tv",
       "matchedFiles": 10,
       "exactContentsVerified": true
+    }
+  ],
+  "reviewedBuildInputChanges": [
+    {
+      "path": "android/app/build.gradle.kts",
+      "baselineNormalizedSha256": "6ed802b6de547844e943d8aecf6da031718d5b06f9e67267cef3f614fdbdd8cd",
+      "sourceNormalizedSha256": "e32313223bbf50d6b1df22d2bcdff35824f6e1208c0f4a4ef71f834d2ae81cb8",
+      "reason": "Expose the existing APK assets as unit-test resources; no dependency, SDK, plugin or runtime build change."
     }
   ],
   "productionAppModified": false,

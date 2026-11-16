@@ -15,7 +15,7 @@ internal data class OcrLineCandidate(
 )
 
 /** Accept or reject complete dialogue blocks; never truncate an accepted block. */
-internal fun filterDialogueOcrLines(candidates: List<OcrLineCandidate>): List<OcrLineCandidate> {
+internal fun filterDialogueOcrLines(candidates: List<OcrLineCandidate>, rejectTimerGlyphs: Boolean = false): List<OcrLineCandidate> {
     // Console home/share controls in the reported crop are not dialogue.
     // This filter is called only when the user enables dialogue filtering;
     // authoritative JSON matches and unfiltered OCR keep their existing path.
@@ -28,6 +28,7 @@ internal fun filterDialogueOcrLines(candidates: List<OcrLineCandidate>): List<Oc
         if (lines.isEmpty()) return@mapNotNull null
         val text = lines.joinToString(" ") { it.text }.trim()
         if (isControllerOcrHint(text)) return@mapNotNull null
+        if (rejectTimerGlyphs && isStandaloneOcrTimer(text)) return@mapNotNull null
         val letters = text.count { it.isLetter() }
         val digits = text.count { it.isDigit() }
         if (letters < 2 || digits > letters * 2) return@mapNotNull null
@@ -57,12 +58,19 @@ internal fun filterDialogueOcrLines(candidates: List<OcrLineCandidate>): List<Oc
 /** Short menu actions followed by two controller buttons are HUD, not dialogue. */
 internal fun isControllerOcrHint(text: String): Boolean = CONTROLLER_HINT_PATTERN.matches(text.trim())
 
+/** A timer such as VI:00 must not become a fictitious speaker called VI. */
+internal fun isStandaloneOcrTimer(text: String): Boolean = OCR_TIMER_PATTERN.matches(text.trim())
+
+private const val OCR_TIMER_GLYPHS = "[0-9oOilILvV|]"
+private const val OCR_TIMER_TOKEN = "$OCR_TIMER_GLYPHS{1,3}\\s*[:：]\\s*$OCR_TIMER_GLYPHS{2}(?:\\s*[:：]\\s*$OCR_TIMER_GLYPHS{2})?"
+private val OCR_TIMER_PATTERN = Regex("$OCR_TIMER_TOKEN(?:\\s+$OCR_TIMER_TOKEN)*")
+
 private val CONTROLLER_HINT_PATTERN = Regex(
     """(?:[\p{L}]+\s+){1,3}(?:L[123TBIU]|R[123TB])\s+(?:L[123TBIU]|R[123TB])""",
     RegexOption.IGNORE_CASE,
 )
 
-private fun isConsoleSystemOcr(text: String): Boolean {
+internal fun isConsoleSystemOcr(text: String): Boolean {
     val value = Normalizer.normalize(text.lowercase(Locale.ROOT).replace('ı', 'i'), Normalizer.Form.NFD)
         .replace(Regex("\\p{M}+"), "").replace(Regex("[^a-z0-9 ]"), " ")
         .replace(Regex("\\s+"), " ").trim()

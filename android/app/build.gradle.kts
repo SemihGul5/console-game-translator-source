@@ -74,6 +74,9 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.2.13676358"
 
+    // Unit tests read the exact correction table bundled in the APK.
+    sourceSets.getByName("test").resources.srcDir("src/main/assets")
+
     // Native dialogs/notifications can switch between English and Turkish
     // after installation, including while offline. Keep both on every device.
     bundle {

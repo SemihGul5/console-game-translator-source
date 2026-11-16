@@ -1,0 +1,2203 @@
+{
+  "version": 1,
+  "languages": {
+    "en": [
+      {
+        "id": "i-am-glyph",
+        "from": [
+          "l'm",
+          "1'm",
+          "I'rn",
+          "l'rn",
+          "I'ni"
+        ],
+        "to": "I'm"
+      },
+      {
+        "id": "i-have-glyph",
+        "from": [
+          "l've",
+          "1've",
+          "I'vc",
+          "l'vc"
+        ],
+        "to": "I've"
+      },
+      {
+        "id": "i-would-glyph",
+        "from": [
+          "l'd",
+          "1'd"
+        ],
+        "to": "I'd"
+      },
+      {
+        "id": "i-will-glyph",
+        "from": [
+          "l'll",
+          "I'Il",
+          "I'lI",
+          "I'lIl",
+          "I'III",
+          "l'Il",
+          "l'lI",
+          "1'll",
+          "I'Ill"
+        ],
+        "to": "I'll"
+      },
+      {
+        "id": "i-am-missing-apostrophe",
+        "from": [
+          "Im",
+          "Irn",
+          "Irm",
+          "I'r"
+        ],
+        "to": "I'm",
+        "next": [
+          "guessing",
+          "guessíng",
+          "guesslng",
+          "guess1ng",
+          "gugssİng",
+          "guessinig",
+          "gue55ing",
+          "going",
+          "g0ing",
+          "golng",
+          "trying",
+          "looking",
+          "lopking",
+          "looklng",
+          "l0oking",
+          "lo0king",
+          "ooking",
+          "Wooking",
+          "getting",
+          "doing",
+          "waiting",
+          "waitlng",
+          "wait1ng",
+          "coming",
+          "leaving",
+          "taking",
+          "telling",
+          "asking",
+          "saying",
+          "thinking",
+          "working",
+          "talking",
+          "ready",
+          "sorry",
+          "s0rry",
+          "sure",
+          "afraid",
+          "here",
+          "fine",
+          "okay",
+          "not"
+        ]
+      },
+      {
+        "id": "i-would-missing-apostrophe",
+        "from": [
+          "Id",
+          "ld",
+          "Ild"
+        ],
+        "to": "I'd",
+        "next": [
+          "call",
+          "caII",
+          "caIl",
+          "calI",
+          "ca1l",
+          "come",
+          "corne",
+          "go",
+          "be",
+          "have",
+          "haye",
+          "take",
+          "takc",
+          "get",
+          "gct",
+          "tell",
+          "teII",
+          "teIl",
+          "telI",
+          "te1l",
+          "ask",
+          "do",
+          "make",
+          "makc",
+          "find",
+          "f1nd",
+          "flnd",
+          "see",
+          "wait",
+          "wa1t",
+          "help",
+          "heIp",
+          "he1p",
+          "keep",
+          "try",
+          "leave",
+          "Ieave",
+          "1eave",
+          "look",
+          "meet",
+          "rneet",
+          "bring",
+          "give",
+          "glve",
+          "g1ve",
+          "show",
+          "check",
+          "open",
+          "close",
+          "start",
+          "stop",
+          "let",
+          "need",
+          "necd",
+          "want",
+          "like",
+          "rather",
+          "love",
+          "say"
+        ]
+      },
+      {
+        "id": "i-will-missing-apostrophe",
+        "from": [
+          "Ill",
+          "IIl",
+          "I11",
+          "lll",
+          "\"ll",
+          "\"'ll",
+          "'Il",
+          "lIl",
+          "'Ill"
+        ],
+        "to": "I'll",
+        "next": [
+          "call",
+          "caII",
+          "caIl",
+          "calI",
+          "ca1l",
+          "come",
+          "corne",
+          "go",
+          "be",
+          "have",
+          "haye",
+          "take",
+          "takc",
+          "get",
+          "gct",
+          "tell",
+          "teII",
+          "teIl",
+          "telI",
+          "te1l",
+          "ask",
+          "do",
+          "make",
+          "makc",
+          "find",
+          "f1nd",
+          "flnd",
+          "see",
+          "wait",
+          "wa1t",
+          "help",
+          "heIp",
+          "he1p",
+          "keep",
+          "try",
+          "leave",
+          "Ieave",
+          "1eave",
+          "look",
+          "meet",
+          "rneet",
+          "bring",
+          "give",
+          "glve",
+          "g1ve",
+          "show",
+          "check",
+          "open",
+          "close",
+          "start",
+          "stop",
+          "let",
+          "need",
+          "necd",
+          "want",
+          "like",
+          "rather",
+          "love",
+          "say"
+        ]
+      },
+      {
+        "id": "i-have-missing-apostrophe",
+        "from": [
+          "Ive",
+          "lve"
+        ],
+        "to": "I've",
+        "next": [
+          "got",
+          "been",
+          "seen",
+          "heard",
+          "done",
+          "had",
+          "made",
+          "lost",
+          "found",
+          "told",
+          "never",
+          "already",
+          "just"
+        ]
+      },
+      {
+        "id": "it-is-glyph",
+        "from": [
+          "lt's",
+          "1t's",
+          "Jt's"
+        ],
+        "to": "It's"
+      },
+      {
+        "id": "it-would-apostrophe",
+        "from": [
+          "Itd",
+          "ltd"
+        ],
+        "to": "It'd",
+        "next": [
+          "be",
+          "have",
+          "haye",
+          "clear",
+          "take",
+          "takc",
+          "help",
+          "heIp",
+          "he1p",
+          "make",
+          "makc",
+          "mean",
+          "look",
+          "feel",
+          "seem"
+        ]
+      },
+      {
+        "id": "that-would-apostrophe",
+        "from": [
+          "Thatd"
+        ],
+        "to": "That'd",
+        "next": [
+          "be",
+          "have",
+          "haye",
+          "help",
+          "heIp",
+          "he1p",
+          "make",
+          "makc",
+          "mean",
+          "work"
+        ]
+      },
+      {
+        "id": "that-will-apostrophe",
+        "from": [
+          "Thatll"
+        ],
+        "to": "That'll",
+        "next": [
+          "be",
+          "do",
+          "help",
+          "heIp",
+          "he1p",
+          "work",
+          "make",
+          "makc",
+          "take",
+          "takc"
+        ]
+      },
+      {
+        "id": "we-are-glyph",
+        "from": [
+          "we'rc"
+        ],
+        "to": "we're"
+      },
+      {
+        "id": "they-are-glyph",
+        "from": [
+          "they'rc"
+        ],
+        "to": "they're"
+      },
+      {
+        "id": "you-are-glyph",
+        "from": [
+          "you'rc"
+        ],
+        "to": "you're"
+      },
+      {
+        "id": "apostrophe-dont",
+        "from": [
+          "dont"
+        ],
+        "to": "don't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-doesnt",
+        "from": [
+          "doesnt"
+        ],
+        "to": "doesn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-didnt",
+        "from": [
+          "didnt"
+        ],
+        "to": "didn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-isnt",
+        "from": [
+          "isnt"
+        ],
+        "to": "isn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-arent",
+        "from": [
+          "arent"
+        ],
+        "to": "aren't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-wasnt",
+        "from": [
+          "wasnt"
+        ],
+        "to": "wasn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-werent",
+        "from": [
+          "werent"
+        ],
+        "to": "weren't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-havent",
+        "from": [
+          "havent"
+        ],
+        "to": "haven't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-hasnt",
+        "from": [
+          "hasnt"
+        ],
+        "to": "hasn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-hadnt",
+        "from": [
+          "hadnt"
+        ],
+        "to": "hadn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-couldnt",
+        "from": [
+          "couldnt"
+        ],
+        "to": "couldn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-wouldnt",
+        "from": [
+          "wouldnt"
+        ],
+        "to": "wouldn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-shouldnt",
+        "from": [
+          "shouldnt"
+        ],
+        "to": "shouldn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-mustnt",
+        "from": [
+          "mustnt"
+        ],
+        "to": "mustn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-neednt",
+        "from": [
+          "neednt"
+        ],
+        "to": "needn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "apostrophe-aint",
+        "from": [
+          "aint"
+        ],
+        "to": "ain't",
+        "caseSensitive": false
+      },
+      {
+        "id": "cant-with-pronoun",
+        "from": [
+          "cant"
+        ],
+        "to": "can't",
+        "previous": [
+          "I",
+          "you",
+          "y0u",
+          "he",
+          "she",
+          "it",
+          "we",
+          "they"
+        ],
+        "next": [
+          "call",
+          "caII",
+          "caIl",
+          "calI",
+          "ca1l",
+          "come",
+          "corne",
+          "go",
+          "be",
+          "have",
+          "haye",
+          "take",
+          "takc",
+          "get",
+          "gct",
+          "tell",
+          "teII",
+          "teIl",
+          "telI",
+          "te1l",
+          "ask",
+          "do",
+          "make",
+          "makc",
+          "find",
+          "f1nd",
+          "flnd",
+          "see",
+          "wait",
+          "wa1t",
+          "help",
+          "heIp",
+          "he1p",
+          "keep",
+          "try",
+          "leave",
+          "Ieave",
+          "1eave",
+          "look",
+          "meet",
+          "rneet",
+          "bring",
+          "give",
+          "glve",
+          "g1ve",
+          "show",
+          "check",
+          "open",
+          "close",
+          "start",
+          "stop",
+          "let",
+          "need",
+          "necd",
+          "want",
+          "like",
+          "rather",
+          "love",
+          "say"
+        ],
+        "caseSensitive": false
+      },
+      {
+        "id": "wont-with-pronoun",
+        "from": [
+          "wont"
+        ],
+        "to": "won't",
+        "previous": [
+          "I",
+          "you",
+          "y0u",
+          "he",
+          "she",
+          "it",
+          "we",
+          "they"
+        ],
+        "next": [
+          "call",
+          "caII",
+          "caIl",
+          "calI",
+          "ca1l",
+          "come",
+          "corne",
+          "go",
+          "be",
+          "have",
+          "haye",
+          "take",
+          "takc",
+          "get",
+          "gct",
+          "tell",
+          "teII",
+          "teIl",
+          "telI",
+          "te1l",
+          "ask",
+          "do",
+          "make",
+          "makc",
+          "find",
+          "f1nd",
+          "flnd",
+          "see",
+          "wait",
+          "wa1t",
+          "help",
+          "heIp",
+          "he1p",
+          "keep",
+          "try",
+          "leave",
+          "Ieave",
+          "1eave",
+          "look",
+          "meet",
+          "rneet",
+          "bring",
+          "give",
+          "glve",
+          "g1ve",
+          "show",
+          "check",
+          "open",
+          "close",
+          "start",
+          "stop",
+          "let",
+          "need",
+          "necd",
+          "want",
+          "like",
+          "rather",
+          "love",
+          "say"
+        ],
+        "caseSensitive": false
+      },
+      {
+        "id": "dont-double-t",
+        "from": [
+          "dontt"
+        ],
+        "to": "don't",
+        "next": [
+          "worry",
+          "have",
+          "haye",
+          "know",
+          "kn0w",
+          "want",
+          "need",
+          "necd",
+          "like",
+          "get",
+          "gct",
+          "do",
+          "think",
+          "see"
+        ],
+        "caseSensitive": false
+      },
+      {
+        "id": "dont-punctuation",
+        "from": [
+          "don:t",
+          "don' t",
+          "don':t"
+        ],
+        "to": "don't",
+        "caseSensitive": false
+      },
+      {
+        "id": "doesnt-punctuation",
+        "from": [
+          "doesn' t",
+          "doesn:t"
+        ],
+        "to": "doesn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "didnt-punctuation",
+        "from": [
+          "didn' t",
+          "didn:t"
+        ],
+        "to": "didn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "isnt-punctuation",
+        "from": [
+          "isn' t",
+          "isn:t"
+        ],
+        "to": "isn't",
+        "caseSensitive": false
+      },
+      {
+        "id": "wouldnt-glyph",
+        "from": [
+          "wouIdn't",
+          "wou1dn't"
+        ],
+        "to": "wouldn't"
+      },
+      {
+        "id": "couldnt-glyph",
+        "from": [
+          "couIdn't",
+          "cou1dn't"
+        ],
+        "to": "couldn't"
+      },
+      {
+        "id": "shouldnt-glyph",
+        "from": [
+          "shouIdn't",
+          "shou1dn't"
+        ],
+        "to": "shouldn't"
+      },
+      {
+        "id": "dont-joined-worry",
+        "from": [
+          "don'tworry",
+          "dontworry"
+        ],
+        "to": "don't worry",
+        "caseSensitive": false
+      },
+      {
+        "id": "i-dont-joined",
+        "from": [
+          "Idon't",
+          "Idont",
+          "Idontt"
+        ],
+        "to": "I don't"
+      },
+      {
+        "id": "i-have-joined",
+        "from": [
+          "Ihave"
+        ],
+        "to": "I have"
+      },
+      {
+        "id": "i-will-joined",
+        "from": [
+          "Iwill"
+        ],
+        "to": "I will"
+      },
+      {
+        "id": "i-know-joined",
+        "from": [
+          "Iknow"
+        ],
+        "to": "I know"
+      },
+      {
+        "id": "and-i-dont-joined",
+        "from": [
+          "andIdon't",
+          "andIdont",
+          "andIdontt"
+        ],
+        "to": "and I don't"
+      },
+      {
+        "id": "and-i-joined",
+        "from": [
+          "andI"
+        ],
+        "to": "and I",
+        "next": [
+          "don't",
+          "dont",
+          "dontt",
+          "don:t",
+          "don':t",
+          "donlt",
+          "donIt",
+          "don1t",
+          "have",
+          "haye",
+          "know",
+          "kn0w",
+          "think",
+          "want",
+          "need",
+          "necd",
+          "will",
+          "wilI",
+          "wiIl",
+          "wiII",
+          "wi1l",
+          "w1ll",
+          "can",
+          "can't",
+          "cant",
+          "was",
+          "am"
+        ]
+      },
+      {
+        "id": "get-out-and-joined",
+        "from": [
+          "getoutand"
+        ],
+        "to": "get out and",
+        "caseSensitive": false
+      },
+      {
+        "id": "get-out-joined",
+        "from": [
+          "getout"
+        ],
+        "to": "get out",
+        "next": [
+          "and",
+          "of",
+          "here",
+          "now"
+        ],
+        "caseSensitive": false
+      },
+      {
+        "id": "your-house-joined",
+        "from": [
+          "yourhouse"
+        ],
+        "to": "your house",
+        "previous": [
+          "at",
+          "to",
+          "near",
+          "outside",
+          "outs1de",
+          "outslde",
+          "inside",
+          "ins1de",
+          "inslde"
+        ]
+      },
+      {
+        "id": "his-room-joined",
+        "from": [
+          "hisroom"
+        ],
+        "to": "his room",
+        "previous": [
+          "in",
+          "to",
+          "from",
+          "frorn",
+          "outside",
+          "outs1de",
+          "outslde"
+        ]
+      },
+      {
+        "id": "myself-a-joined",
+        "from": [
+          "myselfa"
+        ],
+        "to": "myself a",
+        "next": [
+          "drink",
+          "dririk",
+          "clrink",
+          "clririk",
+          "clrirk",
+          "drinik",
+          "driık",
+          "clrnk",
+          "break",
+          "chance",
+          "favor",
+          "favour"
+        ]
+      },
+      {
+        "id": "thank-you-joined",
+        "from": [
+          "thankyou"
+        ],
+        "to": "thank you",
+        "caseSensitive": false
+      },
+      {
+        "id": "with-v-glyph",
+        "from": [
+          "vith"
+        ],
+        "to": "with",
+        "next": [
+          "me",
+          "you",
+          "y0u",
+          "him",
+          "her",
+          "us",
+          "them",
+          "those",
+          "th0se",
+          "tbose",
+          "these",
+          "thcse",
+          "the5e",
+          "the",
+          "tbe",
+          "a",
+          "my",
+          "rny",
+          "your",
+          "y0ur"
+        ]
+      },
+      {
+        "id": "come-rn-glyph",
+        "from": [
+          "corne"
+        ],
+        "to": "come",
+        "next": [
+          "down",
+          "back",
+          "baek",
+          "b4ck",
+          "here",
+          "on",
+          "in",
+          "out",
+          "up",
+          "over",
+          "with",
+          "vith",
+          "inside",
+          "ins1de",
+          "inslde"
+        ]
+      },
+      {
+        "id": "drink-glyph",
+        "from": [
+          "dririk",
+          "clrink",
+          "clririk",
+          "clrirk",
+          "drinik",
+          "driık",
+          "clrnk"
+        ],
+        "to": "drink",
+        "previous": [
+          "a",
+          "my",
+          "rny",
+          "your",
+          "y0ur",
+          "his",
+          "her",
+          "another",
+          "the",
+          "tbe"
+        ]
+      },
+      {
+        "id": "room-glyph",
+        "from": [
+          "soom",
+          "roorn",
+          "r0om",
+          "ro0m"
+        ],
+        "to": "room",
+        "previous": [
+          "my",
+          "rny",
+          "your",
+          "y0ur",
+          "his",
+          "her",
+          "the",
+          "tbe",
+          "this",
+          "th1s",
+          "thls",
+          "thi5",
+          "that",
+          "th4t",
+          "tbat"
+        ]
+      },
+      {
+        "id": "looking-glyph",
+        "from": [
+          "lopking",
+          "looklng",
+          "l0oking",
+          "lo0king"
+        ],
+        "to": "looking",
+        "previous": [
+          "I",
+          "I'm",
+          "l'm",
+          "1'm",
+          "I'rn",
+          "l'rn",
+          "I'ni",
+          "Im",
+          "Irn",
+          "Irm",
+          "I'r",
+          "was",
+          "were",
+          "been",
+          "be",
+          "keep",
+          "liked",
+          "like",
+          "just"
+        ]
+      },
+      {
+        "id": "really-glyph",
+        "from": [
+          "seally",
+          "reaIIy",
+          "rea1ly",
+          "realIy"
+        ],
+        "to": "really",
+        "previous": [
+          "not",
+          "don't",
+          "dont",
+          "dontt",
+          "don:t",
+          "don':t",
+          "donlt",
+          "donIt",
+          "don1t",
+          "I",
+          "I'm",
+          "l'm",
+          "1'm",
+          "I'rn",
+          "l'rn",
+          "I'ni",
+          "Im",
+          "Irn",
+          "Irm",
+          "I'r",
+          "is",
+          "isn't",
+          "isnt",
+          "isn:t",
+          "was",
+          "wasn't",
+          "wasnt"
+        ]
+      },
+      {
+        "id": "word-this",
+        "from": [
+          "th1s",
+          "thls",
+          "thi5"
+        ],
+        "to": "this"
+      },
+      {
+        "id": "word-that",
+        "from": [
+          "th4t",
+          "tbat"
+        ],
+        "to": "that"
+      },
+      {
+        "id": "word-there",
+        "from": [
+          "thcre",
+          "therc",
+          "th3re"
+        ],
+        "to": "there"
+      },
+      {
+        "id": "word-these",
+        "from": [
+          "thcse",
+          "the5e"
+        ],
+        "to": "these"
+      },
+      {
+        "id": "word-those",
+        "from": [
+          "th0se",
+          "tbose"
+        ],
+        "to": "those"
+      },
+      {
+        "id": "word-the",
+        "from": [
+          "tbe"
+        ],
+        "to": "the"
+      },
+      {
+        "id": "word-you",
+        "from": [
+          "y0u"
+        ],
+        "to": "you"
+      },
+      {
+        "id": "word-your",
+        "from": [
+          "y0ur",
+          "y0u r"
+        ],
+        "to": "your"
+      },
+      {
+        "id": "word-youre",
+        "from": [
+          "y0u're"
+        ],
+        "to": "you're"
+      },
+      {
+        "id": "word-youve",
+        "from": [
+          "y0u've"
+        ],
+        "to": "you've"
+      },
+      {
+        "id": "word-youll",
+        "from": [
+          "y0u'll"
+        ],
+        "to": "you'll"
+      },
+      {
+        "id": "word-little",
+        "from": [
+          "litt1e",
+          "Iittle",
+          "littIe"
+        ],
+        "to": "little"
+      },
+      {
+        "id": "word-people",
+        "from": [
+          "peopIe",
+          "peop1e",
+          "peoplc"
+        ],
+        "to": "people"
+      },
+      {
+        "id": "word-all",
+        "from": [
+          "aIl",
+          "alI",
+          "a1l"
+        ],
+        "to": "all"
+      },
+      {
+        "id": "word-still",
+        "from": [
+          "stiIl",
+          "stilI",
+          "st1ll"
+        ],
+        "to": "still"
+      },
+      {
+        "id": "word-will",
+        "from": [
+          "wilI",
+          "wiIl",
+          "wiII",
+          "wi1l",
+          "w1ll"
+        ],
+        "to": "will"
+      },
+      {
+        "id": "word-well",
+        "from": [
+          "weII",
+          "weIl",
+          "welI"
+        ],
+        "to": "well"
+      },
+      {
+        "id": "word-call",
+        "from": [
+          "caII",
+          "caIl",
+          "calI",
+          "ca1l"
+        ],
+        "to": "call"
+      },
+      {
+        "id": "word-tell",
+        "from": [
+          "teII",
+          "teIl",
+          "telI",
+          "te1l"
+        ],
+        "to": "tell"
+      },
+      {
+        "id": "word-help",
+        "from": [
+          "heIp",
+          "he1p"
+        ],
+        "to": "help"
+      },
+      {
+        "id": "word-walk",
+        "from": [
+          "waIk",
+          "wa1k"
+        ],
+        "to": "walk"
+      },
+      {
+        "id": "word-talk",
+        "from": [
+          "taIk",
+          "ta1k"
+        ],
+        "to": "talk"
+      },
+      {
+        "id": "word-should",
+        "from": [
+          "shouId",
+          "shou1d"
+        ],
+        "to": "should"
+      },
+      {
+        "id": "word-could",
+        "from": [
+          "couId",
+          "cou1d"
+        ],
+        "to": "could"
+      },
+      {
+        "id": "word-would",
+        "from": [
+          "wouId",
+          "wou1d",
+          "wwould"
+        ],
+        "to": "would"
+      },
+      {
+        "id": "word-know",
+        "from": [
+          "kn0w"
+        ],
+        "to": "know"
+      },
+      {
+        "id": "word-going",
+        "from": [
+          "g0ing",
+          "golng"
+        ],
+        "to": "going"
+      },
+      {
+        "id": "word-something",
+        "from": [
+          "somethlng",
+          "someth1ng",
+          "sornething"
+        ],
+        "to": "something"
+      },
+      {
+        "id": "word-anything",
+        "from": [
+          "anythlng",
+          "anyth1ng"
+        ],
+        "to": "anything"
+      },
+      {
+        "id": "word-nothing",
+        "from": [
+          "nothlng",
+          "noth1ng"
+        ],
+        "to": "nothing"
+      },
+      {
+        "id": "word-everything",
+        "from": [
+          "everythlng",
+          "everyth1ng"
+        ],
+        "to": "everything"
+      },
+      {
+        "id": "word-maybe",
+        "from": [
+          "rnaybe"
+        ],
+        "to": "maybe"
+      },
+      {
+        "id": "word-much",
+        "from": [
+          "rnuch"
+        ],
+        "to": "much"
+      },
+      {
+        "id": "word-more",
+        "from": [
+          "rnore"
+        ],
+        "to": "more"
+      },
+      {
+        "id": "word-might",
+        "from": [
+          "rnight"
+        ],
+        "to": "might"
+      },
+      {
+        "id": "word-must",
+        "from": [
+          "rnust"
+        ],
+        "to": "must"
+      },
+      {
+        "id": "word-meet",
+        "from": [
+          "rneet"
+        ],
+        "to": "meet"
+      },
+      {
+        "id": "word-my",
+        "from": [
+          "rny"
+        ],
+        "to": "my"
+      },
+      {
+        "id": "word-from",
+        "from": [
+          "frorn"
+        ],
+        "to": "from"
+      },
+      {
+        "id": "word-time",
+        "from": [
+          "tirne",
+          "t1me"
+        ],
+        "to": "time"
+      },
+      {
+        "id": "word-some",
+        "from": [
+          "sorne"
+        ],
+        "to": "some"
+      },
+      {
+        "id": "word-home",
+        "from": [
+          "horne"
+        ],
+        "to": "home"
+      },
+      {
+        "id": "word-back",
+        "from": [
+          "baek",
+          "b4ck"
+        ],
+        "to": "back"
+      },
+      {
+        "id": "word-before",
+        "from": [
+          "bef0re"
+        ],
+        "to": "before"
+      },
+      {
+        "id": "word-after",
+        "from": [
+          "aftcr"
+        ],
+        "to": "after"
+      },
+      {
+        "id": "word-about",
+        "from": [
+          "ab0ut"
+        ],
+        "to": "about"
+      },
+      {
+        "id": "word-around",
+        "from": [
+          "ar0und"
+        ],
+        "to": "around"
+      },
+      {
+        "id": "word-because",
+        "from": [
+          "becausc",
+          "bec4use"
+        ],
+        "to": "because"
+      },
+      {
+        "id": "word-please",
+        "from": [
+          "pIease",
+          "p1ease"
+        ],
+        "to": "please"
+      },
+      {
+        "id": "word-where",
+        "from": [
+          "whcre",
+          "wh3re"
+        ],
+        "to": "where"
+      },
+      {
+        "id": "word-what",
+        "from": [
+          "wh4t"
+        ],
+        "to": "what"
+      },
+      {
+        "id": "word-when",
+        "from": [
+          "whcn",
+          "wh3n"
+        ],
+        "to": "when"
+      },
+      {
+        "id": "word-need",
+        "from": [
+          "necd"
+        ],
+        "to": "need"
+      },
+      {
+        "id": "word-take",
+        "from": [
+          "takc"
+        ],
+        "to": "take"
+      },
+      {
+        "id": "word-make",
+        "from": [
+          "makc"
+        ],
+        "to": "make"
+      },
+      {
+        "id": "word-leave",
+        "from": [
+          "Ieave",
+          "1eave"
+        ],
+        "to": "leave"
+      },
+      {
+        "id": "word-find",
+        "from": [
+          "f1nd",
+          "flnd"
+        ],
+        "to": "find"
+      },
+      {
+        "id": "word-right",
+        "from": [
+          "r1ght",
+          "rlght"
+        ],
+        "to": "right"
+      },
+      {
+        "id": "word-left",
+        "from": [
+          "Ieft",
+          "1eft"
+        ],
+        "to": "left"
+      },
+      {
+        "id": "word-door",
+        "from": [
+          "d00r",
+          "d0or",
+          "do0r"
+        ],
+        "to": "door"
+      },
+      {
+        "id": "word-boat",
+        "from": [
+          "b0at"
+        ],
+        "to": "boat"
+      },
+      {
+        "id": "word-house",
+        "from": [
+          "h0use",
+          "housc"
+        ],
+        "to": "house"
+      },
+      {
+        "id": "word-wait",
+        "from": [
+          "wa1t"
+        ],
+        "to": "wait"
+      },
+      {
+        "id": "word-wait-ing",
+        "from": [
+          "waitlng",
+          "wait1ng"
+        ],
+        "to": "waiting"
+      },
+      {
+        "id": "word-get",
+        "from": [
+          "gct"
+        ],
+        "to": "get"
+      },
+      {
+        "id": "word-give",
+        "from": [
+          "glve",
+          "g1ve"
+        ],
+        "to": "give"
+      },
+      {
+        "id": "word-again",
+        "from": [
+          "aga1n"
+        ],
+        "to": "again"
+      },
+      {
+        "id": "word-enough",
+        "from": [
+          "en0ugh"
+        ],
+        "to": "enough"
+      },
+      {
+        "id": "word-through",
+        "from": [
+          "thr0ugh"
+        ],
+        "to": "through"
+      },
+      {
+        "id": "word-inside",
+        "from": [
+          "ins1de",
+          "inslde"
+        ],
+        "to": "inside"
+      },
+      {
+        "id": "word-outside",
+        "from": [
+          "outs1de",
+          "outslde"
+        ],
+        "to": "outside"
+      },
+      {
+        "id": "word-friend",
+        "from": [
+          "fr1end",
+          "frlend"
+        ],
+        "to": "friend"
+      },
+      {
+        "id": "word-friends",
+        "from": [
+          "fr1ends",
+          "frlends"
+        ],
+        "to": "friends"
+      },
+      {
+        "id": "word-thanks",
+        "from": [
+          "th4nks"
+        ],
+        "to": "thanks"
+      },
+      {
+        "id": "word-sorry",
+        "from": [
+          "s0rry"
+        ],
+        "to": "sorry"
+      },
+      {
+        "id": "word-this-title",
+        "from": [
+          "Th1s",
+          "Thls",
+          "Thi5"
+        ],
+        "to": "This"
+      },
+      {
+        "id": "word-that-title",
+        "from": [
+          "Th4t",
+          "Tbat"
+        ],
+        "to": "That"
+      },
+      {
+        "id": "word-there-title",
+        "from": [
+          "Thcre",
+          "Therc",
+          "Th3re"
+        ],
+        "to": "There"
+      },
+      {
+        "id": "word-these-title",
+        "from": [
+          "Thcse",
+          "The5e"
+        ],
+        "to": "These"
+      },
+      {
+        "id": "word-those-title",
+        "from": [
+          "Th0se",
+          "Tbose"
+        ],
+        "to": "Those"
+      },
+      {
+        "id": "word-you-title",
+        "from": [
+          "Y0u"
+        ],
+        "to": "You"
+      },
+      {
+        "id": "word-your-title",
+        "from": [
+          "Y0ur",
+          "Y0u r"
+        ],
+        "to": "Your"
+      },
+      {
+        "id": "word-youre-title",
+        "from": [
+          "Y0u're"
+        ],
+        "to": "You're"
+      },
+      {
+        "id": "word-youve-title",
+        "from": [
+          "Y0u've"
+        ],
+        "to": "You've"
+      },
+      {
+        "id": "word-youll-title",
+        "from": [
+          "Y0u'll"
+        ],
+        "to": "You'll"
+      },
+      {
+        "id": "word-all-title",
+        "from": [
+          "AIl",
+          "AlI",
+          "A1l"
+        ],
+        "to": "All"
+      },
+      {
+        "id": "word-still-title",
+        "from": [
+          "StiIl",
+          "StilI",
+          "St1ll"
+        ],
+        "to": "Still"
+      },
+      {
+        "id": "word-will-title",
+        "from": [
+          "WilI",
+          "WiIl",
+          "WiII",
+          "Wi1l",
+          "W1ll"
+        ],
+        "to": "Will"
+      },
+      {
+        "id": "word-well-title",
+        "from": [
+          "WeII",
+          "WeIl",
+          "WelI"
+        ],
+        "to": "Well"
+      },
+      {
+        "id": "word-call-title",
+        "from": [
+          "CaII",
+          "CaIl",
+          "CalI",
+          "Ca1l"
+        ],
+        "to": "Call"
+      },
+      {
+        "id": "word-tell-title",
+        "from": [
+          "TeII",
+          "TeIl",
+          "TelI",
+          "Te1l"
+        ],
+        "to": "Tell"
+      },
+      {
+        "id": "word-help-title",
+        "from": [
+          "HeIp",
+          "He1p"
+        ],
+        "to": "Help"
+      },
+      {
+        "id": "word-walk-title",
+        "from": [
+          "WaIk",
+          "Wa1k"
+        ],
+        "to": "Walk"
+      },
+      {
+        "id": "word-talk-title",
+        "from": [
+          "TaIk",
+          "Ta1k"
+        ],
+        "to": "Talk"
+      },
+      {
+        "id": "word-should-title",
+        "from": [
+          "ShouId",
+          "Shou1d"
+        ],
+        "to": "Should"
+      },
+      {
+        "id": "word-could-title",
+        "from": [
+          "CouId",
+          "Cou1d"
+        ],
+        "to": "Could"
+      },
+      {
+        "id": "word-would-title",
+        "from": [
+          "WouId",
+          "Wou1d",
+          "Wwould"
+        ],
+        "to": "Would"
+      },
+      {
+        "id": "word-know-title",
+        "from": [
+          "Kn0w"
+        ],
+        "to": "Know"
+      },
+      {
+        "id": "word-going-title",
+        "from": [
+          "G0ing",
+          "Golng"
+        ],
+        "to": "Going"
+      },
+      {
+        "id": "word-something-title",
+        "from": [
+          "Somethlng",
+          "Someth1ng",
+          "Sornething"
+        ],
+        "to": "Something"
+      },
+      {
+        "id": "word-anything-title",
+        "from": [
+          "Anythlng",
+          "Anyth1ng"
+        ],
+        "to": "Anything"
+      },
+      {
+        "id": "word-nothing-title",
+        "from": [
+          "Nothlng",
+          "Noth1ng"
+        ],
+        "to": "Nothing"
+      },
+      {
+        "id": "word-everything-title",
+        "from": [
+          "Everythlng",
+          "Everyth1ng"
+        ],
+        "to": "Everything"
+      },
+      {
+        "id": "word-please-title",
+        "from": [
+          "PIease",
+          "P1ease"
+        ],
+        "to": "Please"
+      },
+      {
+        "id": "word-where-title",
+        "from": [
+          "Whcre",
+          "Wh3re"
+        ],
+        "to": "Where"
+      },
+      {
+        "id": "word-what-title",
+        "from": [
+          "Wh4t"
+        ],
+        "to": "What"
+      },
+      {
+        "id": "word-when-title",
+        "from": [
+          "Whcn",
+          "Wh3n"
+        ],
+        "to": "When"
+      },
+      {
+        "id": "word-need-title",
+        "from": [
+          "Necd"
+        ],
+        "to": "Need"
+      },
+      {
+        "id": "word-take-title",
+        "from": [
+          "Takc"
+        ],
+        "to": "Take"
+      },
+      {
+        "id": "word-make-title",
+        "from": [
+          "Makc"
+        ],
+        "to": "Make"
+      },
+      {
+        "id": "word-find-title",
+        "from": [
+          "F1nd",
+          "Flnd"
+        ],
+        "to": "Find"
+      },
+      {
+        "id": "word-right-title",
+        "from": [
+          "R1ght",
+          "Rlght"
+        ],
+        "to": "Right"
+      },
+      {
+        "id": "word-door-title",
+        "from": [
+          "D00r",
+          "D0or",
+          "Do0r"
+        ],
+        "to": "Door"
+      },
+      {
+        "id": "word-boat-title",
+        "from": [
+          "B0at"
+        ],
+        "to": "Boat"
+      },
+      {
+        "id": "word-house-title",
+        "from": [
+          "H0use",
+          "Housc"
+        ],
+        "to": "House"
+      },
+      {
+        "id": "word-wait-title",
+        "from": [
+          "Wa1t"
+        ],
+        "to": "Wait"
+      },
+      {
+        "id": "word-wait-ing-title",
+        "from": [
+          "Waitlng",
+          "Wait1ng"
+        ],
+        "to": "Waiting"
+      },
+      {
+        "id": "word-again-title",
+        "from": [
+          "Aga1n"
+        ],
+        "to": "Again"
+      },
+      {
+        "id": "word-enough-title",
+        "from": [
+          "En0ugh"
+        ],
+        "to": "Enough"
+      },
+      {
+        "id": "word-thanks-title",
+        "from": [
+          "Th4nks"
+        ],
+        "to": "Thanks"
+      },
+      {
+        "id": "word-sorry-title",
+        "from": [
+          "S0rry"
+        ],
+        "to": "Sorry"
+      },
+      {
+        "id": "word-guessing-glyph",
+        "from": [
+          "guessíng",
+          "guesslng",
+          "guess1ng",
+          "gugssİng",
+          "guessinig",
+          "gue55ing"
+        ],
+        "to": "guessing"
+      },
+      {
+        "id": "i-am-guessing-joined",
+        "from": [
+          "Imguessing",
+          "Imguessíng",
+          "Imguessinıgg",
+          "I'mguessing",
+          "Irnguessing",
+          "Imguessinig"
+        ],
+        "to": "I'm guessing",
+        "next": [
+          "they",
+          "you",
+          "y0u",
+          "he",
+          "she",
+          "we",
+          "it",
+          "there",
+          "thcre",
+          "therc",
+          "th3re",
+          "that",
+          "th4t",
+          "tbat",
+          "this",
+          "th1s",
+          "thls",
+          "thi5",
+          "the",
+          "tbe"
+        ]
+      },
+      {
+        "id": "i-would-digit-context",
+        "from": [
+          "1d"
+        ],
+        "to": "I'd",
+        "next": [
+          "come",
+          "corne",
+          "like",
+          "love",
+          "rather"
+        ]
+      },
+      {
+        "id": "have-glyph-context",
+        "from": [
+          "haye"
+        ],
+        "to": "have",
+        "previous": [
+          "I",
+          "you",
+          "y0u",
+          "we",
+          "they",
+          "don't",
+          "dont",
+          "dontt",
+          "don:t",
+          "don':t",
+          "donlt",
+          "donIt",
+          "don1t"
+        ],
+        "next": [
+          "a",
+          "an",
+          "the",
+          "tbe",
+          "any",
+          "many",
+          "some",
+          "sorne",
+          "much",
+          "rnuch",
+          "no",
+          "to",
+          "been",
+          "got",
+          "never",
+          "already",
+          "just",
+          "enough",
+          "en0ugh"
+        ]
+      },
+      {
+        "id": "looking-missing-prefix-context",
+        "from": [
+          "ooking",
+          "Wooking"
+        ],
+        "to": "looking",
+        "previous": [
+          "liked",
+          "like",
+          "was",
+          "were",
+          "been",
+          "I'm",
+          "l'm",
+          "1'm",
+          "I'rn",
+          "l'rn",
+          "I'ni",
+          "Im",
+          "Irn",
+          "Irm",
+          "I'r"
+        ],
+        "next": [
+          "at",
+          "for",
+          "around",
+          "ar0und",
+          "through",
+          "thr0ugh",
+          "out",
+          "back",
+          "baek",
+          "b4ck"
+        ]
+      },
+      {
+        "id": "dont-glyph-context",
+        "from": [
+          "donlt",
+          "donIt",
+          "don1t"
+        ],
+        "to": "don't",
+        "caseSensitive": false,
+        "next": [
+          "have",
+          "haye",
+          "know",
+          "kn0w",
+          "want",
+          "need",
+          "necd",
+          "like",
+          "get",
+          "gct",
+          "do",
+          "think",
+          "see",
+          "worry",
+          "wait",
+          "wa1t",
+          "go"
+        ]
+      }
+    ]
+  }
+}

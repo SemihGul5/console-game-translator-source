@@ -91,6 +91,19 @@ internal class SubtitleOcrController(
     private val latestMarianKeyByRegion = ConcurrentHashMap<Int, String>()
     private val recognizer: TextRecognizer =
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val ocrRecovery = OcrRecoveryPolicy { SystemClock.elapsedRealtime() }
+    private val ocrCorrections by lazy {
+        try {
+            applicationContext.assets.open(OcrCorrectionTable.ASSET_PATH).bufferedReader(Charsets.UTF_8).use {
+                OcrCorrectionTable.parse(it.readText())
+            }
+        } catch (error: Exception) {
+            if (BuildConfig.DEBUG) Log.w(OCR_LOG_TAG, "OCR_CORRECTIONS_DISABLED error=${error.javaClass.simpleName}")
+            OcrCorrectionTable.EMPTY
+        }
+    }
+    private val recoveryRevision = AtomicInteger()
+    @Volatile private var selectedGame = false
     @Volatile private var sourceLanguageCode = TranslateLanguage.ENGLISH
     @Volatile private var targetLanguageCode = TranslateLanguage.TURKISH
     @Volatile private var translator: Translator = createTranslator(sourceLanguageCode, targetLanguageCode)
@@ -151,6 +164,8 @@ internal class SubtitleOcrController(
 
     fun setGameTranslationMemory(memory: GameTranslationMemory?) {
         gameTranslationMemory = memory
+        recoveryRevision.incrementAndGet()
+        visualOcrCaches.clear()
         if (closed) return
         recognitionExecutor.execute {
             translationCache.clear()
@@ -165,6 +180,14 @@ internal class SubtitleOcrController(
                 onRecognized(index, currentText, currentConfidence, matchingGameMemory()?.find(currentText))
             }
         }
+    }
+
+    fun setGameSelected(value: Boolean) {
+        if (selectedGame == value) return
+        selectedGame = value
+        recoveryRevision.incrementAndGet()
+        visualOcrCaches.clear()
+        ocrRecovery.reset()
     }
 
     /** Called only by the cache worker after translation has stopped. */
@@ -229,7 +252,9 @@ internal class SubtitleOcrController(
         selectedDeepLApiKey: String = "",
         selectedGeminiApiKey: String = "",
         selectedGeminiApiKeys: List<String> = emptyList(),
+        hasSelectedGame: Boolean = false,
     ) {
+        setGameSelected(hasSelectedGame)
         val geminiKeys = (selectedGeminiApiKeys.ifEmpty { listOf(selectedGeminiApiKey) })
             .filter { it.isNotBlank() }.distinct().take(GeminiKeyList.MAX_KEYS)
         val selectedCloudKey = if (selectedTranslationEngine == "gemini") geminiKeys.firstOrNull().orEmpty() else selectedDeepLApiKey
@@ -888,8 +913,14 @@ internal class SubtitleOcrController(
         releaseCaptureWhenDebugDone: Boolean = true,
         preprocessingMode: Int = 0,
         dialogueFilter: Boolean = false,
+        recoveryRaw: Bitmap? = null,
     ) {
         val ocrStartedAt = SystemClock.elapsedRealtime()
+        val frameRevision = deepLRevision.get()
+        val recoveryEpoch = recoveryRevision.get()
+        val owned = linkedSetOf(bitmap).apply { recoveryRaw?.let { add(it) } }
+        var totalPreprocessMillis = preprocessMillis
+        var attempts = 0
         val visualKey = if (!debugOnly) {
             val count = bitmap.width * bitmap.height
             if (visualPixels.size < count) visualPixels = IntArray(count)
@@ -897,9 +928,17 @@ internal class SubtitleOcrController(
             ocrPixelFingerprint(bitmap.width, bitmap.height, visualPixels)
         } else null
         val visualCache = if (!debugOnly) visualOcrCaches.getOrPut(regionIndex) { OcrVisualCache() } else null
-        fun recognized(result: com.google.mlkit.vision.text.Text, visualReuse: Boolean) {
-            if (visualKey != null && !visualReuse) visualCache?.remember(visualKey, SystemClock.elapsedRealtime(), result)
-            val ocrMillis = SystemClock.elapsedRealtime() - ocrStartedAt
+        data class Evaluated(
+            val result: com.google.mlkit.vision.text.Text,
+            val rawText: String,
+            val rawConfidence: Float,
+            val selected: SubtitleOcrRead,
+            val memory: GameTranslationMemory?,
+            val lookupMillis: Long,
+        ) {
+            fun recoveryRead() = OcrRecoveryPolicy.Read(rawText, rawConfidence, selected.text, selected.confidence)
+        }
+        fun evaluate(result: com.google.mlkit.vision.text.Text): Evaluated {
             val lines = result.textBlocks.flatMap { it.lines }.sortedWith(
                 compareBy<com.google.mlkit.vision.text.Text.Line> { it.boundingBox?.top ?: 0 }
                     .thenBy { it.boundingBox?.left ?: 0 })
@@ -937,7 +976,7 @@ internal class SubtitleOcrController(
                         }
                     }
                         .sortedWith(compareBy<OcrLineCandidate> { it.top }.thenBy { it.left })
-                    filterDialogueOcrLines(candidates)
+                    filterDialogueOcrLines(candidates, rejectTimerGlyphs = !selectedGame && gameTranslationMemory == null)
                 } else null
                 val text = acceptedLines?.let { accepted ->
                     normalizeOcrText(accepted.joinToString(" ") { it.rawText })
@@ -947,37 +986,85 @@ internal class SubtitleOcrController(
                     else confidenceValues.average().toFloat().coerceIn(0f, 1f)
                 SubtitleOcrRead(text, confidence)
             }
-            val text = selected.text
+            return Evaluated(result, rawText, rawConfidence, selected, memory,
+                SystemClock.elapsedRealtime() - lookupStartedAt)
+        }
+        fun release() { owned.forEach { if (!it.isRecycled) it.recycle() } }
+        fun currentRecoveryAllowed() = !closed && enabled && !selectedGame && gameTranslationMemory == null &&
+            recoveryRevision.get() == recoveryEpoch && deepLRevision.get() == frameRevision
+        fun finish(value: Evaluated, chosenMode: Int, visualReuse: Boolean) {
+            val ocrMillis = SystemClock.elapsedRealtime() - ocrStartedAt
+            // A game selected while an alternative was running keeps JSON priority.
+            val current = if (!debugOnly && value.memory !== matchingGameMemory()) evaluate(value.result) else value
+            val selected = current.selected
+            val correction = if (debugOnly || selectedGame || gameTranslationMemory != null || selected.memoryMatch != null)
+                OcrCorrectionTable.Result(selected.text)
+            else ocrCorrections.correct(selected.text, sourceLanguageCode, gameSelected = false)
+            val text = correction.text
             val confidence = selected.confidence
-            val lookupMillis = SystemClock.elapsedRealtime() - lookupStartedAt
-            if (!debugOnly) logLookup(regionIndex, text, memory, selected.memoryMatch,
-                copyMillis, ocrMillis, lookupMillis, visualReuse)
-            if (!debugOnly) logOcrResult(
-                regionIndex, rawText, text, confidence, bitmap.width, bitmap.height,
-                copyMillis, cropMillis, preprocessMillis, preprocessingMode, dialogueFilter, ocrMillis,
-            )
+            if (visualKey != null && !visualReuse && currentRecoveryAllowed())
+                visualCache?.remember(visualKey, SystemClock.elapsedRealtime(), current.result)
+            if (!debugOnly) logLookup(regionIndex, text, current.memory, selected.memoryMatch,
+                copyMillis, ocrMillis, current.lookupMillis, visualReuse)
+            if (!debugOnly) logOcrResult(regionIndex, current.rawText, text, confidence, bitmap.width, bitmap.height,
+                copyMillis, cropMillis, totalPreprocessMillis, chosenMode, dialogueFilter, ocrMillis)
             val details = mapOf(
-                "copyMs" to copyMillis,
-                "cropMs" to cropMillis,
-                "preprocessMs" to preprocessMillis,
-                "preprocessingMode" to preprocessingMode,
-                "preprocessingModeName" to preprocessingModeName(preprocessingMode),
-                "dialogueFilter" to dialogueFilter,
-                "ocrMs" to ocrMillis,
-                "jsonLookupMs" to lookupMillis,
-                "visualReuse" to visualReuse,
-                "cropWidth" to bitmap.width,
-                "cropHeight" to bitmap.height,
-                "ocrConfidence" to confidence,
+                "copyMs" to copyMillis, "cropMs" to cropMillis, "preprocessMs" to totalPreprocessMillis,
+                "preprocessingMode" to chosenMode, "preprocessingModeName" to preprocessingModeName(chosenMode),
+                "dialogueFilter" to dialogueFilter, "ocrMs" to ocrMillis, "jsonLookupMs" to current.lookupMillis,
+                "visualReuse" to visualReuse, "cropWidth" to bitmap.width, "cropHeight" to bitmap.height,
+                "ocrConfidence" to confidence, "recoveryAttempts" to attempts,
+                "ocrCorrections" to correction.replacements,
             )
-            bitmap.recycle()
+            if (attempts > 0 && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
+                "OCR_RECOVERY area=${regionIndex + 1} attempts=$attempts primaryMode=$preprocessingMode chosenMode=$chosenMode latencyMs=$ocrMillis")
+            if (correction.replacements > 0 && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
+                "OCR_CORRECTION area=${regionIndex + 1} replacements=${correction.replacements} tableVersion=1")
+            release()
             if (debugOnly) {
                 if (releaseCaptureWhenDebugDone) finishCapture()
                 completion?.invoke(text.ifEmpty { "Seçili alanda metin bulunamadı" }, details)
                 return
             }
-            onRecognized(regionIndex, text, confidence, selected.memoryMatch)
+            if (!closed && enabled && deepLRevision.get() == frameRevision)
+                onRecognized(regionIndex, text, confidence, selected.memoryMatch)
             completion?.invoke(text, details)
+        }
+        fun recognized(result: com.google.mlkit.vision.text.Text, visualReuse: Boolean) {
+            if (visualKey != null && !visualReuse) visualCache?.remember(visualKey, SystemClock.elapsedRealtime(), result)
+            val primary = evaluate(result)
+            val raw = recoveryRaw
+            if (raw == null || !currentRecoveryAllowed() || !ocrRecovery.begin(primary.recoveryRead(),
+                    gameSelected = selectedGame || gameTranslationMemory != null, visualReuse = visualReuse, debugOnly = debugOnly)) {
+                finish(primary, preprocessingMode, visualReuse)
+                return
+            }
+            val values = mutableListOf(primary)
+            val modes = mutableListOf(preprocessingMode)
+            val recoveryStartedAt = SystemClock.elapsedRealtime()
+            val alternatives = ocrRecovery.modes(preprocessingMode)
+            fun next(index: Int) {
+                if (index >= alternatives.size || !currentRecoveryAllowed() || !ocrRecovery.withinBudget(recoveryStartedAt)) {
+                    val chosen = if (currentRecoveryAllowed())
+                        ocrRecovery.best(values.map { it.recoveryRead() }, sourceLanguageCode) else 0
+                    finish(values[chosen], modes[chosen], visualReuse)
+                    return
+                }
+                val mode = alternatives[index]
+                val started = SystemClock.elapsedRealtime()
+                val alternative = try { preprocessCrop(raw, mode).also { owned.add(it) } }
+                catch (_: Exception) { next(index + 1); return }
+                totalPreprocessMillis += SystemClock.elapsedRealtime() - started
+                attempts++
+                val task = try { recognizer.process(InputImage.fromBitmap(alternative, 0)) }
+                    catch (_: Exception) { next(index + 1); return }
+                task
+                    .addOnSuccessListener(recognitionExecutor) {
+                        values.add(evaluate(it)); modes.add(mode); next(index + 1)
+                    }
+                    .addOnFailureListener(recognitionExecutor) { next(index + 1) }
+            }
+            next(0)
         }
         val cached = if (visualKey == null) null else visualCache?.reuse(visualKey, SystemClock.elapsedRealtime())
         if (cached != null) {
@@ -987,12 +1074,11 @@ internal class SubtitleOcrController(
         recognizer.process(InputImage.fromBitmap(bitmap, 0))
             .addOnSuccessListener(recognitionExecutor) { recognized(it, false) }
             .addOnFailureListener(recognitionExecutor) { error ->
-                bitmap.recycle()
+                release()
                 if (debugOnly) {
                     if (releaseCaptureWhenDebugDone) finishCapture()
                     completion?.invoke("OCR işlenemedi: ${error.javaClass.simpleName}", null)
-                }
-                else {
+                } else {
                     emit(mapOf("type" to "subtitleOcrStatus", "status" to "OCR hatası"))
                     completion?.invoke("", null)
                 }
@@ -1008,6 +1094,7 @@ internal class SubtitleOcrController(
     private fun recognizeRegions(bitmaps: List<Bitmap>, indices: List<Int>, settings: List<OcrRegionSettings>, copyMs: Long, cropMs: Long) {
         if (bitmaps.isEmpty() || closed) { finishCapture(); return }
         val remaining = AtomicInteger(bitmaps.size)
+        val recoveryRegion = ocrRecovery.region(indices, selectedGame || gameTranslationMemory != null)
         bitmaps.forEachIndexed { offset, crop ->
             val index = indices[offset]
             // Process and submit each crop immediately. A slow enhancement on a
@@ -1016,7 +1103,8 @@ internal class SubtitleOcrController(
             val dialogueFilter = settings.getOrNull(index)?.dialogueFilter ?: false
             val preprocessStartedAt = SystemClock.elapsedRealtime()
             val bitmap = preprocessCrop(crop, preprocessingMode)
-            if (bitmap !== crop) crop.recycle()
+            val recoveryRaw = crop.takeIf { index == recoveryRegion && crop.width.toLong() * crop.height <= 1_500_000 }
+            if (bitmap !== crop && recoveryRaw == null) crop.recycle()
             val preprocessMs = SystemClock.elapsedRealtime() - preprocessStartedAt
             recognize(
                 bitmap, index, copyMs, cropMs, preprocessMs, false,
@@ -1025,6 +1113,7 @@ internal class SubtitleOcrController(
                 },
                 preprocessingMode = preprocessingMode,
                 dialogueFilter = dialogueFilter,
+                recoveryRaw = recoveryRaw,
             )
         }
     }
