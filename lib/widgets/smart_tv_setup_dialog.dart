@@ -7,10 +7,16 @@ import '../services/app_links.dart';
 import '../services/lg_webos_client.dart';
 import '../services/tv_output_service.dart';
 import 'setup_notice.dart';
+import 'tv_platform_selector.dart';
 
 class SmartTvSetupDialog extends StatefulWidget {
-  const SmartTvSetupDialog({super.key, required this.kind});
+  const SmartTvSetupDialog({
+    super.key,
+    required this.kind,
+    this.onKindSelected,
+  });
   final TvOutputKind kind;
+  final ValueChanged<TvOutputKind>? onKindSelected;
 
   @override
   State<SmartTvSetupDialog> createState() => _SmartTvSetupDialogState();
@@ -57,7 +63,7 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
       await _lg.connect(_ip.text.trim(), encrypted: _encrypted);
       if (!mounted) return;
       await _lg.testNotification(
-        context.tr('OyunÇevirmeni • TV bağlantı testi'),
+        context.tr('Oyun Çevirmeni • TV bağlantı testi'),
       );
       if (mounted) setState(() => _tested = true);
     } catch (_) {
@@ -137,6 +143,11 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              TvPlatformSelector(
+                selected: widget.kind,
+                onSelected: _busy ? null : widget.onKindSelected,
+              ),
+              const SizedBox(height: 12),
               const SmartTvBetaNotice(),
               const SizedBox(height: 12),
               Text(

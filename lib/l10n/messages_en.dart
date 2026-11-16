@@ -306,7 +306,7 @@ const englishMessages = <String, String>{
   'Konsol: {0}\n': 'Console: {0}\n',
   'Çevrildi · {0} Yerel': 'Translated · {0} Local',
   "Console Game Translator": "Console Game Translator",
-  "OyunÇevirmeni": "Console Game Translator",
+  "Oyun Çevirmeni": "Console Game Translator",
   "Oyununu kendi dilinde yaşa": "Experience your game in your language",
   "Ayar kaydedilemedi": "Couldn't save setting",
   "Uygulama dili": "App language",
@@ -516,6 +516,8 @@ const englishMessages = <String, String>{
   "Daha hızlı ve kaliteli bir çeviri deneyimi için oynadığın oyun listede varsa seç.":
       "If your game is listed, select it for a faster, higher-quality translation experience.",
   "Oyun listesi yükleniyor…": "Loading games…",
+  'Güncel oyun listesi alınamadı. İnternet bağlantını kontrol edip tekrar dene.':
+      'Could not update the game list. Check your internet connection and try again.',
   "seçili": "selected",
   "Oyun seçimini kaldır": "Clear game selection",
   "ÇEVİRİ MODELİ": "TRANSLATION MODEL",
@@ -1357,6 +1359,6 @@ const englishMessages = <String, String>{
       "Play using your main PSN account and switch the TV to the PS5 HDMI input. The TV app does not need to stay on screen. Translation can continue with the phone app in the background or its screen off; if interrupted, check connections and phone battery restrictions.",
   "Bitirirken telefonda Çeviriyi Durdur’a veya çeviri bildirimindeki Durdur’a bas. Remote Play ve çeviri durur; PS5 kaydı, TV eşleştirmesi ve ayarların korunur.":
       "To finish, tap Stop Translation on the phone or Stop in the translation notification. Remote Play and translation stop; your PS5 registration, TV pairing, and settings are kept.",
-  "Android TV’ne “OyunÇevirmeni TV” uygulamamızı indirip aç. TV’nin dili Türkçe değilse adı “Console Game Translator TV” olarak görünür. Eşleştirme adresi ve 6 haneli kod bu uygulamada yer alır.":
-      "Install and open Console Game Translator TV on your Android TV. If the TV language is Turkish, it appears as “OyunÇevirmeni TV”. The app shows the pairing address and 6-digit code.",
+  'TV uygulaması henüz mağazada değil. Aşağıdaki düğmeden sitemize gidip TV için APK’yı indir.':
+      'The TV app is not in the store yet. Use the button below to visit our website and download the APK for your TV.',
 };

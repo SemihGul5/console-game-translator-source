@@ -127,7 +127,7 @@ internal class TranslationCacheDocuments(
         try {
             val intent = Intent(if (export) Intent.ACTION_CREATE_DOCUMENT else Intent.ACTION_OPEN_DOCUMENT)
                 .addCategory(Intent.CATEGORY_OPENABLE).setType(if (export) "application/octet-stream" else "*/*")
-            if (export) intent.putExtra(Intent.EXTRA_TITLE, "OyunÇevirmeni-ceviri-onbellegi.jsonl")
+            if (export) intent.putExtra(Intent.EXTRA_TITLE, "Oyun Çevirmeni-ceviri-onbellegi.jsonl")
             host.startActivityForResult(intent, REQUEST)
         } catch (_: Exception) {
             pending = null

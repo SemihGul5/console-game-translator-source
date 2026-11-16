@@ -81,8 +81,9 @@ class TvAppInstallNotice extends StatelessWidget {
   Widget build(BuildContext context) => SetupNotice(
     icon: Icons.install_desktop_rounded,
     title: context.tr("Önce TV uygulamasını indir"),
+    // TODO: Update the download instructions after the TV store release.
     message: context.tr(
-      "Android TV’ne “OyunÇevirmeni TV” uygulamamızı indirip aç. TV’nin dili Türkçe değilse adı “Console Game Translator TV” olarak görünür. Eşleştirme adresi ve 6 haneli kod bu uygulamada yer alır.",
+      'TV uygulaması henüz mağazada değil. Aşağıdaki düğmeden sitemize gidip TV için APK’yı indir.',
     ),
     // TODO: Remove the website download action when the TV app is in the store.
     action: OutlinedButton.icon(

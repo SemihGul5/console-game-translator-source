@@ -1,12 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/services.dart';
 import 'package:gametranslate/services/game_translation_catalog.dart';
 
-/// Tiny synthetic data for UI tests only. Production ships no game dictionary.
+const testGameCoverPath = 'test/support/fixtures/game-cover.jpg';
+
+/// Tiny synthetic data for UI tests only. No game is bundled in production.
 class _UiGameAssets extends CachingAssetBundle {
   static const _fixturePath = 'assets/games/ui-test.json';
+  static const _coverPath = 'assets/games/ui-test.cover.jpg';
+  Uint8List? _cover;
   static final _fixture = Uint8List.fromList(
     utf8.encode(
       '{"game":"ui-test","source":"en","target":"tr","entries":[{"id":"test-1","english":"Hello","turkish":"Merhaba"}]}',
@@ -17,16 +22,26 @@ class _UiGameAssets extends CachingAssetBundle {
   Future<ByteData> load(String key) async {
     if (key == _fixturePath) return ByteData.sublistView(_fixture);
     if (key == 'assets/games/catalog.json') {
-      final entries = jsonDecode(await rootBundle.loadString(key)) as List;
-      for (final entry in entries.cast<Map>()) {
-        entry['file'] = _fixturePath;
-        entry['sha256'] = crypto.sha256.convert(_fixture).toString();
-        entry['bytes'] = _fixture.length;
-      }
+      _cover ??= await File(testGameCoverPath).readAsBytes();
+      final entries = [
+        {
+          'id': 'mafia-old-country',
+          'name': 'Mafia: The Old Country',
+          'sourceLanguage': 'en',
+          'targetLanguage': 'tr',
+          'file': _fixturePath,
+          'sha256': crypto.sha256.convert(_fixture).toString(),
+          'bytes': _fixture.length,
+          'cover': _coverPath,
+          'coverSha256': crypto.sha256.convert(_cover!).toString(),
+          'coverAspectRatio': 285 / 350,
+        },
+      ];
       return ByteData.sublistView(
         Uint8List.fromList(utf8.encode(jsonEncode(entries))),
       );
     }
+    if (key == _coverPath) return ByteData.sublistView(_cover!);
     return rootBundle.load(key);
   }
 }

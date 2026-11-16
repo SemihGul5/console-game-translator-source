@@ -91,13 +91,7 @@ Future<GameTranslationCatalog> _downloadedTestCatalog(
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     try {
       String hash(List<int> bytes) => crypto.sha256.convert(bytes).toString();
-      final image = await rootBundle.load(
-        'assets/games/mafia-old-country.cover.jpg',
-      );
-      final cover = image.buffer.asUint8List(
-        image.offsetInBytes,
-        image.lengthInBytes,
-      );
+      final cover = await File(testGameCoverPath).readAsBytes();
       final entries = <Map<String, Object>>[];
       final files = <String, List<int>>{};
       for (final name in reverseOrder ? gameNames.reversed : gameNames) {
@@ -556,7 +550,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TvAppInstallNotice), findsOneWidget);
       expect(find.text('Önce TV uygulamasını indir'), findsOneWidget);
-      expect(find.textContaining('OyunÇevirmeni TV'), findsOneWidget);
+      expect(
+        find.textContaining('sitemize gidip TV için APK’yı indir'),
+        findsOneWidget,
+      );
       await tester.ensureVisible(find.text('TV uygulamasını indir'));
       await tester.tap(find.text('TV uygulamasını indir'));
       await tester.pumpAndSettle();
@@ -613,11 +610,12 @@ void main() {
         launched.last.queryParameters['body'],
         contains('ekran görüntüsünü'),
       );
-      await tester.tap(find.text('İptal'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('TV’yi eşleştir'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Samsung Tizen • Beta'));
+      final samsungChoice = find.widgetWithText(
+        ChoiceChip,
+        'Samsung Tizen • Beta',
+      );
+      await tester.ensureVisible(samsungChoice);
+      await tester.tap(samsungChoice);
       await tester.pumpAndSettle();
       expect(find.text('TV uygulamam kurulu • Eşleştir'), findsOneWidget);
       expect(find.text('Beta TV desteği'), findsOneWidget);
@@ -644,6 +642,11 @@ void main() {
         launched.last.queryParameters['subject'],
         'Samsung Tizen TV bağlantı desteği',
       );
+      final androidChoice = find.widgetWithText(ChoiceChip, 'Android TV');
+      await tester.ensureVisible(androidChoice);
+      await tester.tap(androidChoice);
+      await tester.pumpAndSettle();
+      expect(find.text('Android TV’yi eşleştir'), findsOneWidget);
       await tester.tap(find.text('İptal'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
@@ -816,9 +819,34 @@ void main() {
         checklist = List.filled(SetupGuideScreen.totalSteps, true);
         await _connectTestTv(tester);
         final catalog = await _downloadedTestCatalog(tester);
-        savedGameId = 'downloaded-alpha';
+        savedGameId = loaded ? null : 'downloaded-alpha';
         gameMemoryPreparation = Completer<Map<String, Object>>();
         await _openApp(tester, gameCatalog: catalog);
+        if (loaded) {
+          await _selectTab(tester, 'Altyazı');
+          await tester.tap(find.text('Downloaded Alpha'));
+          await tester.pump();
+          await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+          await tester.pump();
+          expect(savedGameId, isNull);
+          for (final tab in {
+            'Ayarlar': 3,
+            'Profil': 2,
+            'Ana sayfa': 1,
+          }.entries) {
+            await tester.tap(
+              find.widgetWithText(NavigationDestination, tab.key),
+            );
+            await tester.pump(const Duration(milliseconds: 400));
+            expect(
+              tester
+                  .widget<NavigationBar>(find.byType(NavigationBar))
+                  .selectedIndex,
+              tab.value,
+            );
+            expect(gameMemoryPreparation!.isCompleted, isFalse);
+          }
+        }
         await tester.tap(find.text('ÇEVİRİYİ BAŞLAT'));
         await tester.pump(const Duration(milliseconds: 400));
         expect(find.text('Oyun çevirileri hazırlanıyor…'), findsOneWidget);
@@ -834,6 +862,11 @@ void main() {
         if (loaded) {
           expect(find.byType(AccessScreen), findsOneWidget);
           expect(nativeCalls, contains('prepareTranslationModels'));
+          expect(savedGameId, 'downloaded-alpha');
+          expect(
+            nativeCalls.indexOf('commitGameTranslationSelection'),
+            lessThan(nativeCalls.indexOf('prepareTranslationModels')),
+          );
         } else {
           expect(find.text('Oyun çevirileri yüklenemedi'), findsOneWidget);
           expect(find.byType(AccessScreen), findsNothing);
@@ -1003,7 +1036,7 @@ void main() {
       await _capture(tester, 'subtitles-game-selected');
       expect(find.text('Mafia: The Old Country seçili'), findsNothing);
       expect(find.text('Oyun seçimini kaldır'), findsNothing);
-      expect(find.byTooltip('Oyun listesini yenile'), findsNothing);
+      expect(find.byTooltip('Oyun listesini yenile'), findsOneWidget);
       expect(tester.widget<GameCoverCard>(selectedCard).selected, isTrue);
       expect(
         tester.getSize(selectedCard).height,
@@ -1069,6 +1102,17 @@ void main() {
       final preparingCallCount = gameMemoryCalls.length;
       await tester.tap(find.text('Altyazı görünümü'));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(Ps5StreamScreen), findsOneWidget);
+      final settingsRoute = ModalRoute.of(
+        tester.element(find.byType(Ps5StreamScreen)),
+      )!;
+      tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .removeRoute(settingsRoute);
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(Ps5StreamScreen), findsNothing);
       await tester.tap(find.text('Mafia: The Old Country'));
       await tester.pump();
@@ -1078,11 +1122,12 @@ void main() {
       expect(gameMemoryCalls.length, preparingCallCount);
       expect(
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-        0,
+        1,
       );
       gameMemoryPreparation!.complete({'loaded': true});
       await tester.pumpAndSettle();
       expect(savedGameId, 'mafia-old-country');
+      await _selectTab(tester, 'Altyazı');
       expect(tester.widget<GameCoverCard>(selectedCard).preparing, isFalse);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -1185,7 +1230,7 @@ void main() {
   }
 
   testWidgets(
-    'library sorts server games and searches names without changing the selected dictionary',
+    'library sorts downloaded games first and searches without changing selection',
     (tester) async {
       final catalog = await _downloadedTestCatalog(
         tester,
@@ -1241,6 +1286,43 @@ void main() {
       expect(gameMemoryCalls, hasLength(memoryLoads));
       expect(tester.takeException(), isNull);
       await _capture(tester, 'game-library-search');
+      await tester.ensureVisible(find.text('İstanbul Şehir'));
+      await tester.tap(find.text('İstanbul Şehir'));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(savedGameId, isNull);
+      final betaBeforeReorder = tester.state(find.byType(GameCoverCard).last);
+      final games = await catalog.loadCatalog();
+      await tester.runAsync(
+        () => catalog.deleteDownloadedPack(
+          games.firstWhere((game) => game.id == 'downloaded-alpha'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(names(), ['Zeta Beta', 'İstanbul Şehir']);
+      expect(
+        tester
+            .widgetList<GameCoverCard>(find.byType(GameCoverCard))
+            .first
+            .downloaded,
+        isTrue,
+      );
+      expect(
+        identical(
+          tester.state(find.byType(GameCoverCard).first),
+          betaBeforeReorder,
+        ),
+        isTrue,
+      );
+      await tester.runAsync(
+        () => catalog.deleteDownloadedPack(
+          games.firstWhere((game) => game.id == 'downloaded-beta'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(names(), ['İstanbul Şehir', 'Zeta Beta']);
+      expect(tester.takeException(), isNull);
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -1393,19 +1475,116 @@ void main() {
   );
 
   testWidgets(
-    'catalog checks on first subtitles visit without startup or resume requests',
+    'a slow first catalog load shows progress and adds games without a gesture',
+    (tester) async {
+      final releaseCatalog = Completer<String>();
+      var checks = 0;
+      final requests = <String>[];
+      late HttpServer server;
+      late GameTranslationCatalog catalog;
+      await tester.runAsync(() async {
+        final cover = await File(testGameCoverPath).readAsBytes();
+        final first = {
+          'id': 'server-game',
+          'name': 'Server Game',
+          'sourceLanguage': 'en',
+          'targetLanguage': 'tr',
+          'file': 'translations/server-game.json',
+          'sha256': List.filled(64, 'a').join(),
+          'bytes': 1,
+          'coverSha256': crypto.sha256.convert(cover).toString(),
+        };
+        final manifest = jsonEncode({
+          'schemaVersion': 1,
+          'games': [
+            {...first, 'cover': 'covers/shared.jpg'},
+            {
+              ...first,
+              'id': 'new-catalog-game',
+              'name': 'New Catalog Game',
+              'cover': 'covers/shared.jpg',
+            },
+          ],
+        });
+        server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        server.listen((request) async {
+          requests.add(request.uri.path);
+          if (request.uri.path == '/covers/shared.jpg') {
+            request.response.add(cover);
+          } else {
+            request.response.headers.contentType = ContentType.json;
+            request.response.write(manifest);
+          }
+          await request.response.close();
+        });
+        catalog = GameTranslationCatalog.testing(
+          catalogUri: Uri.parse('http://127.0.0.1:${server.port}/catalog.json'),
+          cacheDirectory: () async => null,
+          token: () {
+            checks++;
+            return releaseCatalog.future;
+          },
+        );
+        // Run the real socket operation outside the widget test's fake clock.
+        unawaited(catalog.refresh());
+      });
+      addTearDown(() => server.close(force: true));
+      await _openApp(tester, gameCatalog: catalog);
+      expect(checks, 1);
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Altyazı'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Oyun listesi yükleniyor…'), findsOneWidget);
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byKey(const ValueKey('refresh-game-catalog')),
+            )
+            .onPressed,
+        isNull,
+      );
+      expect(find.byType(GameCoverCard), findsNothing);
+      expect(find.text('New Catalog Game'), findsNothing);
+
+      await tester.runAsync(() async {
+        final previousOverrides = HttpOverrides.current;
+        HttpOverrides.global = null;
+        try {
+          releaseCatalog.complete('test-app-check-token');
+          await catalog.refresh();
+        } finally {
+          HttpOverrides.global = previousOverrides;
+        }
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Oyun listesi yükleniyor…'), findsNothing);
+      expect(find.text('New Catalog Game'), findsOneWidget);
+      expect(find.text('Server Game'), findsOneWidget);
+      expect(requests.where((path) => path == '/catalog.json'), hasLength(1));
+      await _selectTab(tester, 'Ana sayfa');
+      await _selectTab(tester, 'Altyazı');
+      expect(requests.where((path) => path == '/catalog.json'), hasLength(1));
+      expect(tester.takeException(), isNull);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
+
+  testWidgets(
+    'catalog preloads once and failures offer a retry without tab or resume requests',
     (tester) async {
       var checks = 0;
+      var now = DateTime.utc(2026, 11, 17);
       final catalog = GameTranslationCatalog.testing(
         catalogUri: Uri.parse(GameTranslationCatalog.catalogUrl),
         cacheDirectory: () async => null,
+        now: () => now,
         token: () async {
           checks++;
           throw StateError('Offline catalog check');
         },
       );
       await _openApp(tester, gameCatalog: catalog);
-      expect(checks, 0);
+      expect(checks, 1);
       await _selectTab(tester, 'Altyazı');
       expect(checks, 1);
       for (final state in [
@@ -1423,8 +1602,32 @@ void main() {
       await _selectTab(tester, 'Ana sayfa');
       await _selectTab(tester, 'Altyazı');
       expect(checks, 1);
-      expect(find.text('Mafia: The Old Country'), findsOneWidget);
+      expect(find.byType(GameCoverCard), findsNothing);
+      expect(find.text('Henüz oyun eklenmedi.'), findsNothing);
+      final retry = find.byKey(const ValueKey('retry-game-catalog'));
+      await tester.ensureVisible(retry);
+      await tester.tap(retry);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(checks, 2);
+      expect(retry, findsOneWidget);
+      final refresh = find.byKey(const ValueKey('refresh-game-catalog'));
+      expect(tester.widget<IconButton>(refresh).onPressed, isNull);
+      expect(tester.widget<TextButton>(retry).onPressed, isNull);
+      await tester.ensureVisible(refresh);
+      await tester.tap(refresh);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(checks, 2);
+      now = now.add(GameTranslationCatalog.manualRefreshCooldown);
+      await tester.pump(GameTranslationCatalog.manualRefreshCooldown);
+      expect(tester.widget<IconButton>(refresh).onPressed, isNotNull);
+      await tester.tap(refresh);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
+      expect(checks, 3);
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
     },
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
@@ -1514,7 +1717,7 @@ void main() {
         expect(launched.single.path, AppLinks.supportEmail);
         expect(
           launched.single.queryParameters['subject'],
-          'OyunÇevirmeni - Oyun isteği',
+          'Oyun Çevirmeni - Oyun isteği',
         );
         final body = launched.single.queryParameters['body']!;
         expect(body, contains('Oyun adı: Yeni Oyun & لعبة'));
@@ -1556,7 +1759,7 @@ void main() {
       expect(launched.single.path, AppLinks.supportEmail);
       expect(
         launched.single.queryParameters['subject'],
-        'OyunÇevirmeni Destek',
+        'Oyun Çevirmeni Destek',
       );
       await tester.ensureVisible(find.text('X (Twitter)'));
       expect(find.text('@abreboStudio'), findsOneWidget);

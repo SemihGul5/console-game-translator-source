@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "date": "2026-11-16",
-  "applicationVersion": "1.0.8+9",
+  "date": "2026-11-17",
+  "applicationVersion": "1.0.9+10",
   "kind": "manually refreshed source snapshot; binary/source pairing not verified",
   "files": [
     {
@@ -54,8 +54,8 @@
     },
     {
       "path": "android/app/src/androidTest/kotlin/com/abrebostudio/consolegametranslator/AppUiLanguageResourcesTest.kt",
-      "sha256": "0f658bcc61e7a215e20c286a2169f87c69658c449613b91275ce713bea8c550c",
-      "bytes": 2533,
+      "sha256": "c630348e5a9d4c782d50d1e137d013bdab5db2ba1b555d53cc9f3b29a39639cd",
+      "bytes": 2535,
       "category": "application"
     },
     {
@@ -492,8 +492,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/TranslationCacheDocuments.kt",
-      "sha256": "bf9e8929e68d235589f842136ec24c6193a02e285bb9fd013fcbcdc39b6f3729",
-      "bytes": 8846,
+      "sha256": "ad540beb5bee55134a7da0676a2171eb7c8bd79bb0a4abf9892def1fd56fdf97",
+      "bytes": 8847,
       "category": "application"
     },
     {
@@ -630,8 +630,8 @@
     },
     {
       "path": "android/app/src/main/res/values-tr/strings.xml",
-      "sha256": "f826b5ffc869a7b2c1c93dc45a780392785f2c22629aa28329abbc1c81d005e8",
-      "bytes": 458,
+      "sha256": "acdc046fe62e38f0bbfa5e1f10e112a94eab9b741fe5173953987125acadae32",
+      "bytes": 460,
       "category": "application"
     },
     {
@@ -1008,20 +1008,14 @@
     },
     {
       "path": "assets/games/catalog.json",
-      "sha256": "157a60eddd7234159cb03704804a40b36b39c52ccbc4debcc732e8cdcb16d37e",
-      "bytes": 551,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3,
       "category": "application"
     },
     {
       "path": "assets/games/languages.json",
       "sha256": "ca6c5fa2977c9eed602b140682a2281b57d3be9be56370163e5e13bab94c29da",
       "bytes": 3152,
-      "category": "application"
-    },
-    {
-      "path": "assets/games/mafia-old-country.cover.jpg",
-      "sha256": "6afd7ea4ab42f793b1abcece2e96e43442f68528fb5e65f0bc7c8370fa4a2029",
-      "bytes": 96316,
       "category": "application"
     },
     {
@@ -31200,8 +31194,8 @@
     },
     {
       "path": "lib/app_branding.dart",
-      "sha256": "cd19ee93d65d6abee3277b626aa087c144d0fd1a8295fe0f07c765bb36ef3827",
-      "bytes": 887,
+      "sha256": "b18082067899b78814f11d543996e4d192fd5c5236ae73b6a35b8e890d4512a2",
+      "bytes": 888,
       "category": "application"
     },
     {
@@ -31218,20 +31212,20 @@
     },
     {
       "path": "lib/l10n/messages_en.dart",
-      "sha256": "b7545a0366e61bf3bae43f2613636b09016c90b176811487038a7743a48f835a",
-      "bytes": 110514,
+      "sha256": "7f17316ee67a1dbbc200d348adf350083c9dddb99865ac0bc6fd101759e30391",
+      "bytes": 110506,
       "category": "application"
     },
     {
       "path": "lib/l10n/messages_tv_en.dart",
-      "sha256": "5ca45e3a956bd6824ae43138f8b237285a4f0ae7e961060b9a30b8d8d99d8867",
-      "bytes": 8068,
+      "sha256": "cca6d4d66798dd024c10fcda30c2365f9ac7d9fb8655bab2d2673f2b9855d2f7",
+      "bytes": 8069,
       "category": "application"
     },
     {
       "path": "lib/main.dart",
-      "sha256": "04dc59002c02bb977f5bd925640cd3ee63f2754fbe419273fae612ee74f390e2",
-      "bytes": 168437,
+      "sha256": "68b9c22274cb64dc0706f6b74f4dd0670874d005ad4a4263d8cbf90d6edc8c21",
+      "bytes": 173810,
       "category": "application"
     },
     {
@@ -31350,14 +31344,14 @@
     },
     {
       "path": "lib/services/game_library_search.dart",
-      "sha256": "3ca4001dbdd09e01a1cac741f1edbc15e7b0f86e3bcdc7d7ca2c0f9a4efa0ff2",
-      "bytes": 1810,
+      "sha256": "67754049258902a9f99d8b2925521b434e457d2a98eca19b79e53accbf0fc843",
+      "bytes": 2063,
       "category": "application"
     },
     {
       "path": "lib/services/game_translation_catalog.dart",
-      "sha256": "7da4e299521de2ad8ebb867f936fb9264ff01176c81c74da0e7ae8d028987934",
-      "bytes": 21209,
+      "sha256": "2662f29f9a50ed7d516ec7c1f2e5b1daf9c8509284c5328223d714d4e5cff47d",
+      "bytes": 24302,
       "category": "application"
     },
     {
@@ -31494,14 +31488,14 @@
     },
     {
       "path": "lib/widgets/setup_notice.dart",
-      "sha256": "222f15c27ed307d21c2d4ef20899a86e1d1f44cf82f1f99c4851425f1bbfdf3e",
-      "bytes": 2913,
+      "sha256": "f20d9ccae18a7e36269ee7b1dee61778719022dc108f73fb28d81a323cffcc10",
+      "bytes": 2874,
       "category": "application"
     },
     {
       "path": "lib/widgets/smart_tv_setup_dialog.dart",
-      "sha256": "42947d0bd606b43d2bc6447780f955c7c5bdfa1fdced744448cf73adcf3af4fb",
-      "bytes": 12308,
+      "sha256": "bae0080282de972b30434094c87947a4861863469a312a9c53fad7af083c1135",
+      "bytes": 12633,
       "category": "application"
     },
     {
@@ -31511,21 +31505,27 @@
       "category": "application"
     },
     {
+      "path": "lib/widgets/tv_platform_selector.dart",
+      "sha256": "aba73ee2968a0a1f48137c5666f224e01a2b1dda39a08a59cfbb7ec31bea9e0f",
+      "bytes": 1686,
+      "category": "application"
+    },
+    {
       "path": "MODIFICATIONS.md",
-      "sha256": "3a5b4b30e4e31bd2387892b55aab8bb0bbea2617593b0d96262aee7bcba320f2",
-      "bytes": 3304,
+      "sha256": "4c3f5d6aefd231741d145790730f5073ddad8d9387f02bf5542f3ba5458fe2b4",
+      "bytes": 3305,
       "category": "retained-public-source"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "c34635c6ad5dccd016b657a99d1102815535e163e8d72f37969ce577346aaa73",
-      "bytes": 2047,
+      "sha256": "650f0b952e56b841dc7d61bf05744db8c8c55c6fc51edfce5c3142ead068add7",
+      "bytes": 2048,
       "category": "retained-public-source"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "9619c7dde7001b4ecd8000d7754a061bded9c69f00f40924c57f64f4691a69e4",
-      "bytes": 1900,
+      "sha256": "2c5dd8c3d0f52da4ac2f784470bc5370a8ab56148f806df264cbe44efdbf149d",
+      "bytes": 1902,
       "category": "retained-public-source"
     },
     {
@@ -31536,20 +31536,20 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "462a79f54e946d5073d429182ec7008ab416bcbfb0bec95baf3b941173c07d76",
-      "bytes": 4473,
+      "sha256": "79798e7b029ea87846a1e9b89a3a61918d9dc8c4752ea9d6e22220162211e883",
+      "bytes": 4474,
       "category": "application"
     },
     {
       "path": "README.md",
-      "sha256": "c9bfed642515938e5d68c2e935634b04cf62c7162eb88acca8d9e7072a0c9ceb",
-      "bytes": 4988,
+      "sha256": "77ff0e8032436efaa89ed21323b39dd34d651c9eeecb86fd4983c8ee056c5c28",
+      "bytes": 4990,
       "category": "retained-public-source"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "3e83885fbf30a3755002a447675e3ac4df3058296b8bdd4e575a31edbc5ff304",
-      "bytes": 5998,
+      "sha256": "0e8eddede67c804058cb6f311de44ccc0da1b56374a64134f0ab0c4931b84987",
+      "bytes": 5999,
       "category": "retained-public-source"
     },
     {
@@ -31740,8 +31740,8 @@
     },
     {
       "path": "test/app_branding_test.dart",
-      "sha256": "57d4b4e1ae448dd7fa3bf77484e2f5282e2f5c7210684bfaf09f04a34e67cfdd",
-      "bytes": 2196,
+      "sha256": "d7910e7aaa478f9318641452ffd1143fcf79e071aff4db7e8712b98b0311a13c",
+      "bytes": 2157,
       "category": "application"
     },
     {
@@ -31812,8 +31812,8 @@
     },
     {
       "path": "test/game_translation_catalog_test.dart",
-      "sha256": "e2f926a47c195e5f054561523c45bab4587b9516fcf4303f9787baf2c9f0cf18",
-      "bytes": 22362,
+      "sha256": "343312c92fa842a648b5a9d1c7b9fca36c651e864ab1610d3243e57d9b98c58a",
+      "bytes": 25542,
       "category": "application"
     },
     {
@@ -31842,8 +31842,8 @@
     },
     {
       "path": "test/navigation_test.dart",
-      "sha256": "eed5a46bf616e54895c19295be2ea45375ce03456966753058c269083e1f72db",
-      "bytes": 63974,
+      "sha256": "3463406577a0a46c4e863bfb7b70f8c78d2a41479e5c5c4ac7b432a1e9332272",
+      "bytes": 71916,
       "category": "application"
     },
     {
@@ -31878,8 +31878,8 @@
     },
     {
       "path": "test/smart_tv_setup_dialog_test.dart",
-      "sha256": "b18ea9be64dc01509d520a1986b5a567af68a032e671f6e38306f03ee2f33677",
-      "bytes": 4028,
+      "sha256": "8842f39ebfb3fb9746dc73255ae7516ec4b3271badd570a185f3ec88eb8f27e7",
+      "bytes": 4122,
       "category": "application"
     },
     {
@@ -31901,9 +31901,15 @@
       "category": "application"
     },
     {
+      "path": "test/support/fixtures/game-cover.jpg",
+      "sha256": "6afd7ea4ab42f793b1abcece2e96e43442f68528fb5e65f0bc7c8370fa4a2029",
+      "bytes": 96316,
+      "category": "application"
+    },
+    {
       "path": "test/support/offline_game_catalog.dart",
-      "sha256": "e260525f5aad74ae87d3786d9f8904a349175739ca068e1d3c2d2d5693a45a8e",
-      "bytes": 1500,
+      "sha256": "39e10f8ea0b73c0ae483394c994993ad0e55a2f2a5ca8b12a74d296632a9be01",
+      "bytes": 1984,
       "category": "application"
     },
     {

@@ -33,8 +33,8 @@ class AppUiLanguageResourcesTest {
                     val name = localized.getString(R.string.app_name)
                     val status = localized.getString(R.string.local_translation_status, name)
                     if (language == "tr") {
-                        assertEquals("OyunÇevirmeni", name)
-                        assertEquals("Çevrildi · OyunÇevirmeni Yerel", status)
+                        assertEquals("Oyun Çevirmeni", name)
+                        assertEquals("Çevrildi · Oyun Çevirmeni Yerel", status)
                         assertEquals("Durdur", AppUiLanguage.text(context, "Durdur"))
                     } else {
                         assertEquals("Console Game Translator", name)

@@ -26,7 +26,7 @@ void main() {
 
     tester.platformDispatcher.localesTestValue = const [Locale('tr', 'TR')];
     await tester.pumpWidget(GameTranslateApp(gameCatalog: offlineGameCatalog));
-    expect(find.text('OyunÇevirmeni'), findsOneWidget);
+    expect(find.text('Oyun Çevirmeni'), findsOneWidget);
     expect(
       find.image(const AssetImage('assets/branding/app_icon_tr.png')),
       findsOneWidget,
@@ -46,9 +46,7 @@ void main() {
       await tester.pumpAndSettle();
       final turkish = locale.languageCode == 'tr';
       expect(
-        find.text(
-          turkish ? 'OyunÇevirmeni' : 'Console Game Translator',
-        ),
+        find.text(turkish ? 'Oyun Çevirmeni' : 'Console Game Translator'),
         findsOneWidget,
       );
       expect(
@@ -58,9 +56,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text(
-          turkish ? 'Console Game Translator' : 'OyunÇevirmeni',
-        ),
+        find.text(turkish ? 'Console Game Translator' : 'Oyun Çevirmeni'),
         findsNothing,
       );
       expect(tester.takeException(), isNull);

@@ -11,7 +11,8 @@ import 'game_catalog_access.dart';
 import 'game_catalog_cache.dart';
 import 'game_translation_pack.dart';
 
-/// Loads the shipped/last-good catalog immediately, then refreshes it separately.
+/// Loads the last server catalog immediately, then refreshes it separately.
+/// The production bundle contains no games; test bundles may provide fixtures.
 /// Packs are authenticated, verified and cached by content hash across launches.
 class GameTranslationCatalog {
   factory GameTranslationCatalog() => _shared;
@@ -21,10 +22,12 @@ class GameTranslationCatalog {
     required AssetBundle bundle,
     required Future<String> Function() token,
     required GameCatalogCache cache,
+    DateTime Function()? now,
     this.allowLoopbackHttp = false,
   }) : _bundle = bundle,
        _token = token,
-       _cache = cache;
+       _cache = cache,
+       _now = now ?? DateTime.now;
 
   @visibleForTesting
   factory GameTranslationCatalog.testing({
@@ -32,10 +35,12 @@ class GameTranslationCatalog {
     required Future<Directory?> Function() cacheDirectory,
     AssetBundle? bundle,
     Future<String> Function()? token,
+    DateTime Function()? now,
   }) => GameTranslationCatalog._(
     catalogUri: catalogUri,
     bundle: bundle ?? rootBundle,
     token: token ?? () async => 'test-app-check-token',
+    now: now,
     cache: GameCatalogCache(catalogUri.toString(), directory: cacheDirectory),
     allowLoopbackHttp: true,
   );
@@ -46,6 +51,8 @@ class GameTranslationCatalog {
         'https://console-game-translator-games.abrebostudio.workers.dev/catalog.json',
   );
   static const maxManifestBytes = 512 * 1024;
+  static const catalogFreshness = Duration(hours: 6);
+  static const manualRefreshCooldown = Duration(seconds: 30);
   static const maxPackBytes = 25 * 1024 * 1024;
   static const maxCoverBytes = 5 * 1024 * 1024;
   static const maxFontBytes = 2 * 1024 * 1024;
@@ -63,6 +70,7 @@ class GameTranslationCatalog {
   final AssetBundle _bundle;
   final Future<String> Function() _token;
   final GameCatalogCache _cache;
+  final DateTime Function() _now;
   final _dataLoads = <String, Future<String>>{};
   final _coverLoads = <String, Future<Uint8List?>>{};
   final _fontLoads = <String, Future<Uint8List>>{};
@@ -116,9 +124,21 @@ class GameTranslationCatalog {
 
   Future<List<GameCatalogEntry>>? _bootstrap;
   Future<List<GameCatalogEntry>>? _refreshing;
+  Future<List<GameCatalogEntry>>? _manualRefreshing;
   List<GameCatalogEntry> _bundled = const [];
   List<GameCatalogEntry>? _catalog;
   bool _refreshAttempted = false;
+  DateTime? _lastCatalogCheck;
+  DateTime? _lastManualRefresh;
+
+  Duration get manualRefreshRemaining {
+    if (_lastManualRefresh == null) return Duration.zero;
+    final elapsed = _now().difference(_lastManualRefresh!);
+    if (elapsed.isNegative || elapsed >= manualRefreshCooldown) {
+      return Duration.zero;
+    }
+    return manualRefreshCooldown - elapsed;
+  }
 
   Future<List<GameCatalogEntry>> loadCatalog() =>
       _catalog != null ? Future.value(_catalog!) : _bootstrap ??= _loadLocal();
@@ -129,9 +149,24 @@ class GameTranslationCatalog {
       throw const FormatException('Oyun kataloğu bir liste değil.');
     }
     _bundled = _parseEntries(decoded, remote: false);
+    final manualCheck = await _cache.read('catalog-manual-refresh-at.txt', 64);
+    if (manualCheck != null) {
+      _lastManualRefresh = DateTime.tryParse(
+        utf8.decode(manualCheck, allowMalformed: true),
+      );
+    }
     try {
       final saved = await _cache.read('catalog.json', maxManifestBytes);
-      if (saved != null) return _catalog = _parseRemote(utf8.decode(saved));
+      if (saved != null) {
+        final entries = _parseRemote(utf8.decode(saved));
+        final check = await _cache.read('catalog-checked-at.txt', 64);
+        if (check != null) {
+          _lastCatalogCheck = DateTime.tryParse(
+            utf8.decode(check, allowMalformed: true),
+          );
+        }
+        return _catalog = entries;
+      }
     } on FormatException {
       // A damaged cache must not hide the packaged game library.
     }
@@ -141,8 +176,20 @@ class GameTranslationCatalog {
   Future<List<GameCatalogEntry>> refresh({bool force = false}) async {
     await loadCatalog();
     if (_refreshing != null) return _refreshing!;
-    // One background catalog check per app process, on first library visit.
-    // A failed attempt also stays quiet until the app is opened again.
+    // Reuse a recent disk cache even after restarting the app. Future timestamps
+    // are ignored so a device clock change cannot freeze catalog updates.
+    final age = _lastCatalogCheck == null
+        ? null
+        : _now().difference(_lastCatalogCheck!);
+    if (!force && age != null && !age.isNegative && age < catalogFreshness) {
+      return _catalog!;
+    }
+    // Restarting after a failed manual request must not bypass its cooldown
+    // through the automatic startup check.
+    if (!force && manualRefreshRemaining > Duration.zero) {
+      throw GameCatalogRefreshCooldown(manualRefreshRemaining);
+    }
+    // At most one automatic attempt per process. Only explicit retries bypass it.
     if (!force && _refreshAttempted) return _catalog!;
     _refreshAttempted = true;
     final operation = _fetchCatalog();
@@ -152,6 +199,34 @@ class GameTranslationCatalog {
     } finally {
       _refreshing = null;
     }
+  }
+
+  /// Manual refreshes bypass freshness, but not the shared 30-second limit.
+  /// Failed attempts also count; reopening the app does not reset the limit.
+  Future<List<GameCatalogEntry>> refreshManually() async {
+    await loadCatalog();
+    if (_manualRefreshing != null) return _manualRefreshing!;
+    if (_refreshing != null) return _refreshing!;
+    final remaining = manualRefreshRemaining;
+    if (remaining > Duration.zero) {
+      throw GameCatalogRefreshCooldown(remaining);
+    }
+    _lastManualRefresh = _now().toUtc();
+    final operation = _runManualRefresh();
+    _manualRefreshing = operation;
+    try {
+      return await operation;
+    } finally {
+      _manualRefreshing = null;
+    }
+  }
+
+  Future<List<GameCatalogEntry>> _runManualRefresh() async {
+    await _cache.write(
+      'catalog-manual-refresh-at.txt',
+      Uint8List.fromList(utf8.encode(_lastManualRefresh!.toIso8601String())),
+    );
+    return refresh(force: true);
   }
 
   Future<List<GameCatalogEntry>> _fetchCatalog() async {
@@ -177,6 +252,11 @@ class GameTranslationCatalog {
         );
     final entries = _parseRemote(utf8.decode(data));
     await _cache.write('catalog.json', data);
+    _lastCatalogCheck = _now().toUtc();
+    await _cache.write(
+      'catalog-checked-at.txt',
+      Uint8List.fromList(utf8.encode(_lastCatalogCheck!.toIso8601String())),
+    );
     return _catalog = entries;
   }
 
@@ -593,4 +673,10 @@ class GameTranslationCatalog {
       throw const FormatException('Oyun çeviri dosyası doğrulanamadı.');
     }
   }
+}
+
+class GameCatalogRefreshCooldown implements Exception {
+  const GameCatalogRefreshCooldown(this.remaining);
+
+  final Duration remaining;
 }

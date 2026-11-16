@@ -16,7 +16,7 @@ const tvEnglishMessages = <String, String>{
   'TV’ye bağlanılıyor': 'Connecting to TV',
   'TV’ye bağlanılıyor…': 'Connecting to TV…',
   'Başlamak için TV’yi eşleştir': 'Pair your TV to start',
-  'OyunÇevirmeni • TV bağlantı testi':
+  'Oyun Çevirmeni • TV bağlantı testi':
       'Console Game Translator • TV connection test',
   'Önce TV bağlantısını kontrol edelim.':
       'Let’s check your TV connection first.',

@@ -21,6 +21,7 @@ import 'services/game_library_search.dart';
 import 'services/app_links.dart';
 import 'services/tv_output_service.dart';
 import 'widgets/smart_tv_setup_dialog.dart';
+import 'widgets/tv_platform_selector.dart';
 import 'services/access_service.dart';
 import 'screens/access_screen.dart';
 import 'screens/profile_tab.dart';
@@ -296,6 +297,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _gameLibraryHeaderKey = GlobalKey();
   bool _loadingGames = true;
   bool _refreshingGames = false;
+  bool _gamesRefreshStarted = false;
+  bool _gamesRefreshFailed = false;
+  Timer? _gameRefreshCooldownTimer;
   String? _gamesError;
   String? _selectedGameId;
   String _libraryTargetLanguage = 'tr';
@@ -763,6 +767,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     AccessService.instance.removeListener(_accessChanged);
     _translationStateTimer?.cancel();
+    _gameRefreshCooldownTimer?.cancel();
     _tvStatusSubscription?.cancel();
     _gameSearchController.dispose();
     super.dispose();
@@ -1037,30 +1042,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    const Chip(label: Text('Android TV')),
-                    ActionChip(
-                      label: const Text('LG webOS • Beta'),
-                      onPressed: busy
-                          ? null
-                          : () {
-                              Navigator.pop(dialogContext);
-                              unawaited(_openSmartTv(TvOutputKind.lg));
-                            },
-                    ),
-                    ActionChip(
-                      label: const Text('Samsung Tizen • Beta'),
-                      onPressed: busy
-                          ? null
-                          : () {
-                              Navigator.pop(dialogContext);
-                              unawaited(_openSmartTv(TvOutputKind.samsung));
-                            },
-                    ),
-                  ],
+                TvPlatformSelector(
+                  selected: TvOutputKind.android,
+                  onSelected: busy
+                      ? null
+                      : (kind) => _switchTvSetup(dialogContext, kind),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -1327,12 +1313,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     codeController.dispose();
   }
 
+  void _switchTvSetup(BuildContext dialogContext, TvOutputKind kind) {
+    Navigator.pop(dialogContext);
+    unawaited(kind == TvOutputKind.android ? _pairTv() : _openSmartTv(kind));
+  }
+
   Future<void> _openSmartTv(TvOutputKind kind) async {
     if (!mounted) return;
     await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => SmartTvSetupDialog(kind: kind),
+      builder: (dialogContext) => SmartTvSetupDialog(
+        kind: kind,
+        onKindSelected: (nextKind) => _switchTvSetup(dialogContext, nextKind),
+      ),
     );
     if (!mounted) return;
     setState(() {
@@ -1442,7 +1436,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
         if (mounted &&
             libraryLanguage != null &&
-            games.any((game) => game.targetLanguage == libraryLanguage)) {
+            (games.isEmpty ||
+                games.any((game) => game.targetLanguage == libraryLanguage))) {
           setState(() => _libraryTargetLanguage = libraryLanguage);
         }
       } on PlatformException {
@@ -1450,7 +1445,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       } on MissingPluginException {
         // Preview hosts have no native preferences.
       }
-      if (_selectedTab == _AppTab.subtitles) unawaited(_refreshGames());
+      // Start the server check early; a first install has no packaged games.
+      final refresh = _refreshGames();
+      unawaited(refresh);
       if (selectedId == null) return;
       GameCatalogEntry? game;
       for (final candidate in games) {
@@ -1462,8 +1459,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       }
       if (game == null) {
-        setState(() => _gameMemoryError = "Seçili oyun katalogda bulunamadı.");
-        return;
+        // A saved game may only appear once the server catalog has arrived.
+        await refresh;
+        if (!mounted) return;
+        game = _games
+            .where(
+              (candidate) =>
+                  candidate.id == selectedId ||
+                  candidate.gameId == selectedId &&
+                      candidate.targetLanguage == 'tr',
+            )
+            .firstOrNull;
+        if (game == null) {
+          if (!_gamesRefreshFailed) {
+            setState(
+              () => _gameMemoryError = "Seçili oyun katalogda bulunamadı.",
+            );
+          }
+          return;
+        }
       }
       if (mounted) setState(() => _selectedGameId = game!.id);
       final generation = ++_gameSelectionGeneration;
@@ -1505,10 +1519,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _gameMemoryError = null;
     });
     if (game != null) _showGameLibrary();
-    final operation = _applyGameSelection(game, generation);
+    final operation = _finishGameSelection(
+      game,
+      generation,
+      previousId: previousId,
+      previousContentKey: previousContentKey,
+      previousFont: previousFont,
+    );
     _gameMemoryLoadFuture = operation;
+    await operation;
+  }
+
+  Future<void> _finishGameSelection(
+    GameCatalogEntry? game,
+    int generation, {
+    required String? previousId,
+    required String? previousContentKey,
+    required LoadedGameFont? previousFont,
+  }) async {
     try {
-      await operation;
+      await _applyGameSelection(game, generation);
       if (_gameMemoryError != null && mounted) {
         final selectionError = _gameMemoryError;
         final rollbackGeneration = ++_gameSelectionGeneration;
@@ -1891,12 +1921,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return 'Oyun çeviri verisi okunamadı.';
   }
 
-  Future<void> _refreshGames() async {
-    if (_refreshingGames || !mounted) return;
-    _refreshingGames = true;
+  Future<void> _refreshGames({bool manual = false}) async {
+    if (_refreshingGames ||
+        !mounted ||
+        (_gamesRefreshStarted && !manual) ||
+        (manual && _gameCatalog.manualRefreshRemaining > Duration.zero)) {
+      return;
+    }
+    setState(() {
+      _gamesRefreshStarted = true;
+      _refreshingGames = true;
+      _gamesRefreshFailed = false;
+    });
     unawaited(_gameCatalog.refreshDownloadedPacks(_games));
     try {
-      final catalog = await _gameCatalog.refresh();
+      final catalog = await (manual
+          ? _gameCatalog.refreshManually()
+          : _gameCatalog.refresh());
       if (!mounted) return;
       final selected = _games
           .where((game) => game.id == _selectedGameId)
@@ -1927,9 +1968,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
       unawaited(_gameCatalog.refreshDownloadedPacks(_games));
     } catch (_) {
-      // Continue using the last valid library when a background refresh fails.
+      // Keep local games usable and offer an explicit retry instead of polling.
+      if (mounted) setState(() => _gamesRefreshFailed = true);
     } finally {
-      _refreshingGames = false;
+      if (mounted) {
+        setState(() => _refreshingGames = false);
+        _gameRefreshCooldownTimer?.cancel();
+        final remaining = _gameCatalog.manualRefreshRemaining;
+        if (remaining > Duration.zero) {
+          // A local one-shot timer only re-enables the controls; it sends no request.
+          _gameRefreshCooldownTimer = Timer(remaining, () {
+            if (mounted) setState(() {});
+          });
+        }
+      }
     }
   }
 
@@ -2881,7 +2933,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> showSubtitleSettings() async {
-    if (_selectingGame) return;
     final navigator = Navigator.of(context);
     final translationActive = await _isTranslationActive();
     // When this HomeScreen sits above the translation route, return to that
@@ -2971,7 +3022,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return PopScope<Object?>(
-      canPop: _selectedTab == _AppTab.home && !_selectingGame,
+      canPop: _selectedTab == _AppTab.home,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop && _selectedTab != _AppTab.home) {
           _selectTab(_AppTab.home);
@@ -3029,7 +3080,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _selectTab(_AppTab tab) {
-    if (_selectingGame || _selectedTab == tab) return;
+    if (_selectedTab == tab) return;
     FocusScope.of(context).unfocus();
     setState(() {
       _selectedTab = tab;
@@ -3070,9 +3121,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
       child: NavigationBar(
         selectedIndex: _selectedTab.index,
-        onDestinationSelected: _selectingGame
-            ? null
-            : (index) => _selectTab(_AppTab.values[index]),
+        onDestinationSelected: (index) => _selectTab(_AppTab.values[index]),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: [
           NavigationDestination(
@@ -3638,7 +3687,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildGamesCard() {
+  Widget _buildGamesCard() => ValueListenableBuilder<Set<String>>(
+    valueListenable: _gameCatalog.downloadedPacks,
+    builder: (context, downloadedPacks, _) =>
+        _buildGameLibrary(downloadedPacks),
+  );
+
+  Widget _buildGameLibrary(Set<String> downloadedPacks) {
+    final refreshWait = _gameCatalog.manualRefreshRemaining;
+    final canRefreshGames =
+        !_loadingGames && !_refreshingGames && refreshWait == Duration.zero;
     final languageScope = AppLanguageScope.maybeOf(context);
     // Retain the real system language even when the interface uses English as
     // its fallback. English devices allow manual library language selection.
@@ -3661,6 +3719,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _gameSearchController.text,
       selectedGameId: _selectedGameId,
       targetLanguage: languageCode,
+      downloadedContentKeys: downloadedPacks,
     );
     final gameIndices = {for (var i = 0; i < games.length; i++) games[i].id: i};
     return DecoratedSliver(
@@ -3678,24 +3737,46 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.sports_esports_rounded,
-                        color: purple,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          context.tr("Oyun Kütüphanesi"),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final heading = Row(
+                        children: [
+                          const Icon(
+                            Icons.sports_esports_rounded,
+                            color: purple,
+                            size: 20,
                           ),
-                        ),
-                      ),
-                      TextButton.icon(
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text(
+                              context.tr("Oyun Kütüphanesi"),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            key: const ValueKey('refresh-game-catalog'),
+                            tooltip: refreshWait > Duration.zero
+                                ? context.tr(
+                                    'Tekrar denemek için {0} saniye bekle.',
+                                    [
+                                      (refreshWait.inMilliseconds / 1000)
+                                          .ceil(),
+                                    ],
+                                  )
+                                : context.tr('Oyun listesini yenile'),
+                            onPressed: canRefreshGames
+                                ? () => _refreshGames(manual: true)
+                                : null,
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            visualDensity: VisualDensity.compact,
+                            color: cyan,
+                          ),
+                        ],
+                      );
+                      final requestGame = TextButton.icon(
                         key: const ValueKey('request-game-button'),
                         onPressed: () => AppLinks.requestGame(
                           context,
@@ -3708,8 +3789,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                         icon: const Icon(Icons.mail_outline_rounded, size: 16),
                         label: Text(context.tr('Oyun iste')),
-                      ),
-                    ],
+                      );
+                      if (constraints.maxWidth < 300 ||
+                          MediaQuery.textScalerOf(context).scale(15) > 18) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            heading,
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: requestGame,
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(child: heading),
+                          requestGame,
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -3722,7 +3822,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       height: 1.5,
                     ),
                   ),
-                  if (_loadingGames)
+                  if (_loadingGames || _refreshingGames)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const SizedBox(
@@ -3732,8 +3832,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                       title: Text(context.tr("Oyun listesi yükleniyor…")),
                       dense: true,
-                    )
-                  else if (_gamesError != null || _gameMemoryError != null)
+                    ),
+                  if (_gamesRefreshFailed)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr(
+                              'Güncel oyun listesi alınamadı. İnternet bağlantını kontrol edip tekrar dene.',
+                            ),
+                            style: const TextStyle(color: muted, fontSize: 12),
+                          ),
+                          TextButton.icon(
+                            key: const ValueKey('retry-game-catalog'),
+                            onPressed: canRefreshGames
+                                ? () => _refreshGames(manual: true)
+                                : null,
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            label: Text(context.tr('Tekrar dene')),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (!_loadingGames &&
+                      (_gamesError != null || _gameMemoryError != null))
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(
@@ -3744,7 +3868,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ),
                     )
-                  else if (_games.isEmpty)
+                  else if (!_loadingGames &&
+                      !_refreshingGames &&
+                      !_gamesRefreshFailed &&
+                      _games.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: Text(

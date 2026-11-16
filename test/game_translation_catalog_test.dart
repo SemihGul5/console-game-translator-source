@@ -74,6 +74,7 @@ void main() {
   late bool corruptPack;
   late bool html;
   late bool redirect;
+  late DateTime now;
   Completer<void>? packRequested;
   Completer<void>? releasePack;
   HttpOverrides? originalOverrides;
@@ -84,10 +85,12 @@ void main() {
         cacheDirectory: () async => directory,
         bundle: _Assets(),
         token: token,
+        now: () => now,
       );
 
   setUp(() async {
     originalOverrides = HttpOverrides.current;
+    now = DateTime.utc(2026, 11, 17);
     HttpOverrides.global = null;
     directory = await Directory.systemTemp.createTemp('game-catalog-test-');
     requests = [];
@@ -253,7 +256,7 @@ void main() {
   );
 
   test(
-    'the real app ships only Mafia metadata and downloads its dictionary on selection',
+    'the real app has no packaged games and uses only the server and its cache',
     () async {
       var tokenAttempts = 0;
       final service = GameTranslationCatalog.testing(
@@ -264,18 +267,31 @@ void main() {
           throw StateError('Offline first selection');
         },
       );
-      final mafia = (await service.loadCatalog()).single;
-      expect(mafia.id, 'mafia-old-country');
-      expect(mafia.isRemote, isTrue);
-      expect(Uri.parse(mafia.file).origin, catalogUri.origin);
-      expect(await service.hasDownloadedPack(mafia), isFalse);
+      expect(await service.loadCatalog(), isEmpty);
       expect(tokenAttempts, 0);
-      await expectLater(service.loadJson(mafia), throwsStateError);
+      await expectLater(service.refresh(), throwsStateError);
       expect(tokenAttempts, 1);
+      expect(await service.loadCatalog(), isEmpty);
+      final online = GameTranslationCatalog.testing(
+        catalogUri: catalogUri,
+        cacheDirectory: () async => directory,
+      );
+      expect(await online.loadCatalog(), isEmpty);
+      expect((await online.refresh()).single.id, 'remote-game');
+      final cached = GameTranslationCatalog.testing(
+        catalogUri: catalogUri,
+        cacheDirectory: () async => directory,
+        token: () async => throw StateError('Offline restart'),
+      );
+      expect((await cached.loadCatalog()).single.id, 'remote-game');
+      expect((await cached.refresh()).single.id, 'remote-game');
+      expect(requests, ['/catalog.json']);
       final assets = await AssetManifest.loadFromAssetBundle(rootBundle);
       expect(
         assets.listAssets().where(
-          (path) => path.startsWith('assets/games/') && path.endsWith('.jsonl'),
+          (path) =>
+              path.startsWith('assets/games/') &&
+              (path.endsWith('.jsonl') || path.endsWith('.jpg')),
         ),
         isEmpty,
       );
@@ -583,7 +599,7 @@ void main() {
   );
 
   test(
-    'catalog checks once per launch and concurrent refresh calls share one request',
+    'catalog stays fresh across launches for six hours and concurrent checks share one request',
     () async {
       final service = catalog();
       await Future.wait(List.generate(5, (_) => service.refresh()));
@@ -597,7 +613,83 @@ void main() {
       final nextLaunch = catalog();
       expect(await nextLaunch.loadCatalog(), hasLength(1));
       expect(requests, hasLength(1));
+      expect(await nextLaunch.refresh(), hasLength(1));
+      expect(requests, hasLength(1));
+      now = now.add(GameTranslationCatalog.catalogFreshness);
       expect(await nextLaunch.refresh(), hasLength(2));
+      expect(requests, hasLength(2));
+    },
+  );
+
+  test(
+    'manual refresh bypasses freshness but throttles spam and app restarts',
+    () async {
+      final service = catalog();
+      await service.refresh();
+      manifest['games'] = [game(), game(id: 'new-game')];
+      final refreshed = await Future.wait(
+        List.generate(5, (_) => service.refreshManually()),
+      );
+      expect(refreshed.every((games) => games.length == 2), isTrue);
+      expect(requests, hasLength(2));
+      for (var i = 0; i < 20; i++) {
+        await expectLater(
+          service.refreshManually(),
+          throwsA(isA<GameCatalogRefreshCooldown>()),
+        );
+      }
+      final restarted = catalog();
+      await expectLater(
+        restarted.refreshManually(),
+        throwsA(isA<GameCatalogRefreshCooldown>()),
+      );
+      now = now.add(
+        GameTranslationCatalog.manualRefreshCooldown -
+            const Duration(milliseconds: 1),
+      );
+      await expectLater(
+        restarted.refreshManually(),
+        throwsA(isA<GameCatalogRefreshCooldown>()),
+      );
+      expect(requests, hasLength(2));
+      now = now.add(const Duration(milliseconds: 1));
+      await restarted.refreshManually();
+      expect(requests, hasLength(3));
+      expect(requests.every((path) => path == '/catalog.json'), isTrue);
+    },
+  );
+
+  test(
+    'failed manual refreshes also persist the cooldown without a disk catalog',
+    () async {
+      status = 500;
+      await expectLater(catalog().refreshManually(), throwsFormatException);
+      expect(requests, hasLength(1));
+      final restarted = catalog();
+      await expectLater(
+        restarted.refreshManually(),
+        throwsA(isA<GameCatalogRefreshCooldown>()),
+      );
+      expect(requests, hasLength(1));
+      await expectLater(
+        restarted.refresh(),
+        throwsA(isA<GameCatalogRefreshCooldown>()),
+      );
+      expect(requests, hasLength(1));
+      now = now.add(GameTranslationCatalog.manualRefreshCooldown);
+      status = 200;
+      expect(await restarted.refreshManually(), hasLength(1));
+      expect(requests, hasLength(2));
+    },
+  );
+
+  test(
+    'a clock moved backwards does not keep a cached catalog fresh',
+    () async {
+      await catalog().refresh();
+      manifest['games'] = [game(), game(id: 'new-game')];
+      now = now.subtract(const Duration(hours: 1));
+      expect(await catalog().refresh(), hasLength(2));
       expect(requests, hasLength(2));
     },
   );

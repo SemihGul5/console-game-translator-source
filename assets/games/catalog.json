@@ -1,14 +1,1 @@
-[
-  {
-    "id": "mafia-old-country",
-    "name": "Mafia: The Old Country",
-    "sourceLanguage": "en",
-    "targetLanguage": "tr",
-    "file": "translations/mafia-old-country.en-tr.9a8cf7b628536f46ca1dac3a7741fec2f50a60dddfb2707b1bc666a385456dad.jsonl",
-    "cover": "assets/games/mafia-old-country.cover.jpg",
-    "sha256": "9a8cf7b628536f46ca1dac3a7741fec2f50a60dddfb2707b1bc666a385456dad",
-    "bytes": 1188327,
-    "coverSha256": "6afd7ea4ab42f793b1abcece2e96e43442f68528fb5e65f0bc7c8370fa4a2029",
-    "coverAspectRatio": 0.8142857142857143
-  }
-]
+[]

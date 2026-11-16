@@ -1,6 +1,6 @@
 {
-  "preparedOn": "2026-11-16",
-  "applicationVersion": "1.0.8+9",
+  "preparedOn": "2026-11-17",
+  "applicationVersion": "1.0.9+10",
   "comparison": "reviewed seed snapshot",
   "added": [
     "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
@@ -79,6 +79,7 @@
     "lib/widgets/free_trial_offer_card.dart",
     "lib/widgets/gemini_settings_panel.dart",
     "lib/widgets/subscription_offer_card.dart",
+    "lib/widgets/tv_platform_selector.dart",
     "test/access_identity_test.dart",
     "test/deepl_integration_test.dart",
     "test/deepl_settings_panel_test.dart",
@@ -88,6 +89,7 @@
     "test/gemini_settings_panel_test.dart",
     "test/multilingual_library_test.dart",
     "test/subtitle_region_settings_test.dart",
+    "test/support/fixtures/game-cover.jpg",
     "test/support/purchases_customer_info.dart",
     "test/translation_cache_screen_test.dart"
   ],
@@ -113,6 +115,7 @@
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameTranslationMemoryTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SubscriptionAccessTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SubtitleSourceSelectorTest.kt",
+    "assets/games/catalog.json",
     "assets/tv/samsung-receiver.zip",
     "lib/app_branding.dart",
     "lib/l10n/app_language.dart",
@@ -158,6 +161,7 @@
     "test/tv_setup_link_test.dart"
   ],
   "removed": [
+    "assets/games/mafia-old-country.cover.jpg",
     "lib/widgets/app_language_picker.dart"
   ],
   "embeddedArchiveChecks": [

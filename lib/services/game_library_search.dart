@@ -43,6 +43,7 @@ List<GameCatalogEntry> gameLibraryResults(
   String query, {
   String? selectedGameId,
   String? targetLanguage,
+  Set<String> downloadedContentKeys = const {},
 }) {
   final terms = _searchName(
     query,
@@ -57,6 +58,9 @@ List<GameCatalogEntry> gameLibraryResults(
   return results..sort((a, b) {
     if (a.id == selectedGameId && b.id != selectedGameId) return -1;
     if (b.id == selectedGameId && a.id != selectedGameId) return 1;
+    final aDownloaded = downloadedContentKeys.contains(a.contentKey);
+    final bDownloaded = downloadedContentKeys.contains(b.contentKey);
+    if (aDownloaded != bDownloaded) return aDownloaded ? -1 : 1;
     final order = sortNames[a.id]!.compareTo(sortNames[b.id]!);
     return order == 0 ? a.id.compareTo(b.id) : order;
   });
