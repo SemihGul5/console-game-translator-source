@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Console Game Translator</string>
+    <string name="launcher_name">Console Game Translator</string>
+    <string name="battery_optimization_message">You can exclude %1$s from battery optimization to keep translation running with the screen off. Open battery settings now?</string>
+    <string name="local_translation_status">Translated · %1$s Local</string>
+</resources>

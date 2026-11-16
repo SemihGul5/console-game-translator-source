@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>RevenueCat/renovate"],
+  "packageRules": [
+    {
+      "matchManagers": ["mise"],
+      "matchDepNames": ["flutter"],
+      "matchUpdateTypes": ["minor", "major"],
+      "enabled": true,
+      "groupName": "flutter (mise)"
+    }
+  ]
+}

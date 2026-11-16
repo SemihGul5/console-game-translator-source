@@ -1,0 +1,34 @@
+Chiaki / chiaki-ng
+https://github.com/chiaki-ng/chiaki-ng
+
+This application includes modified Chiaki / chiaki-ng Remote Play code and
+Android JNI bindings. Copyright remains with the upstream authors and
+contributors identified in their source files and project history.
+
+The imported source uses LicenseRef-AGPL-3.0-only-OpenSSL: GNU Affero General
+Public License version 3, with the OpenSSL additional permission reproduced
+verbatim at the end of chiaki-COPYING.txt. That permission requires the
+Corresponding Source to include the relevant OpenSSL source as well.
+
+This code is provided without warranty as described in the license. Applicable
+statutory consumer rights remain unaffected. The license grants recipients
+rights to use, copy, modify and redistribute the covered code under its terms.
+
+Integration modifications, recorded on 2026-11-06:
+- Android CMake integration, Windows OpenSSL build/path fixes and 16 KB linking.
+- JNI connections to the app's Remote Play controller and video/audio output.
+- Frame capture for on-device OCR, preview handling and background translation.
+- Application-specific PSN/account and subtitle/TV integration.
+
+These changes are by the application project; this is not an official Chiaki
+or Sony release. Existing source-file notices are preserved. The upstream
+project does not provide this application's subscription service or support.
+
+License provenance: chiaki-ng v1.10.0 COPYING, SHA-256
+fff3acb5eddbde97746cc1ad2082a1e95f50c2315a8748b26b8a81a499d8d216.
+It is identical to COPYING at upstream commit
+43728af2e639fecb8a7af1cd68c29820a40de973.
+
+The full license text describes recipients' source rights and non-source
+distribution conditions. This attribution notice does not replace those
+conditions or grant an exception for proprietary application distribution.

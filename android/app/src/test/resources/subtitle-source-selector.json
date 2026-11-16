@@ -1,0 +1,37 @@
+{
+  "game": "mafia-old-country",
+  "source": "en",
+  "target": "tr",
+  "entries": [
+    {
+      "id": "001283",
+      "chapter": "IV - IL BARONE",
+      "kind": "dialogue",
+      "speaker": "ISABELLA",
+      "qualityStatus": "ai_draft",
+      "notes": null,
+      "english": "Oh, didn't you know? The Baron owns this land. The great Don Torrisi is just his tenant. Ciao, Gaspare.",
+      "turkish": "Aa, bilmiyor muydun? Bu topraklar Baron'un. Koca Don Torrisi burada yalnızca kiracı. Ciao, Gaspare."
+    },
+    {
+      "id": "001691",
+      "chapter": "V - VENDETTA D'ONORE",
+      "kind": "dialogue",
+      "speaker": "TINO",
+      "qualityStatus": "ai_draft",
+      "notes": null,
+      "english": "Make a mess of this and any misguided faith the Don has in you will be lost, u capisti?",
+      "turkish": "Bu işi batırırsan Don’un sana beslediği o yersiz güven de yok olur, anladın mı?"
+    },
+    {
+      "id": "001692",
+      "chapter": "V - VENDETTA D'ONORE",
+      "kind": "dialogue",
+      "speaker": "CARLO",
+      "qualityStatus": "ai_draft",
+      "notes": null,
+      "english": "Don't be an idiota, avoid the main gate.",
+      "turkish": "Aptallık etme, ana kapıdan uzak dur."
+    }
+  ]
+}

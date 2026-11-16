@@ -1,0 +1,9 @@
+if(NOT DEFINED OPENSSL_SOURCE_DIR OR NOT DEFINED OPENSSL_BINARY_DIR OR NOT DEFINED OPENSSL_INSTALL_DIR)
+	message(FATAL_ERROR "OpenSSL source, binary, and install directories must be provided")
+endif()
+
+file(MAKE_DIRECTORY "${OPENSSL_INSTALL_DIR}/include" "${OPENSSL_INSTALL_DIR}/lib")
+file(COPY "${OPENSSL_SOURCE_DIR}/include/" DESTINATION "${OPENSSL_INSTALL_DIR}/include")
+file(COPY "${OPENSSL_BINARY_DIR}/include/" DESTINATION "${OPENSSL_INSTALL_DIR}/include")
+file(COPY_FILE "${OPENSSL_BINARY_DIR}/libcrypto.a" "${OPENSSL_INSTALL_DIR}/lib/libcrypto.a")
+file(COPY_FILE "${OPENSSL_BINARY_DIR}/libssl.a" "${OPENSSL_INSTALL_DIR}/lib/libssl.a")

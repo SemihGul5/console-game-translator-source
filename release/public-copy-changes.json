@@ -1,0 +1,20 @@
+[
+  {
+    "path": "chiaki-native/cmake/OpenSSLExternalProject.cmake",
+    "originalSha256": "47b559f0a6bf8d3c9dba67e0329279100b808c06e1b7b5415a7502f5027104cc",
+    "publicCopySha256": "83003868b474d366b87d9394252d3e45b2ce8aa8797e05119a4f8886dcc6c057",
+    "reason": "public-copy build configuration only"
+  },
+  {
+    "path": "chiaki-native/CMakeLists.txt",
+    "originalSha256": "7112512754615b1a315f7c51399903bbd0ce810c3b72b1943e2f507a0b9ff5dc",
+    "publicCopySha256": "3f374ad3f1ebb502d12ae7d5eb863b6bc4fde025124380b22ed6383fa60c3a2b",
+    "reason": "public-copy build configuration only"
+  },
+  {
+    "path": "android/gradle.properties",
+    "originalSha256": "6ab1b22c5849f60d54d58a1d8702e0e8b625c5664771e41bfe1083f0693b8579",
+    "publicCopySha256": "d90823dc0db753d9a644ce1f53b4b6b14942626af2ccf16a471337eee6ed42e1",
+    "reason": "public-copy build configuration only"
+  }
+]

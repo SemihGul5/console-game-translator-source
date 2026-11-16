@@ -1,0 +1,8 @@
+{
+  "paths": [
+    "third_party/pub/google_sign_in_android-7.2.11/example/android/app/google-services.json",
+    "third_party/pub/google_sign_in-7.2.0/example/android/app/google-services.json",
+    "third_party/pub/google_sign_in_ios-6.3.8/darwin/Tests/GoogleService-Info.plist"
+  ],
+  "reason": "Public upstream example service identifiers; not library implementation or publisher credentials"
+}

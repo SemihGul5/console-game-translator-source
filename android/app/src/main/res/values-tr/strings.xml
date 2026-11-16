@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AnlaOyna</string>
+    <string name="launcher_name">AnlaOyna: Konsol Oyun Çevirisi</string>
+    <string name="local_translation_status">Çevrildi · %1$s Yerel</string>
+    <string name="battery_optimization_message">Ekran kapalıyken çevirinin kesilmemesi için %1$s uygulamasını pil optimizasyonundan çıkarabilirsin. Pil ayarlarını şimdi açmak ister misin?</string>
+</resources>

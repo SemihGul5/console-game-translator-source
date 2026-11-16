@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://abrebostudio.com/console-game-translator/tv" version="1.0.0" viewmodes="maximized">
+  <tizen:application id="CGTransTV1.Receiver" package="CGTransTV1" required_version="2.4"/>
+  <name>Console Game Translator TV</name>
+  <content src="index.html"/>
+  <icon src="icon.png"/>
+  <access origin="*" subdomains="true"/>
+  <tizen:profile name="tv-samsung"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.window"/>
+  <tizen:privilege name="http://tizen.org/privilege/system"/>
+  <tizen:privilege name="http://developer.samsung.com/privilege/appcommon"/>
+  <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
+</widget>

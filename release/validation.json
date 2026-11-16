@@ -1,0 +1,16 @@
+{
+  "preparedOn": "2026-11-16",
+  "filesChecked": 13194,
+  "integrityAndPatternScanPassed": true,
+  "publicationStatus": "prepared-not-published",
+  "releaseReady": false,
+  "knownNonProductionTlsFixtures": [
+    "test/fixtures/tv_tls/a-key.pem",
+    "test/fixtures/tv_tls/b-key.pem"
+  ],
+  "problems": [],
+  "developmentSourceHashesRechecked": 5178,
+  "productionAppModified": false,
+  "binarySourcePairingVerified": false,
+  "publicRepositoryPublished": false
+}

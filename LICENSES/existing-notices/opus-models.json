@@ -1,0 +1,65 @@
+[
+  {
+    "target": "tr",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-tur",
+    "revision": "32dca174fe084ee339100534c34b0bd2ddb3b0ea",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-tur/raw/32dca174fe084ee339100534c34b0bd2ddb3b0ea/README.md"
+  },
+  {
+    "target": "de",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-deu",
+    "revision": "4847728f444dbb6536d47ecf796579a5a2c940c7",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-deu/raw/4847728f444dbb6536d47ecf796579a5a2c940c7/README.md"
+  },
+  {
+    "target": "ca",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-cat",
+    "revision": "9028c59be7e616dcf9311cafe1ad1d9f8e2e6f5e",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-cat/raw/9028c59be7e616dcf9311cafe1ad1d9f8e2e6f5e/README.md"
+  },
+  {
+    "target": "fr",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-fra",
+    "revision": "c260690aae6dff61a0bda312bfb1e0d22c09716f",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-fra/raw/c260690aae6dff61a0bda312bfb1e0d22c09716f/README.md"
+  },
+  {
+    "target": "es",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-spa",
+    "revision": "2d7f9fd",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-spa/raw/2d7f9fd/README.md"
+  },
+  {
+    "target": "it",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-ita",
+    "revision": "58b98ae",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-ita/raw/58b98ae/README.md"
+  },
+  {
+    "target": "nl",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-nld",
+    "revision": "18891f4",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-nld/raw/18891f4/README.md"
+  },
+  {
+    "target": "el",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-ell",
+    "revision": "a4ac4e4514af2c71a75d0fd0393e9b9f4c86778e",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-ell/raw/a4ac4e4514af2c71a75d0fd0393e9b9f4c86778e/README.md"
+  },
+  {
+    "target": "ru",
+    "repository": "Helsinki-NLP/opus-mt_tiny_eng-rus",
+    "revision": "4502094b76a7c33666eae47e4ff9151543e15239",
+    "license": "apache-2.0",
+    "source": "https://huggingface.co/Helsinki-NLP/opus-mt_tiny_eng-rus/raw/4502094b76a7c33666eae47e4ff9151543e15239/README.md"
+  }
+]

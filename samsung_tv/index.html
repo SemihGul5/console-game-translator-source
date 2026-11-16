@@ -1,0 +1,20 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=1920,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' file:; style-src 'self'; connect-src ws://*:*; object-src 'none'">
+<title>Console Game Translator TV</title><link rel="stylesheet" href="style.css">
+<script src="$WEBAPIS/webapis/webapis.js"></script></head>
+<body>
+<main id="controls">
+  <h1>Console Game Translator TV <small>Samsung Tizen</small></h1>
+  <p id="instructions"></p>
+  <label><span id="addressLabel"></span><input id="address" type="text" placeholder="192.168.1.20:43824" maxlength="22"></label>
+  <label><span id="codeLabel"></span><input id="code" type="text" inputmode="numeric" maxlength="6" autocomplete="off"></label>
+  <button id="connect"></button>
+  <label><span id="hdmiLabel">HDMI</span><select id="hdmi"></select></label>
+  <button id="test"></button><button id="confirm" disabled></button>
+  <button id="disconnect"></button>
+  <p id="status" role="status"></p><p id="limits"></p><p id="support"></p>
+</main>
+<div id="subtitles" aria-live="off"></div>
+<script src="receiver.js"></script><script src="app.js"></script>
+</body></html>

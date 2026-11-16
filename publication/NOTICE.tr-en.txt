@@ -1,0 +1,34 @@
+TR — Mağaza/indirme ve uygun yasal bilgi sayfası için taslak
+
+Console Game Translator, değiştirilmiş Chiaki/chiaki-ng Remote Play kodu içerir.
+Özgün yazarların telif hakları ve kaynak dosyalarındaki bildirimleri korunmuştur.
+Kapsanan yazılım GNU AGPL sürüm 3 ve beraberindeki OpenSSL ek izniyle sunulur.
+Lisans uyarınca kopyalama, değiştirme ve yeniden dağıtma haklarınız vardır.
+Yazılım lisansında belirtilen kapsamda garantisizdir; kanuni tüketici hakları saklıdır.
+
+Bu sürüm: 1.0.6+7
+Bu sürümün ücretsiz kaynakları: MATCHING_SOURCE_RELEASE_URL
+Tam lisans ve üçüncü taraf bildirimleri: PUBLIC_LEGAL_PAGE_URL
+Chiaki-ng: https://github.com/chiaki-ng/chiaki-ng
+
+Bu bağımsız uygulama Chiaki veya Sony'nin resmi ürünü değildir.
+
+EN — Template for the download/store and appropriate legal-information page
+
+Console Game Translator includes modified Chiaki/chiaki-ng Remote Play code.
+Copyright and original source notices remain with the upstream authors.
+Covered software is provided under GNU AGPL version 3 with its OpenSSL additional
+permission. You have rights to copy, modify and redistribute it under that license.
+The software is without warranty to the extent stated in the license; statutory
+consumer rights are unaffected.
+
+This version: 1.0.6+7
+Free source for this version: MATCHING_SOURCE_RELEASE_URL
+Full license and third-party notices: PUBLIC_LEGAL_PAGE_URL
+Chiaki-ng: https://github.com/chiaki-ng/chiaki-ng
+
+This independent application is not an official Chiaki or Sony product.
+
+Before publishing, replace every uppercase placeholder with the actual version
+and publicly accessible, matching release/legal-page URLs. This notice does not
+resolve the ML Kit permission question recorded in RELEASE-CHECKLIST.tr.md.

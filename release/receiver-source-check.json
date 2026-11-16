@@ -1,0 +1,52 @@
+[
+  {
+    "path": "licenses/Inter-OFL.txt",
+    "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "config.xml",
+    "sha256": "fbec43290745293cea7616787b7acd7ed1e952729963fea6b7e1bdd64830c627",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "index.html",
+    "sha256": "9c2ab44441a85503e18e8a1115d131b7f0ed6feefd04cb7589cf01686da391a5",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "style.css",
+    "sha256": "62192f4f2c07abb6cb271da89f07ca140f34e8db0a3e1bfe28d398c709d37aa4",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "receiver.js",
+    "sha256": "6d1545b1010b9f05cadef0ebbb2a29e2572a7adccd779a5ec93dbd507997aa4f",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "app.js",
+    "sha256": "b82d51204d643f8dec54668f17828da6688741394a0ce8780d17555b8d423f18",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "icon.png",
+    "sha256": "7efbb2f760f47a2b704409e276a4e9760afc80db85b4840d5bb4b3441b8d42bf",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "README.tr.md",
+    "sha256": "f2825a608bef32b8a5e7a27abdd4cf434cbf546a97feded02b31f2887c2618a7",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "README.en.md",
+    "sha256": "9e41996061cdb056f271f7a8e92a683063652d70fc2615afdf6554dd8df1731f",
+    "matchesEditableSource": true
+  },
+  {
+    "path": "package.ps1",
+    "sha256": "0c067df688a04e492d49794de779c138e69e607c4d60f8969ef2847b2656cd63",
+    "matchesEditableSource": true
+  }
+]

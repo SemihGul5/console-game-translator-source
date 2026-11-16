@@ -1,0 +1,28 @@
+{
+  "game": "display-test",
+  "source": "en",
+  "target": "tr",
+  "entries": [
+    {
+      "id": "dialogue-sweet",
+      "english": "We should leave before nightfall.",
+      "turkish": "Gece çökmeden gitmeliyiz.\nÇıkış şu köşede.",
+      "speaker": "Sweet"
+    },
+    {
+      "id": "dialogue-isabella",
+      "english": "Watch the entrance to the house.",
+      "turkish": "Evin girişini gözetle.",
+      "speaker": "Isabella"
+    },
+    {
+      "id": "objective-warehouse",
+      "english": "Reach the old warehouse.",
+      "turkish": "Eski depoya ulaş."
+    }
+  ],
+  "speakers": {
+    "Sweet": "Sweet",
+    "Isabella": "Isabella"
+  }
+}

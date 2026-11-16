@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "preparedOn": "2026-11-16",
+  "sourceSnapshotVersion": "1.0.6+7",
+  "status": "prepared-not-published",
+  "binaryVersionName": null,
+  "binaryVersionCode": null,
+  "binarySha256": null,
+  "publicRepositoryUrl": null,
+  "publicCommit": null,
+  "sourceTag": "source-v1.0.6-build7",
+  "matchingSourceArchiveUrl": null,
+  "legalPageUrl": null,
+  "mlKitCombinedDistributionBasis": "Compatibility assumed by publisher; not independently established by this script.",
+  "legalNoticesVerified": false,
+  "binarySourcePairingVerified": false,
+  "intendedSourceReleaseUrl": null
+}

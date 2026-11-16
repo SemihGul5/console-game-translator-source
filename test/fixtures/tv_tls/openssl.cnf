@@ -1,0 +1,5 @@
+# Public test identities, never used by the apps.
+[req]
+distinguished_name = dn
+[dn]
+CN = GameTranslate-Test
