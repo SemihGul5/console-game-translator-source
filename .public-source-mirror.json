@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "kind": "anlaoyna-public-source-mirror",
-  "snapshot": "console-game-translator-source-v1.0.9-build10-20261116T225702672Z",
-  "sourceInventorySha256": "a67edbe5ea2042bdf7c97a462fcfcbd1e121f48a259833cce7f56ff4129559fd",
+  "snapshot": "console-game-translator-source-v1.1.0-build11-20261117T124644106Z",
+  "sourceInventorySha256": "7c36817f2f5c75d2072c1e47fb66573e4d0d7eba63895d7844531c45bddbb772",
   "files": [
     {
       "path": ".gitignore",
@@ -290,7 +290,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RemotePlayController.kt",
-      "sha256": "90c0b99013b9f51be5e863518da6bdb4ceda751cdf6ce4d583ed32b68e099ee8"
+      "sha256": "8754fcee22a680e15b964791e1c8ec9c12d2c726d2a8a42da34a5586f68a3caf"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RemotePlayTrialGate.kt",
@@ -310,7 +310,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleOcrController.kt",
-      "sha256": "2ea08fe7f411b36b804fa96259941699321f1d48a1e3c425ed637e2fc57576f9"
+      "sha256": "1a55b8a1279dc1aa486b694ecb1fc0a7ca817d9fdfabecaa8c18e42ac9699305"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleSourceSelector.kt",
@@ -20810,7 +20810,7 @@
     },
     {
       "path": "lib/l10n/messages_en.dart",
-      "sha256": "7f17316ee67a1dbbc200d348adf350083c9dddb99865ac0bc6fd101759e30391"
+      "sha256": "1fdf8d4ac1bae36862be09400fe4fcd9a43e9dd592771c9fe537bc86d099027a"
     },
     {
       "path": "lib/l10n/messages_tv_en.dart",
@@ -20818,7 +20818,7 @@
     },
     {
       "path": "lib/main.dart",
-      "sha256": "68b9c22274cb64dc0706f6b74f4dd0670874d005ad4a4263d8cbf90d6edc8c21"
+      "sha256": "8b6ae27b91dd28d037e4160c2a937c56a01c133ef8c80cd7aecdfabc77189877"
     },
     {
       "path": "lib/models/game_catalog_entry.dart",
@@ -20850,7 +20850,7 @@
     },
     {
       "path": "lib/screens/ps5_stream_screen.dart",
-      "sha256": "8203d8873d2e38cd5134a5e641b839d6c7eb595086f3b5978c63ea8a09ca4ce2"
+      "sha256": "bc5d1bc84575b1c2a09c13abb3f7fdd943ef8b573ee0225cce85ff0e5b69c0eb"
     },
     {
       "path": "lib/screens/psn_login_screen.dart",
@@ -20934,7 +20934,7 @@
     },
     {
       "path": "lib/services/subtitle_settings_store.dart",
-      "sha256": "c21edd1c8c6a3857d7d26d0d72d4c230b51397fbb7e71eb00bde1b90c8b194b5"
+      "sha256": "101036c387ed35c40fa20b735c01f885aa2f777db072b268a8768b0463d27681"
     },
     {
       "path": "lib/services/translation_cache_service.dart",
@@ -21010,15 +21010,15 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "4c3f5d6aefd231741d145790730f5073ddad8d9387f02bf5542f3ba5458fe2b4"
+      "sha256": "652f229dbf89d10939101eeaf867281fbc6f1b3b9492cd544faf80d7fafa390f"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "650f0b952e56b841dc7d61bf05744db8c8c55c6fc51edfce5c3142ead068add7"
+      "sha256": "8db93d62aeca197f51fb1a5a8f45b2f176f23b804dc8747519f9d8cfae33d4b9"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "2c5dd8c3d0f52da4ac2f784470bc5370a8ab56148f806df264cbe44efdbf149d"
+      "sha256": "f7b0c4026679fd93c5afdfbd7ebeb3e22a003b96b8419d675ac8d044e7416405"
     },
     {
       "path": "pubspec.lock",
@@ -21026,11 +21026,11 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "79798e7b029ea87846a1e9b89a3a61918d9dc8c4752ea9d6e22220162211e883"
+      "sha256": "03dc121e9e3188f60db0ffd5d0b4ca34ce508cf17e1f3156e83ff99c6d17dc25"
     },
     {
       "path": "README.md",
-      "sha256": "77ff0e8032436efaa89ed21323b39dd34d651c9eeecb86fd4983c8ee056c5c28"
+      "sha256": "e08bc0ff0ae2a4cc3d125e6fdf2353899da952061000b33c7ffc1cf345dcfcc8"
     },
     {
       "path": "release/checks.json",
@@ -21038,7 +21038,7 @@
     },
     {
       "path": "release/manual-sync.json",
-      "sha256": "ae7333887a7085f94ccc6a223e2310b2b5357ae0dbf70dd0db6df0182e3012b2"
+      "sha256": "eeccaed16e118b54fe3205417ab0756a62a9d38862ad884e0c991d910511e264"
     },
     {
       "path": "release/maven-dependencies.json",
@@ -21062,7 +21062,7 @@
     },
     {
       "path": "release/publication.json",
-      "sha256": "608e525497feaaa9e36bb876061f5866ac7b00f1a96bc0c09ca539e955af41c4"
+      "sha256": "628f92c1626e4bc19d7a271161c42dc99583aa5cd6e18d152f380c02d80eaa72"
     },
     {
       "path": "release/receiver-source-check.json",
@@ -21074,15 +21074,15 @@
     },
     {
       "path": "release/SHA256SUMS",
-      "sha256": "a67edbe5ea2042bdf7c97a462fcfcbd1e121f48a259833cce7f56ff4129559fd"
+      "sha256": "7c36817f2f5c75d2072c1e47fb66573e4d0d7eba63895d7844531c45bddbb772"
     },
     {
       "path": "release/snapshot-files.json",
-      "sha256": "7ac8f6554382361bf745018fb2047f6703acf04473f854526f511847441ae969"
+      "sha256": "4d2ffc8605acbd23febfc3cfa1464db556a20b80fa5504981d5e9f31fcade86d"
     },
     {
       "path": "release/source-sync.json",
-      "sha256": "f7a5fbf65c841277f3736f1cb7dbf764f6f2e1600558a58c3958901a5fbad307"
+      "sha256": "5a0dabbb866681b270f984d9b4288252d40bb531ff8c19f82c29c592b52f6cea"
     },
     {
       "path": "release/validation.json",
@@ -21090,7 +21090,7 @@
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "0e8eddede67c804058cb6f311de44ccc0da1b56374a64134f0ab0c4931b84987"
+      "sha256": "ded71afe60c89d65772534166a6e28240821051711e565c45a552acd35b1d05d"
     },
     {
       "path": "samsung_tv/app.js",
@@ -21194,7 +21194,7 @@
     },
     {
       "path": "test/app_language_test.dart",
-      "sha256": "d73bfc27ac1c93b3921af11763c78ea262dd2bbed3a855dbb7e78f53ea861f61"
+      "sha256": "0d10f510a5eb28f4123437f700b8eed3d28802dd21e77203fed925734a492428"
     },
     {
       "path": "test/deepl_integration_test.dart",
@@ -21258,7 +21258,7 @@
     },
     {
       "path": "test/navigation_test.dart",
-      "sha256": "3463406577a0a46c4e863bfb7b70f8c78d2a41479e5c5c4ac7b432a1e9332272"
+      "sha256": "c0adc148c1aed6debc19cf7cd14cf0ec3f6b0ca0d72a3e1c1f06e86b50e8322d"
     },
     {
       "path": "test/premium_plan_card_test.dart",
@@ -21334,7 +21334,7 @@
     },
     {
       "path": "test/widget_test.dart",
-      "sha256": "9d197d9dd0f474bd026ebd70f52e221b6a0c700e6e418c95472878fff324ccf4"
+      "sha256": "02526baacba03132769a7e14a0db6d696520d9d0e18df5b6cf4d02c6b8d23be7"
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",

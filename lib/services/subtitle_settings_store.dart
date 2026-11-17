@@ -8,6 +8,8 @@ import '../models/subtitle_settings.dart';
 class SubtitleSettingsStore {
   const SubtitleSettingsStore();
 
+  static const defaultTranslationEngine = 'opus';
+
   static const _channel = MethodChannel(
     'com.abrebostudio.consolegametranslator/ps5_registration',
   );
@@ -74,7 +76,8 @@ class SubtitleSettingsStore {
   }
 
   Future<String> loadTranslationEngine() async =>
-      await _channel.invokeMethod<String>('getTranslationEngine') ?? 'mlkit';
+      await _channel.invokeMethod<String>('getTranslationEngine') ??
+      defaultTranslationEngine;
 
   Future<bool> isOpusModelInstalled() async =>
       await _channel.invokeMethod<bool>('getOpusModelStatus') ?? false;

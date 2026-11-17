@@ -1,6 +1,6 @@
 {
   "preparedOn": "2026-11-17",
-  "applicationVersion": "1.0.9+10",
+  "applicationVersion": "1.1.0+11",
   "comparison": "reviewed seed snapshot",
   "added": [
     "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
@@ -158,7 +158,8 @@
     "test/smart_tv_setup_dialog_test.dart",
     "test/subtitle_settings_persistence_test.dart",
     "test/support/offline_game_catalog.dart",
-    "test/tv_setup_link_test.dart"
+    "test/tv_setup_link_test.dart",
+    "test/widget_test.dart"
   ],
   "removed": [
     "assets/games/mafia-old-country.cover.jpg",

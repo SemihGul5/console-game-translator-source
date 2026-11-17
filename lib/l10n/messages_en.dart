@@ -521,8 +521,10 @@ const englishMessages = <String, String>{
   "seçili": "selected",
   "Oyun seçimini kaldır": "Clear game selection",
   "ÇEVİRİ MODELİ": "TRANSLATION MODEL",
-  "Model A": "Model A",
-  "Model B": "Model B",
+  'En iyi çeviri için Oyun Kütüphanesi’ni öneriyoruz. Oyunun listede yoksa DeepL veya Gemini’yi, bunlara erişimin yoksa yerel modelleri kullanabilirsin.':
+      'For the best translation, we recommend the Game Library. If your game is not listed, try DeepL or Gemini. If you cannot access them, use a local model.',
+  'Model A - Yerel Kaliteli': 'Model A - Local, High Quality',
+  'Model B - Yerel Hızlı': 'Model B - Local, Fast',
   "Önce yaklaşık 80 MB HPLT model paketini indir.":
       "Download the HPLT model pack first (about 80 MB).",
   "İngilizceden seçtiğin hedef dile ait paketi indir.":
@@ -734,8 +736,8 @@ const englishMessages = <String, String>{
       "TURQUOISE BOXES • WHERE SHOULD SUBTITLES APPEAR?",
   "Her turkuaz alan aynı çevrilmiş altyazıyı seçtiğin konumda gösterir. OCR alanlarından bağımsızdır; birden fazla yere ekleyebilirsin.":
       "Each turquoise area displays the same translated subtitle in your chosen position. Subtitle areas are independent of OCR areas; you can add more than one.",
-  "OCR ipucu: Oyunda varsa altyazı arka planını aç. Koyu zemin üzerindeki açık renk yazı gibi yüksek kontrast, metnin daha güvenilir okunmasına yardımcı olur.":
-      "OCR tip: Enable subtitle backgrounds in the game if available. High contrast, such as light text on a dark background, helps OCR read more reliably.",
+  'OCR ipucu: Oyun ayarları izin veriyorsa İngilizce altyazının arka planını açıp opaklığını artır. Koyu zemin ve açık renk yazı, metnin daha net okunmasına ve çevirinin iyileşmesine yardımcı olabilir.':
+      'OCR tip: If the game settings allow it, enable the English subtitle background and increase its opacity. Light text on a dark background can make the text easier to read and help improve translation.',
   "Altyazı kutusunu sıfırla": "Reset subtitle box",
   "Seçili OCR alanını sıfırla": "Reset selected OCR area",
   "Son OCR: {0}\n{1}": "Last OCR: {0}\n{1}",

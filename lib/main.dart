@@ -332,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<TranslationLanguageModel> _translationModels = const [];
   bool _loadingTranslationModels = true;
   String? _translationModelsError;
-  String _translationEngine = 'mlkit';
+  String _translationEngine = SubtitleSettingsStore.defaultTranslationEngine;
   int _translationEngineDropdownRevision = 0;
   bool _deepLConfigured = false;
   bool _geminiConfigured = false;
@@ -453,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _translationEngine =
             const {'mlkit', 'opus', 'deepl', 'gemini'}.contains(savedEngine)
             ? savedEngine
-            : 'mlkit';
+            : SubtitleSettingsStore.defaultTranslationEngine;
         _opusModelInstalled = values[1] as bool;
         _offlineModels = (values[2] as List<Map<String, dynamic>>);
         _hpltModelInstalled = values[3] as bool;
@@ -471,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await _loadDeepLLanguages();
       }
     } catch (_) {
-      // Non-Android previews continue to use ML Kit as the default.
+      // Keep Model A selected when the native preference cannot be read.
     }
   }
 
@@ -4144,6 +4144,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ],
           ),
           const SizedBox(height: 10),
+          Text(
+            context.tr(
+              'En iyi çeviri için Oyun Kütüphanesi’ni öneriyoruz. Oyunun listede yoksa DeepL veya Gemini’yi, bunlara erişimin yoksa yerel modelleri kullanabilirsin.',
+            ),
+            style: const TextStyle(color: muted, fontSize: 11, height: 1.5),
+          ),
+          const SizedBox(height: 10),
           DropdownButtonFormField<String>(
             key: ValueKey(
               '$_translationEngine-$_translationEngineDropdownRevision',
@@ -4166,11 +4173,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             items: [
               DropdownMenuItem(
                 value: 'opus',
-                child: Text(context.tr("Model A")),
+                child: Text(
+                  context.tr('Model A - Yerel Kaliteli'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               DropdownMenuItem(
                 value: 'mlkit',
-                child: Text(context.tr("Model B")),
+                child: Text(
+                  context.tr('Model B - Yerel Hızlı'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               DropdownMenuItem(
                 value: 'deepl',

@@ -1,4 +1,4 @@
-> Son elle kaynak guncellemesi: 2026-11-17, surum 1.0.9+10.
+> Son elle kaynak guncellemesi: 2026-11-17, surum 1.1.0+11.
 > Onceki hazirlik notlari asagida tarihsel olarak korunur. Bu calistirmada ML Kit uyumlulugu
 > yayincinin varsayimi olarak kabul edildi. Ikili/kaynak eslesmesi ve yayin baglantilari henuz dogrulanmadi.
 

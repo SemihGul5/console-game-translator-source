@@ -110,7 +110,7 @@ internal class SubtitleOcrController(
     private var mlkitSourceLanguage = sourceLanguageCode
     private var mlkitTargetLanguage = targetLanguageCode
     @Volatile private var translationModelReady = false
-    @Volatile private var translationEngine = "mlkit"
+    @Volatile private var translationEngine = "opus"
     @Volatile private var gameTranslationMemory: GameTranslationMemory? = null
     @Volatile private var marianTranslator: MarianOnDeviceTranslator? = null
     @Volatile private var hpltTranslator: HpltCTranslate2? = null
@@ -247,7 +247,7 @@ internal class SubtitleOcrController(
         imagePreprocessingModes: List<Int>,
         imageDialogueFilters: List<Boolean>,
         imageCaptureScale: Float,
-        selectedTranslationEngine: String = "mlkit",
+        selectedTranslationEngine: String = "opus",
         independentRegionSettings: List<OcrRegionSettings> = emptyList(),
         selectedDeepLApiKey: String = "",
         selectedGeminiApiKey: String = "",
@@ -298,7 +298,7 @@ internal class SubtitleOcrController(
             )
         }
         sampleIntervalMillis = regionSettings.minOf { it.sampleIntervalMillis }
-        val safeEngine = selectedTranslationEngine.takeIf { it in setOf("mlkit", "opus", "deepl", "gemini") } ?: "mlkit"
+        val safeEngine = selectedTranslationEngine.takeIf { it in setOf("mlkit", "opus", "deepl", "gemini") } ?: "opus"
         val safeMarianTarget = if (safeEngine == "hplt") "tr" else
             targetLanguage.takeIf { it in OfflineMarianCatalog.targetCodes } ?: "tr"
         if (marianTargetLanguageCode != safeMarianTarget) {

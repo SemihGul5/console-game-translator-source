@@ -184,7 +184,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
         }
         translationAccess.onStatusChanged = { emit(mapOf("type" to "accessChanged")) }
         consoleStore = RegisteredConsoleStore(applicationContext)
-        translationEngine() // Migrate a previously selected Model C or D to Model B.
+        translationEngine() // Migrate a previously selected Model C or D to Model A.
         worker.execute(::removeRetiredExperimentalModels)
         flutterEngine.platformViewsController.registry.registerViewFactory(
             VIDEO_VIEW,
@@ -1387,7 +1387,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                 regions.coerceAtLeast(1)
             }),
             storedOcrCaptureScale().toFloat(),
-            prefs.getString("translation_engine", "mlkit") ?: "mlkit",
+            translationEngine(),
             readRegionSettings("ocr_region_settings_json").map { OcrRegionSettings.fromMap(it) },
             runCatching { deepLCredentials.read() }.getOrNull().orEmpty(),
             selectedGeminiApiKeys = runCatching { geminiCredentials.readAll() }.getOrDefault(emptyList()),
@@ -1428,7 +1428,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
             dialogueFilters,
             (((settings["ocrCaptureScale"] as? Number)?.toDouble() ?: storedOcrCaptureScale())
                 .coerceIn(1.0, 2.0).toFloat()),
-            subtitleSettingsPrefs.getString("translation_engine", "mlkit") ?: "mlkit",
+            translationEngine(),
             (settings["ocrRegionSettings"] as? List<*>)?.take(12)
                 ?.map { OcrRegionSettings.fromMap(it as? Map<*, *>) }.orEmpty(),
             runCatching { deepLCredentials.read() }.getOrNull().orEmpty(),
@@ -1438,10 +1438,10 @@ internal class RemotePlayController private constructor(context: Context) : Cont
     }
 
     private fun translationEngine(): String {
-        val saved = subtitleSettingsPrefs.getString("translation_engine", "mlkit") ?: "mlkit"
+        val saved = subtitleSettingsPrefs.getString("translation_engine", "opus") ?: "opus"
         if (saved in setOf("mlkit", "opus", "deepl", "gemini")) return saved
-        subtitleSettingsPrefs.edit().putString("translation_engine", "mlkit").apply()
-        return "mlkit"
+        subtitleSettingsPrefs.edit().putString("translation_engine", "opus").apply()
+        return "opus"
     }
 
     private fun removeRetiredExperimentalModels() {

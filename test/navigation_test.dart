@@ -279,6 +279,8 @@ void main() {
     messenger.setMockMethodCallHandler(_native, (call) async {
       nativeCalls.add(call.method);
       switch (call.method) {
+        case 'getTranslationEngine':
+          return 'mlkit';
         case 'getSavedConsole':
           return consoleSaved
               ? {'host': '192.168.1.50', 'nickname': 'PS5'}

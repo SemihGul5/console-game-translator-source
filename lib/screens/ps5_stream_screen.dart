@@ -1368,7 +1368,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
               Expanded(
                 child: Text(
                   context.tr(
-                    "OCR ipucu: Oyunda varsa altyazı arka planını aç. Koyu zemin üzerindeki açık renk yazı gibi yüksek kontrast, metnin daha güvenilir okunmasına yardımcı olur.",
+                    'OCR ipucu: Oyun ayarları izin veriyorsa İngilizce altyazının arka planını açıp opaklığını artır. Koyu zemin ve açık renk yazı, metnin daha net okunmasına ve çevirinin iyileşmesine yardımcı olabilir.',
                   ),
                   style: TextStyle(
                     color: Color(0xFFD5D9E5),

@@ -45,6 +45,8 @@ void main() {
         .setMockMethodCallHandler(_native, (call) async {
           calls.add(call);
           switch (call.method) {
+            case 'getTranslationEngine':
+              return 'mlkit';
             case 'getAppLanguage':
               return savedLanguage;
             case 'setAppLanguage':
