@@ -10,7 +10,11 @@ internal fun deepLRequestText(text: String, source: String): String {
     var value = Normalizer.normalize(text, Normalizer.Form.NFKC)
         .replace('’', '\'').replace('‘', '\'').replace(Regex("\\s+"), " ").trim()
     if (source.substringBefore('-') != "en") return value
-    value = value.replace(Regex("(?i)(?<![\\p{L}])[il]'[il|]{1,3}(?![\\p{L}|])"), "I'll")
+    // A duplicated I/l glyph before an English first-person contraction is OCR
+    // noise, not a different word (the reported lI'm / I'm paid twice).
+    value = value.replace(Regex("(?<![\\p{L}\\p{N}'|])[Il|]{2,3}'(?i:(m|d|ve|ll))\\b")) {
+        "I'${it.groupValues[1].lowercase(Locale.ROOT)}"
+    }.replace(Regex("(?i)(?<![\\p{L}])[il]'[il|]{1,3}(?![\\p{L}|])"), "I'll")
         .replace(Regex("(?i)\\b[il]'(d|m|ve)\\b")) { "I'${it.groupValues[1].lowercase(Locale.ROOT)}" }
         .replace(Regex("(?i)\\bwwould(n't)?\\b")) { "would${it.groupValues[1]}" }
         .replace(Regex("(?i)\\b(don|isn|aren|wasn|weren|didn|doesn|haven|hasn|hadn|wouldn|couldn|shouldn|mustn|needn)t\\b")) {
@@ -21,6 +25,7 @@ internal fun deepLRequestText(text: String, source: String): String {
         // real words such as "ill", "id" and the abbreviation "ID" intact.
         .replace(Regex("\\b(?:I|l)d(?= (?:be|have|come|go|like|rather|love|say|take|do|make)\\b)"), "I'd")
         .replace(Regex("\\b(?:I|l)[lI|]{2}(?= (?:call|go|be|have|take|get|come|see|tell|ask|do|make)\\b)"), "I'll")
+        .replace(Regex("(?<![\\p{L}\\p{N}'])'ll(?= (?:call|go|be|have|take|get|come|see|tell|ask|do|make)\\b)"), "I'll")
         .replace(Regex("\\b([Ii]t|[Tt]hat)(ll|d)\\b")) { "${it.groupValues[1]}'${it.groupValues[2]}" }
     return value
 }
@@ -31,32 +36,38 @@ internal fun deepLTextKey(text: String, source: String): String = deepLRequestTe
 /** Per visible subtitle, never a fuzzy lookup across unrelated past dialogue. */
 internal class DeepLOcrPolicy(private val elapsedMillis: () -> Long = { System.nanoTime() / 1_000_000 }) {
     data class Read(val key: String, val text: String, val confidence: Float)
+    private data class InitialCandidate(val read: Read, val count: Int, val firstSeen: Long, val lastSeen: Long)
     private var anchor: Read? = null
     private var pending: Read? = null
     private var pendingReads = 0
     private var pendingSince = 0L
     private var newLine: Read? = null
     private var newLineReads = 0
-    private val newLineCandidates = linkedMapOf<String, Pair<Read, Int>>()
+    private val newLineCandidates = linkedMapOf<String, InitialCandidate>()
 
     /** A different, unconfirmed line must not send a queued request for the old one. */
     val requestKey: String? get() = anchor?.key.takeIf { newLine == null }
     val hasPendingRead: Boolean get() = newLine != null || pending != null
 
+    /** Shared cloud settings; Gemini retains its tighter initial corroboration. */
+    fun observeCloud(text: String, confidence: Float, source: String, sampleIntervalMs: Long,
+        engine: String): Read? = observe(text, confidence, source, sampleIntervalMs,
+        corroborateInitialCandidate = engine == "gemini", confirmWeakCandidate = true)
+
     fun observe(text: String, confidence: Float, source: String, sampleIntervalMs: Long,
-        corroborateInitialCandidate: Boolean = false): Read? {
+        corroborateInitialCandidate: Boolean = false, confirmWeakCandidate: Boolean = false): Read? {
         val now = elapsedMillis()
         val key = deepLTextKey(text, source)
         val next = Read(key, deepLRequestText(text, source), confidence)
         val previous = anchor
-        if (previous == null) return confirmNewLine(next, sampleIntervalMs, corroborateInitialCandidate)
+        if (previous == null) return confirmNewLine(next, sampleIntervalMs, corroborateInitialCandidate, confirmWeakCandidate, now)
         if (equivalent(previous.key, key, source)) {
             pending = null
             pendingReads = 0
             clearNewLine()
             return previous
         }
-        if (!nearVariant(previous.key, key)) return confirmNewLine(next, sampleIntervalMs, corroborateInitialCandidate)
+        if (!nearVariant(previous.key, key)) return confirmNewLine(next, sampleIntervalMs, corroborateInitialCandidate, confirmWeakCandidate, now)
         clearNewLine()
         if (pending?.key != key) {
             pending = next
@@ -78,34 +89,47 @@ internal class DeepLOcrPolicy(private val elapsedMillis: () -> Long = { System.n
 
     fun discardPending() { pending = null; pendingReads = 0; clearNewLine() }
 
-    private fun confirmNewLine(next: Read, sampleIntervalMs: Long, corroborateInitialCandidate: Boolean): Read? {
+    private fun confirmNewLine(next: Read, sampleIntervalMs: Long, corroborateInitialCandidate: Boolean,
+        confirmWeakCandidate: Boolean, now: Long): Read? {
         pending = null
         pendingReads = 0
         // Corroborating frames at high rates avoid buying the first noisy
-        // fade-in spelling. Short dialogue and slow sampling remain immediate.
-        if (next.key.length < 16 || sampleIntervalMs >= 200) return accept(next)
+        // fade-in spelling. Clear short replies and slow sampling remain
+        // immediate; a weak fragment such as 'tl' needs repetition over 250 ms.
+        val shortRead = next.key.length < 16
+        if (sampleIntervalMs >= 200 || (shortRead &&
+                (!(corroborateInitialCandidate || confirmWeakCandidate) || next.confidence >= .65f)))
+            return accept(next)
         val candidate = newLine
         if (candidate == null || (candidate.key != next.key && !nearVariant(candidate.key, next.key))) {
             newLine = next
             newLineReads = 1
             newLineCandidates.clear()
-            newLineCandidates[next.key] = Pair(next, 1)
+            newLineCandidates[next.key] = InitialCandidate(next, 1, now, now)
             return null
         }
         newLineReads++
         if (next.confidence >= candidate.confidence) newLine = next
         val seen = newLineCandidates[next.key]
-        newLineCandidates[next.key] = Pair(if (seen == null || next.confidence >= seen.first.confidence) next else seen.first,
-            (seen?.second ?: 0) + 1)
+        newLineCandidates[next.key] = InitialCandidate(
+            if (seen == null || next.confidence >= seen.read.confidence) next else seen.read,
+            (seen?.count ?: 0) + 1, seen?.firstSeen ?: now, now)
         if (newLineCandidates.size > 16) newLineCandidates.remove(newLineCandidates.keys.first())
-        val required = if (sampleIntervalMs <= 100) 3 else 2
-        // Preserve DeepL's measured OCR behavior. Gemini opts into the stricter
-        // first-reading rule because its request/minute limit is much tighter.
-        if (!corroborateInitialCandidate) return if (newLineReads >= required) accept(newLine!!) else null
+        val required = if (shortRead) 2 else if (sampleIntervalMs <= 100) 3 else 2
+        // DeepL keeps its measured high-confidence selection. Weak fade-in
+        // readings need corroboration rather than buying a one-off fragment.
+        if (!corroborateInitialCandidate) {
+            val best = newLine!!
+            val confirmed = if (!confirmWeakCandidate || best.confidence >= .75f) best
+                else newLineCandidates.values.filter { it.count >= 2 && it.lastSeen - it.firstSeen >= 250L }
+                    .maxWithOrNull(compareBy<InitialCandidate> { it.read.confidence }.thenBy { it.count })?.read
+            return if (newLineReads >= required && confirmed != null) accept(confirmed) else null
+        }
         // A single high-confidence fade-in glitch must not win over a reading
         // actually seen twice. The reported "bed2!" frame previously did that.
-        val corroborated = newLineCandidates.values.filter { it.second >= 2 }
-            .maxWithOrNull(compareBy<Pair<Read, Int>> { it.second }.thenBy { it.first.confidence })?.first
+        val corroborated = newLineCandidates.values.filter { it.count >= 2 &&
+                (!confirmWeakCandidate || !shortRead || it.read.confidence >= .65f || it.lastSeen - it.firstSeen >= 250L) }
+            .maxWithOrNull(compareBy<InitialCandidate> { it.count }.thenBy { it.read.confidence })?.read
         return if (newLineReads >= required && corroborated != null) accept(corroborated) else null
     }
 

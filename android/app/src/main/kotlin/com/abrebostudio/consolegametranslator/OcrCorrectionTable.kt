@@ -44,8 +44,8 @@ internal class OcrCorrectionTable private constructor(private val languages: Map
         }
     }
 
-    fun correct(text: String, source: String, gameSelected: Boolean): Result {
-        if (gameSelected || text.isBlank() || text.length > MAX_INPUT) return Result(text)
+    fun correct(text: String, source: String, gameSelected: Boolean, gameLookupMiss: Boolean = false): Result {
+        if ((gameSelected && !gameLookupMiss) || text.isBlank() || text.length > MAX_INPUT) return Result(text)
         val language = languages[source.substringBefore('-').lowercase(Locale.ROOT)] ?: return Result(text)
         // Canonical apostrophes preserve character offsets; untouched text stays byte-for-byte the same.
         val searchable = canonical(text)

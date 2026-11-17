@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-11-17",
-  "applicationVersion": "1.1.0+11",
+  "applicationVersion": "1.1.1+12",
   "kind": "manually refreshed source snapshot; binary/source pairing not verified",
   "files": [
     {
@@ -84,8 +84,8 @@
     },
     {
       "path": "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
-      "sha256": "2b7af4175626e1457540087a26f3ec3ab77d8a672ab2d978cad791a3efd68a94",
-      "bytes": 40804,
+      "sha256": "a4a87994ce498fa72efba5443e9da3b816bc7bdd9b0c5096cf182c8cc44785e6",
+      "bytes": 101536,
       "category": "application"
     },
     {
@@ -209,6 +209,12 @@
       "category": "application"
     },
     {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflight.kt",
+      "sha256": "4901c8468e6deb8b4027dbd5e0f757c0756fb560bea7dac2d62e5e57b55977fc",
+      "bytes": 1340,
+      "category": "application"
+    },
+    {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicy.kt",
       "sha256": "7f5ae4a8a798c4f4385a29b3f62992856d9e3da4f2d7ffdfa2159e6263cb36f5",
       "bytes": 2378,
@@ -228,8 +234,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLOcrPolicy.kt",
-      "sha256": "1fd10ea77d413073ca5740f665ca3c628d4450e7e817145c09ee0380c5d5aff0",
-      "bytes": 9065,
+      "sha256": "5af6c8469c194e0a68398eb53f86efc4a2e6a4f889a7ec8a53b7d49fe4555664",
+      "bytes": 10904,
       "category": "application"
     },
     {
@@ -360,8 +366,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrCorrectionTable.kt",
-      "sha256": "569170ba98c35451d0d523f64c81dc8ef61507b5f0b03ab2e26472e671bc45a8",
-      "bytes": 7840,
+      "sha256": "331e9762fa48d1909deac6f9204d0701244c857a95ff6ed81c199872f5e6ed39",
+      "bytes": 7894,
       "category": "application"
     },
     {
@@ -372,8 +378,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrRecoveryPolicy.kt",
-      "sha256": "da05ba1520e41cbc1ef64c619d4f05995d7809cedf4833dff77c51a8aa197a45",
-      "bytes": 4568,
+      "sha256": "04c7cd5d8068adc25d5267450b60e56d680754b6dde83e7890eaf42706a7411e",
+      "bytes": 4686,
       "category": "application"
     },
     {
@@ -462,8 +468,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleOcrController.kt",
-      "sha256": "1a55b8a1279dc1aa486b694ecb1fc0a7ca817d9fdfabecaa8c18e42ac9699305",
-      "bytes": 120856,
+      "sha256": "8394af80fe8bde21b88699017bb32df270d10418f2065a024cf7c6bfb648635e",
+      "bytes": 122638,
       "category": "application"
     },
     {
@@ -524,6 +530,12 @@
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/TranslationForegroundService.kt",
       "sha256": "4ff5a0d0a6c8aa85d55906ac03b0f9beaea93390917a831aaabb2bf3ae5b3c61",
       "bytes": 10186,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/UnmatchedOcrPreparation.kt",
+      "sha256": "cfb2a91b82baf613af23066a844b2a8b82a2b456a2debfd716a46a743b1dbe31",
+      "bytes": 1225,
       "category": "application"
     },
     {
@@ -683,6 +695,12 @@
       "category": "application"
     },
     {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflightTest.kt",
+      "sha256": "ad7bf6709e354917b7b1e8572292b9a9667751b92c705803f149aef9d318d98c",
+      "bytes": 1770,
+      "category": "application"
+    },
+    {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicyTest.kt",
       "sha256": "5bc9b95395bce306f0dabd634a73ecc446da6b6c68edbdb0c3343a2b132dd635",
       "bytes": 2246,
@@ -696,14 +714,14 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLLoggedOcrReplayTest.kt",
-      "sha256": "0a7a98f2b99397592ca141a4b66f3995c86260208fc14a2ab45bfb824e5f6417",
-      "bytes": 5141,
+      "sha256": "0adf92f645fe8de04e6a9e7881b000c5d5e51a57c52a8e22a98dac63e1e7b55b",
+      "bytes": 8161,
       "category": "application"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLOcrPolicyTest.kt",
-      "sha256": "47339364fbd6dc1db89b28834f5404ba029aefeae2217224c267698f28a69386",
-      "bytes": 11309,
+      "sha256": "c2dec735f22786ac7f9637df627257b84e0da0167b627f787b993d4f58b3f669",
+      "bytes": 18366,
       "category": "application"
     },
     {
@@ -734,6 +752,12 @@
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/FreeTrialPolicyTest.kt",
       "sha256": "4da0985bb8221368b463208db66ab9f297125275b0bac5e9f8e70fac6581680f",
       "bytes": 603,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameLibraryLiveFallbackTest.kt",
+      "sha256": "9d1e32ca7b8e1581b01e5a06ce145ccb303946141861fb0e753c91cea5cfc204",
+      "bytes": 4803,
       "category": "application"
     },
     {
@@ -786,8 +810,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GeminiLoggedOcrReplayTest.kt",
-      "sha256": "bc9ffe1224776a16493a558bee6d59828c36fadb6b2359063ed1dc15ff596769",
-      "bytes": 3626,
+      "sha256": "23edf21929dd9209ff1c9f96e08907396364a6fc208eaee6c9311fdd0bd2b1d3",
+      "bytes": 3647,
       "category": "application"
     },
     {
@@ -816,8 +840,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrCorrectionTableTest.kt",
-      "sha256": "640c6d58c18613f8a4007a2738b132e8f4184185f2ee3b702570d938bf35edaa",
-      "bytes": 10407,
+      "sha256": "705b079252130dd852a4015e42ef867b9689c823b968f79fa9b2ae18420a0b70",
+      "bytes": 13692,
       "category": "application"
     },
     {
@@ -828,8 +852,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrRecoveryPolicyTest.kt",
-      "sha256": "eb79d9a15cc7cc63fbd921fcdccf42a0909d87c8d7bb74db8e4a952349558cde",
-      "bytes": 5457,
+      "sha256": "ac05b45756a77ef48a5a7186c206d07c794d133c521cfe43dd1122794cc936a3",
+      "bytes": 6015,
       "category": "application"
     },
     {
@@ -881,6 +905,18 @@
       "category": "application"
     },
     {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/UnmatchedOcrPreparationTest.kt",
+      "sha256": "4ed8f44f4db42d85dfa262ddf7c22b779331ef8768e7d14f422499557840e2d0",
+      "bytes": 4748,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/test/resources/cloud-ocr-2026-11-17-followup.json",
+      "sha256": "58f4b1c09a15fb87eee713d8befd6276adb48936025cb168a83acc1a361272e3",
+      "bytes": 22401,
+      "category": "application"
+    },
+    {
       "path": "android/app/src/test/resources/deepl-ocr-2026-11-15-followup.json",
       "sha256": "ba182c016bd26377bbafbd5796b11c14203b79da66adb515f4bd28a3158dc9d1",
       "bytes": 95766,
@@ -890,6 +926,12 @@
       "path": "android/app/src/test/resources/deepl-ocr-2026-11-15.json",
       "sha256": "aea948db82a58479bc8420e19d124effd54234549aa746c3a9c6e8c2120eab15",
       "bytes": 30011,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/test/resources/deepl-ocr-2026-11-17-no-game.json",
+      "sha256": "beb7adb214ed9f447922531578d2f8a3951add1052decf6626085495ed6ac93a",
+      "bytes": 44016,
       "category": "application"
     },
     {
@@ -31512,19 +31554,19 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "652f229dbf89d10939101eeaf867281fbc6f1b3b9492cd544faf80d7fafa390f",
+      "sha256": "bfff45d19e04ffe58d4502a10622263cde5cea873b99bc9c8c326d2c78927ee8",
       "bytes": 3305,
       "category": "retained-public-source"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "8db93d62aeca197f51fb1a5a8f45b2f176f23b804dc8747519f9d8cfae33d4b9",
+      "sha256": "a6b67a2ce558dbbc75375bf91278f0ec13f27db8b71dbf31ce62afcb8ed2f5f5",
       "bytes": 2048,
       "category": "retained-public-source"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "f7b0c4026679fd93c5afdfbd7ebeb3e22a003b96b8419d675ac8d044e7416405",
+      "sha256": "0dd01f6703ef2ca50835a359bac5f6068f4616d538ae5f827011cd2853f43271",
       "bytes": 1902,
       "category": "retained-public-source"
     },
@@ -31536,19 +31578,19 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "03dc121e9e3188f60db0ffd5d0b4ca34ce508cf17e1f3156e83ff99c6d17dc25",
+      "sha256": "6118d506ad4285b6acebddea74cb720715bf872c079c40c7b51a3333fbbcd7cb",
       "bytes": 4474,
       "category": "application"
     },
     {
       "path": "README.md",
-      "sha256": "e08bc0ff0ae2a4cc3d125e6fdf2353899da952061000b33c7ffc1cf345dcfcc8",
+      "sha256": "a98cfd0a5fb7a017e06f5dd05df5261df92ae6cf0d03c0794e4f851ee073153c",
       "bytes": 4990,
       "category": "retained-public-source"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "ded71afe60c89d65772534166a6e28240821051711e565c45a552acd35b1d05d",
+      "sha256": "5e52a2780002f3e59da88752a760f5df36af0d49b93f56f2bbdbd64c2f88b91a",
       "bytes": 5999,
       "category": "retained-public-source"
     },

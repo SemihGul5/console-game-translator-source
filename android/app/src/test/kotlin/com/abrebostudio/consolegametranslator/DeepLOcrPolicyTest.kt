@@ -120,6 +120,128 @@ class DeepLOcrPolicyTest {
         assertEquals(accepted.key, policy.observe(correct, .85f, "en", 67)?.key)
     }
 
+    @Test fun cloudFadeInWaitsForRepeatedTextRatherThanBuyingTheBestSingleGlitch() {
+        val policy = newPolicy()
+        val correct = "CESARE: Want me to show you how it's done?"
+        assertNull(policy.observe(correct, .85f, "en", 100, corroborateInitialCandidate = true))
+        assertNull(policy.observe("CESARE: Want me to show you how it's done:", .9f, "en", 100,
+            corroborateInitialCandidate = true))
+        assertEquals(correct, policy.observe(correct, .84f, "en", 100,
+            corroborateInitialCandidate = true)?.text)
+    }
+
+    @Test fun shortCloudNoiseNeedsTwoReadsButClearRepliesAndSlowSamplingStayImmediate() {
+        var now = 0L
+        val policy = DeepLOcrPolicy { now }
+        assertNull(policy.observe("tl", .41f, "en", 100, confirmWeakCandidate = true))
+        policy.discardPending()
+        now = 100
+        assertNull(policy.observe("tl", .41f, "en", 100, confirmWeakCandidate = true))
+        now = 200
+        assertNull(policy.observe("tl", .42f, "en", 100, confirmWeakCandidate = true))
+        now = 350
+        assertEquals("tl", policy.observe("tl", .42f, "en", 100, confirmWeakCandidate = true)?.text)
+        listOf("No!", "Go!", "I", "A").forEach {
+            assertEquals(it, policy.observe(it, .8f, "en", 100, confirmWeakCandidate = true)?.text)
+        }
+        policy.clear()
+        assertEquals("Yes!", policy.observe("Yes!", .5f, "en", 4_000,
+            confirmWeakCandidate = true)?.text)
+    }
+
+    @Test fun deepLDoesNotBuyUncorroboratedLowConfidenceFadeInButAcceptsTheClearReading() {
+        val policy = newPolicy()
+        listOf("Dort worry about it. It's gone. I'll call the insurance company.",
+            "RaDon't worty about it, It's gone. I'll call the insurance company.",
+            "Donttworry aboutit. It's gone. I'll call the insurance company.").forEach {
+            assertNull(policy.observe(it, .72f, "en", 100, confirmWeakCandidate = true))
+        }
+        val correct = "Don't worry about it. It's gone. I'll call the insurance company."
+        assertEquals(correct, policy.observe(correct, .8f, "en", 100, confirmWeakCandidate = true)?.text)
+    }
+
+    @Test fun stableWeakDialogueIsNotBlockedByAnEarlierSlightlyHigherConfidenceGlitch() {
+        var now = 0L
+        val policy = DeepLOcrPolicy { now }
+        val correct = "Meet us beside the old warehouse tonight."
+        assertNull(policy.observe(correct, .7f, "en", 100, confirmWeakCandidate = true))
+        now = 100
+        assertNull(policy.observe("Meet us beside the old warehause tonight.", .74f, "en", 100,
+            confirmWeakCandidate = true))
+        now = 200
+        assertNull(policy.observe(correct, .7f, "en", 100, confirmWeakCandidate = true))
+        now = 300
+        assertEquals(correct, policy.observe(correct, .7f, "en", 100, confirmWeakCandidate = true)?.text)
+    }
+
+    @Test fun droppedIInFutureContractionReusesTheSameCloudKeyInVerbContextsOnly() {
+        val correct = "ISABELLA: Not much of a compliment, but I'll take it."
+        val damaged = "ISABELLA: Not much of a compliment, but 'll take it."
+        assertEquals(deepLTextKey(correct, "en"), deepLTextKey(damaged, "en"))
+        assertEquals(damaged, deepLRequestText(damaged, "fr"))
+        listOf("The abbreviation 'll' is quoted.", "Don't change this word.", "We'll take it.")
+            .forEach { assertEquals(it, deepLRequestText(it, "en")) }
+    }
+
+    @Test fun geminiAlsoCorroboratesWeakShortFragmentsWithoutDelayingClearReplies() {
+        var now = 0L
+        val policy = DeepLOcrPolicy { now }
+        repeat(3) {
+            assertNull(policy.observe("tl", .41f, "en", 100,
+                corroborateInitialCandidate = true, confirmWeakCandidate = true))
+            now += 100
+        }
+        assertEquals("tl", policy.observe("tl", .41f, "en", 100,
+            corroborateInitialCandidate = true, confirmWeakCandidate = true)?.text)
+        assertEquals("Go!", policy.observe("Go!", .8f, "en", 100,
+            corroborateInitialCandidate = true, confirmWeakCandidate = true)?.text)
+    }
+
+    @Test fun duplicatedFirstPersonGlyphsDoNotCreateAnotherCloudTranslationForEitherProvider() {
+        listOf("deepl", "gemini").forEach { engine ->
+            val policy = newPolicy()
+            val correct = "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+            val variants = listOf(correct, correct.replace("I'm", "lI'm"), correct.replace("I'm", "II'm"),
+                correct.replace("I'm", "Il'm"), correct.replace("I'm", "|I'm"))
+            val keys = variants.flatMap { text -> List(6) { policy.observeCloud(text, .85f, "en", 100, engine)?.key } }
+                .filterNotNull().distinct()
+            assertEquals(engine, listOf(deepLTextKey(correct, "en")), keys)
+        }
+    }
+
+    @Test fun duplicatedGlyphRepairKeepsOtherLanguagesNamesAndDifferentContractionsDistinct() {
+        listOf("lI'm moving." to "I'm moving.", "II'd go now." to "I'd go now.",
+            "Il've been here." to "I've been here.", "lI'll take it." to "I'll take it.")
+            .forEach { (raw, expected) ->
+                assertEquals(expected, deepLRequestText(raw, "en"))
+                assertEquals(raw, deepLRequestText(raw, "fr"))
+            }
+        listOf("Meet William's friend.", "Li'm is a name.", "The ID card is here.", "He is ill.",
+            "O'Il'm is written here.", "I'll go.", "I'm going.", "I'd go.", "I've gone.")
+            .forEach { assertEquals(it, deepLRequestText(it, "en")) }
+        assertNotEquals(deepLTextKey("I'm going.", "en"), deepLTextKey("I'd go.", "en"))
+        assertNotEquals(deepLTextKey("I can go.", "en"), deepLTextKey("I can't go.", "en"))
+    }
+
+    @Test fun bothCloudProvidersKeepMeaningChangesAndClearShortReplies() {
+        listOf("deepl", "gemini").forEach { engine ->
+            listOf("Meet me at gate 12 beside the old warehouse." to "Meet me at gate 13 beside the old warehouse.",
+                "Take the left road and wait by the entrance." to "Take the right road and wait by the entrance.",
+                "Open the northern gate and wait for me." to "Do not open the northern gate and wait for me.",
+                "JOHN: I will wait for you outside the old house." to "JOAN: I will wait for you outside the old house.")
+                .forEach { (first, second) ->
+                    val policy = newPolicy()
+                    val keys = listOf(first, second).flatMap { text ->
+                        List(7) { policy.observeCloud(text, .85f, "en", 100, engine)?.key }
+                    }.filterNotNull().toSet()
+                    assertEquals(engine, setOf(deepLTextKey(first, "en"), deepLTextKey(second, "en")), keys)
+                }
+            val policy = newPolicy()
+            assertNull(policy.observeCloud("tl", .41f, "en", 100, engine))
+            assertEquals("Go!", policy.observeCloud("Go!", .85f, "en", 100, engine)?.text)
+        }
+    }
+
     @Test fun newUnconfirmedLineInvalidatesQueuedOldRequestAndTransientMissBreaksConfirmation() {
         val policy = newPolicy()
         val old = prime(policy, "The boat is gone. Call the insurance company.")

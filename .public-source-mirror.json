@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "kind": "anlaoyna-public-source-mirror",
-  "snapshot": "console-game-translator-source-v1.1.0-build11-20261117T124644106Z",
-  "sourceInventorySha256": "7c36817f2f5c75d2072c1e47fb66573e4d0d7eba63895d7844531c45bddbb772",
+  "snapshot": "console-game-translator-source-v1.1.1-build12-20261117T172521990Z",
+  "sourceInventorySha256": "c12f129adf0b41897c13c6ed10b81c2411ec15435259f82a2806cc439d3d0767",
   "files": [
     {
       "path": ".gitignore",
@@ -58,7 +58,7 @@
     },
     {
       "path": "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
-      "sha256": "2b7af4175626e1457540087a26f3ec3ab77d8a672ab2d978cad791a3efd68a94"
+      "sha256": "a4a87994ce498fa72efba5443e9da3b816bc7bdd9b0c5096cf182c8cc44785e6"
     },
     {
       "path": "android/app/src/main/cpp/audio-decoder.c",
@@ -141,6 +141,10 @@
       "sha256": "f62f27182db7fd17c21fd0fcca9f42ad4daedc229b43f80a7f430b236460535e"
     },
     {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflight.kt",
+      "sha256": "4901c8468e6deb8b4027dbd5e0f757c0756fb560bea7dac2d62e5e57b55977fc"
+    },
+    {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicy.kt",
       "sha256": "7f5ae4a8a798c4f4385a29b3f62992856d9e3da4f2d7ffdfa2159e6263cb36f5"
     },
@@ -154,7 +158,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLOcrPolicy.kt",
-      "sha256": "1fd10ea77d413073ca5740f665ca3c628d4450e7e817145c09ee0380c5d5aff0"
+      "sha256": "5af6c8469c194e0a68398eb53f86efc4a2e6a4f889a7ec8a53b7d49fe4555664"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLTranslationCache.kt",
@@ -242,7 +246,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrCorrectionTable.kt",
-      "sha256": "569170ba98c35451d0d523f64c81dc8ef61507b5f0b03ab2e26472e671bc45a8"
+      "sha256": "331e9762fa48d1909deac6f9204d0701244c857a95ff6ed81c199872f5e6ed39"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrFrameGeometry.kt",
@@ -250,7 +254,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrRecoveryPolicy.kt",
-      "sha256": "da05ba1520e41cbc1ef64c619d4f05995d7809cedf4833dff77c51a8aa197a45"
+      "sha256": "04c7cd5d8068adc25d5267450b60e56d680754b6dde83e7890eaf42706a7411e"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrRegionSettings.kt",
@@ -310,7 +314,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleOcrController.kt",
-      "sha256": "1a55b8a1279dc1aa486b694ecb1fc0a7ca817d9fdfabecaa8c18e42ac9699305"
+      "sha256": "8394af80fe8bde21b88699017bb32df270d10418f2065a024cf7c6bfb648635e"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleSourceSelector.kt",
@@ -351,6 +355,10 @@
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/TranslationForegroundService.kt",
       "sha256": "4ff5a0d0a6c8aa85d55906ac03b0f9beaea93390917a831aaabb2bf3ae5b3c61"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/UnmatchedOcrPreparation.kt",
+      "sha256": "cfb2a91b82baf613af23066a844b2a8b82a2b456a2debfd716a46a743b1dbe31"
     },
     {
       "path": "android/app/src/main/res/drawable/launch_background.xml",
@@ -457,6 +465,10 @@
       "sha256": "b01a4541a8144c15bc617bab7eb267c99fa1476368fbbda5a12cdbf4e316a34c"
     },
     {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflightTest.kt",
+      "sha256": "ad7bf6709e354917b7b1e8572292b9a9667751b92c705803f149aef9d318d98c"
+    },
+    {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicyTest.kt",
       "sha256": "5bc9b95395bce306f0dabd634a73ecc446da6b6c68edbdb0c3343a2b132dd635"
     },
@@ -466,11 +478,11 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLLoggedOcrReplayTest.kt",
-      "sha256": "0a7a98f2b99397592ca141a4b66f3995c86260208fc14a2ab45bfb824e5f6417"
+      "sha256": "0adf92f645fe8de04e6a9e7881b000c5d5e51a57c52a8e22a98dac63e1e7b55b"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLOcrPolicyTest.kt",
-      "sha256": "47339364fbd6dc1db89b28834f5404ba029aefeae2217224c267698f28a69386"
+      "sha256": "c2dec735f22786ac7f9637df627257b84e0da0167b627f787b993d4f58b3f669"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLTranslationCacheTest.kt",
@@ -491,6 +503,10 @@
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/FreeTrialPolicyTest.kt",
       "sha256": "4da0985bb8221368b463208db66ab9f297125275b0bac5e9f8e70fac6581680f"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameLibraryLiveFallbackTest.kt",
+      "sha256": "9d1e32ca7b8e1581b01e5a06ce145ccb303946141861fb0e753c91cea5cfc204"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameSubtitleEventTest.kt",
@@ -526,7 +542,7 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GeminiLoggedOcrReplayTest.kt",
-      "sha256": "bc9ffe1224776a16493a558bee6d59828c36fadb6b2359063ed1dc15ff596769"
+      "sha256": "23edf21929dd9209ff1c9f96e08907396364a6fc208eaee6c9311fdd0bd2b1d3"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GeminiTranslationEngineTest.kt",
@@ -546,7 +562,7 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrCorrectionTableTest.kt",
-      "sha256": "640c6d58c18613f8a4007a2738b132e8f4184185f2ee3b702570d938bf35edaa"
+      "sha256": "705b079252130dd852a4015e42ef867b9689c823b968f79fa9b2ae18420a0b70"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrPipelineTimingTest.kt",
@@ -554,7 +570,7 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrRecoveryPolicyTest.kt",
-      "sha256": "eb79d9a15cc7cc63fbd921fcdccf42a0909d87c8d7bb74db8e4a952349558cde"
+      "sha256": "ac05b45756a77ef48a5a7186c206d07c794d133c521cfe43dd1122794cc936a3"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrRegionSettingsTest.kt",
@@ -589,12 +605,24 @@
       "sha256": "6eda43d09075aef2d5ecb05c0a20619fd229e557dc6e60bfe7d9a1ec2f194120"
     },
     {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/UnmatchedOcrPreparationTest.kt",
+      "sha256": "4ed8f44f4db42d85dfa262ddf7c22b779331ef8768e7d14f422499557840e2d0"
+    },
+    {
+      "path": "android/app/src/test/resources/cloud-ocr-2026-11-17-followup.json",
+      "sha256": "58f4b1c09a15fb87eee713d8befd6276adb48936025cb168a83acc1a361272e3"
+    },
+    {
       "path": "android/app/src/test/resources/deepl-ocr-2026-11-15-followup.json",
       "sha256": "ba182c016bd26377bbafbd5796b11c14203b79da66adb515f4bd28a3158dc9d1"
     },
     {
       "path": "android/app/src/test/resources/deepl-ocr-2026-11-15.json",
       "sha256": "aea948db82a58479bc8420e19d124effd54234549aa746c3a9c6e8c2120eab15"
+    },
+    {
+      "path": "android/app/src/test/resources/deepl-ocr-2026-11-17-no-game.json",
+      "sha256": "beb7adb214ed9f447922531578d2f8a3951add1052decf6626085495ed6ac93a"
     },
     {
       "path": "android/app/src/test/resources/game-json-display.json",
@@ -21010,15 +21038,15 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "652f229dbf89d10939101eeaf867281fbc6f1b3b9492cd544faf80d7fafa390f"
+      "sha256": "bfff45d19e04ffe58d4502a10622263cde5cea873b99bc9c8c326d2c78927ee8"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "8db93d62aeca197f51fb1a5a8f45b2f176f23b804dc8747519f9d8cfae33d4b9"
+      "sha256": "a6b67a2ce558dbbc75375bf91278f0ec13f27db8b71dbf31ce62afcb8ed2f5f5"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "f7b0c4026679fd93c5afdfbd7ebeb3e22a003b96b8419d675ac8d044e7416405"
+      "sha256": "0dd01f6703ef2ca50835a359bac5f6068f4616d538ae5f827011cd2853f43271"
     },
     {
       "path": "pubspec.lock",
@@ -21026,11 +21054,11 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "03dc121e9e3188f60db0ffd5d0b4ca34ce508cf17e1f3156e83ff99c6d17dc25"
+      "sha256": "6118d506ad4285b6acebddea74cb720715bf872c079c40c7b51a3333fbbcd7cb"
     },
     {
       "path": "README.md",
-      "sha256": "e08bc0ff0ae2a4cc3d125e6fdf2353899da952061000b33c7ffc1cf345dcfcc8"
+      "sha256": "a98cfd0a5fb7a017e06f5dd05df5261df92ae6cf0d03c0794e4f851ee073153c"
     },
     {
       "path": "release/checks.json",
@@ -21038,7 +21066,7 @@
     },
     {
       "path": "release/manual-sync.json",
-      "sha256": "eeccaed16e118b54fe3205417ab0756a62a9d38862ad884e0c991d910511e264"
+      "sha256": "2a21760aadb72ceb6a147b1301ecd2a3b5b2d87aca1ab3f8456b9cb7c2f9e1ab"
     },
     {
       "path": "release/maven-dependencies.json",
@@ -21062,7 +21090,7 @@
     },
     {
       "path": "release/publication.json",
-      "sha256": "628f92c1626e4bc19d7a271161c42dc99583aa5cd6e18d152f380c02d80eaa72"
+      "sha256": "99749e212d4a9dc6ae8d2a8ab99daab7cedecb7f784dbff820cdce4fdc0017eb"
     },
     {
       "path": "release/receiver-source-check.json",
@@ -21074,23 +21102,23 @@
     },
     {
       "path": "release/SHA256SUMS",
-      "sha256": "7c36817f2f5c75d2072c1e47fb66573e4d0d7eba63895d7844531c45bddbb772"
+      "sha256": "c12f129adf0b41897c13c6ed10b81c2411ec15435259f82a2806cc439d3d0767"
     },
     {
       "path": "release/snapshot-files.json",
-      "sha256": "4d2ffc8605acbd23febfc3cfa1464db556a20b80fa5504981d5e9f31fcade86d"
+      "sha256": "e7f27abb95e6e6cbcbc390cfc3c9086493a9a64cbb5d7a5beab45280d7455141"
     },
     {
       "path": "release/source-sync.json",
-      "sha256": "5a0dabbb866681b270f984d9b4288252d40bb531ff8c19f82c29c592b52f6cea"
+      "sha256": "00cbfb00d379bc66c377921bf3460879935b8457e279dec03a6095aca9919e01"
     },
     {
       "path": "release/validation.json",
-      "sha256": "7ad7a369a44b5ee3a11af6723cd81ac7cdfd10c47d953c25b1099e343441b839"
+      "sha256": "de9e20f5a7cf260c9afb4c3a1094ef372269205d39fd3cbb4a83d5bc1fbd0f88"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "ded71afe60c89d65772534166a6e28240821051711e565c45a552acd35b1d05d"
+      "sha256": "5e52a2780002f3e59da88752a760f5df36af0d49b93f56f2bbdbd64c2f88b91a"
     },
     {
       "path": "samsung_tv/app.js",

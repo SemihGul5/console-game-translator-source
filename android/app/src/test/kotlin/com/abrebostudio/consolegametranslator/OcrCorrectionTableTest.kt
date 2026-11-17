@@ -10,10 +10,16 @@ class OcrCorrectionTableTest {
     private val table = OcrCorrectionTable.parse(json)
     private fun correct(text: String, source: String = "en", selected: Boolean = false) = table.correct(text, source, selected)
 
-    @Test fun aSelectedGameBypassesAllTableRulesEvenIfItsPackHasNoMatchingLine() {
+    @Test fun aSelectedGameWithoutAConfirmedLookupMissBypassesTableRules() {
         val text = "Im guessing th1s is hisroom. l'd come down and waIk."
         assertEquals(OcrCorrectionTable.Result(text), correct(text, selected = true))
         assertNotEquals(text, correct(text).text)
+    }
+
+    @Test fun aConfirmedSelectedGameMissGetsTheSameCorrectionsAsNoGame() {
+        val text = "Im going to the harbour."
+        assertEquals(correct(text).text, table.correct(text, "en", true, gameLookupMiss = true).text)
+        assertEquals(text, table.correct(text, "en", true, gameLookupMiss = false).text)
     }
 
     @Test fun corruptedGlyphsAndContractionsShareOneTextBeforeAnyTranslationEngine() {
@@ -22,6 +28,45 @@ class OcrCorrectionTableTest {
         assertEquals("I'd come down. I'll call. I've got this. It's all good.",
             correct("Id come down. \"ll call. l've got this. Jt's all good.").text)
         assertEquals("a drink in his room", correct("a dririk in his roorn").text)
+    }
+
+    @Test fun duplicatedPronounsAndBrokenContractionsAreRepairedInOnePass() {
+        assertEquals("I'm moving. I've seen it. I'd go. I'll call.",
+            correct("lI'm moving. II've seen it. Il'd go. |I'll call.").text)
+        assertEquals("I'm looking at it. I'm really sure.", correct("lI'm looklng at it. II'rn reaIIy sure.").text)
+        assertEquals("I'm here. I've gone. I'd go. I'll call.", correct("I' m here. I 've gone. l' d go. I' ll call.").text)
+        assertEquals("We'll go. THEY'LL go. You'll go.", correct("We'Il go. THEY'1L go. You'lI go.").text)
+        assertEquals("He doesn't know. She wasn't here. It isn't true. They couldn't go.",
+            correct("He doesnIt know. She wasn1t here. It isnlt true. They couldnIt go.").text)
+    }
+
+    @Test fun addedVariantsKeepBoundariesNamesNumbersLanguagesAndOriginalJsonReadings() {
+        val protected = "William's O'Il'm Li'm xIl'm Il'm_tag Il'm123 éIl'm 1d 2h gate 12 left not right"
+        assertEquals(protected, correct(protected).text)
+        val raw = "lI'm moving. We'Il go. It isnIt true."
+        assertEquals(raw, correct(raw, selected = true).text)
+        for (language in listOf("tr", "ar", "id", "th", "ru", "hi")) assertEquals(raw, correct(raw, language).text)
+        val addresses = "https://example.com/lI'm www.we'Il.com isnIt@example.com"
+        assertEquals(addresses, correct(addresses).text)
+        assertEquals("IsnIt is a name. WasnIt is listed.", correct("IsnIt is a name. WasnIt is listed.").text)
+        assertEquals("I'm not going. I am going. We'll wait. Well wait. We're ready. Were ready.",
+            correct("lI'm not going. I am going. We'Il wait. Well wait. We're ready. Were ready.").text)
+    }
+
+    @Test fun furtherWordAndJoinedPhraseVariantsUseTheirRequiredNeighbours() {
+        assertEquals("I remember. We understand. You believe. I listen. We follow.",
+            correct("I rememher. We understancl. You beIieve. I Iisten. We foIlow.").text)
+        assertEquals("I'm moving. It is important. A minute. The problem.",
+            correct("lI'm movlng. It is irnportant. A rninute. The probIem.").text)
+        assertEquals("We need to go. I want to wait. I'm going to leave. Don't worry about it.",
+            correct("We needto go. I wantto wait. I'm goingto leave. Donttworry aboutit.").text)
+        assertEquals("inthe code onthe label alot later", correct("inthe code onthe label alot later").text)
+        assertEquals("in the room, on the road, a lot of trouble", correct("inthe room, onthe road, alot of trouble").text)
+        assertEquals("Rememher is a name. Corning is a company. The Corning Museum. Gate 12, not 13.",
+            correct("Rememher is a name. Corning is a company. The Corning Museum. Gate 12, not 13.").text)
+        val text = "I rememher. We needto go. Donttworry aboutit."
+        assertEquals(text, correct(text, selected = true).text)
+        assertEquals(text, correct(text, source = "tr").text)
     }
 
     @Test fun ambiguousRealWordsNeedTheWhitelistedContext() {

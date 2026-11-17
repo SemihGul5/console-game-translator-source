@@ -1,6 +1,6 @@
 {
   "preparedOn": "2026-11-17",
-  "filesChecked": 13201,
+  "filesChecked": 13208,
   "integrityAndPatternScanPassed": true,
   "publicationStatus": "prepared-not-published",
   "releaseReady": false,
@@ -9,7 +9,7 @@
     "test/fixtures/tv_tls/b-key.pem"
   ],
   "problems": [],
-  "developmentSourceHashesRechecked": 5185,
+  "developmentSourceHashesRechecked": 5192,
   "productionAppModified": false,
   "binarySourcePairingVerified": false,
   "publicRepositoryPublished": false

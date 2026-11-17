@@ -976,7 +976,9 @@ internal class SubtitleOcrController(
                         }
                     }
                         .sortedWith(compareBy<OcrLineCandidate> { it.top }.thenBy { it.left })
-                    filterDialogueOcrLines(candidates, rejectTimerGlyphs = !selectedGame && gameTranslationMemory == null)
+                    // This callback is reached only after the normal full/block JSON lookup misses.
+                    filterDialogueOcrLines(candidates, rejectTimerGlyphs = canPrepareUnmatchedOcr(
+                        selectedGame || gameTranslationMemory != null, memory != null, jsonMatched = false))
                 } else null
                 val text = acceptedLines?.let { accepted ->
                     normalizeOcrText(accepted.joinToString(" ") { it.rawText })
@@ -990,36 +992,52 @@ internal class SubtitleOcrController(
                 SystemClock.elapsedRealtime() - lookupStartedAt)
         }
         fun release() { owned.forEach { if (!it.isRecycled) it.recycle() } }
-        fun currentRecoveryAllowed() = !closed && enabled && !selectedGame && gameTranslationMemory == null &&
+        fun currentFrameContext() = !closed && enabled &&
             recoveryRevision.get() == recoveryEpoch && deepLRevision.get() == frameRevision
+        fun currentRecoveryAllowed(value: Evaluated) = currentFrameContext() && canPrepareUnmatchedOcr(
+            selectedGame || gameTranslationMemory != null,
+            value.memory != null && value.memory === matchingGameMemory(),
+            value.selected.memoryMatch != null,
+        )
         fun finish(value: Evaluated, chosenMode: Int, visualReuse: Boolean) {
-            val ocrMillis = SystemClock.elapsedRealtime() - ocrStartedAt
             // A game selected while an alternative was running keeps JSON priority.
             val current = if (!debugOnly && value.memory !== matchingGameMemory()) evaluate(value.result) else value
-            val selected = current.selected
-            val correction = if (debugOnly || selectedGame || gameTranslationMemory != null || selected.memoryMatch != null)
-                OcrCorrectionTable.Result(selected.text)
-            else ocrCorrections.correct(selected.text, sourceLanguageCode, gameSelected = false)
-            val text = correction.text
+            val hasGame = selectedGame || gameTranslationMemory != null
+            var extraLookupMillis = 0L
+            val prepared = if (debugOnly || !currentFrameContext()) PreparedOcrRead(current.selected)
+            else prepareUnmatchedOcr(current.selected, hasGame, current.memory != null,
+                correct = { text -> ocrCorrections.correct(text, sourceLanguageCode,
+                    gameSelected = hasGame, gameLookupMiss = current.memory != null) },
+                findGameTranslation = { text ->
+                    val startedAt = SystemClock.elapsedRealtime()
+                    try { current.memory?.find(text) }
+                    finally { extraLookupMillis += SystemClock.elapsedRealtime() - startedAt }
+                })
+            val selected = prepared.read
+            val text = selected.text
             val confidence = selected.confidence
-            if (visualKey != null && !visualReuse && currentRecoveryAllowed())
+            val ocrMillis = SystemClock.elapsedRealtime() - ocrStartedAt
+            val lookupMillis = current.lookupMillis + extraLookupMillis
+            // Also retain a recovery result which found JSON, without adding work to primary JSON hits.
+            if (visualKey != null && !visualReuse && currentFrameContext() &&
+                (currentRecoveryAllowed(current) || (attempts > 0 && selected.memoryMatch != null)))
                 visualCache?.remember(visualKey, SystemClock.elapsedRealtime(), current.result)
             if (!debugOnly) logLookup(regionIndex, text, current.memory, selected.memoryMatch,
-                copyMillis, ocrMillis, current.lookupMillis, visualReuse)
+                copyMillis, ocrMillis, lookupMillis, visualReuse)
             if (!debugOnly) logOcrResult(regionIndex, current.rawText, text, confidence, bitmap.width, bitmap.height,
                 copyMillis, cropMillis, totalPreprocessMillis, chosenMode, dialogueFilter, ocrMillis)
             val details = mapOf(
                 "copyMs" to copyMillis, "cropMs" to cropMillis, "preprocessMs" to totalPreprocessMillis,
                 "preprocessingMode" to chosenMode, "preprocessingModeName" to preprocessingModeName(chosenMode),
-                "dialogueFilter" to dialogueFilter, "ocrMs" to ocrMillis, "jsonLookupMs" to current.lookupMillis,
+                "dialogueFilter" to dialogueFilter, "ocrMs" to ocrMillis, "jsonLookupMs" to lookupMillis,
                 "visualReuse" to visualReuse, "cropWidth" to bitmap.width, "cropHeight" to bitmap.height,
                 "ocrConfidence" to confidence, "recoveryAttempts" to attempts,
-                "ocrCorrections" to correction.replacements,
+                "ocrCorrections" to prepared.corrections,
             )
             if (attempts > 0 && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
                 "OCR_RECOVERY area=${regionIndex + 1} attempts=$attempts primaryMode=$preprocessingMode chosenMode=$chosenMode latencyMs=$ocrMillis")
-            if (correction.replacements > 0 && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
-                "OCR_CORRECTION area=${regionIndex + 1} replacements=${correction.replacements} tableVersion=1")
+            if (prepared.corrections > 0 && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
+                "OCR_CORRECTION area=${regionIndex + 1} replacements=${prepared.corrections} tableVersion=1")
             release()
             if (debugOnly) {
                 if (releaseCaptureWhenDebugDone) finishCapture()
@@ -1034,8 +1052,9 @@ internal class SubtitleOcrController(
             if (visualKey != null && !visualReuse) visualCache?.remember(visualKey, SystemClock.elapsedRealtime(), result)
             val primary = evaluate(result)
             val raw = recoveryRaw
-            if (raw == null || !currentRecoveryAllowed() || !ocrRecovery.begin(primary.recoveryRead(),
-                    gameSelected = selectedGame || gameTranslationMemory != null, visualReuse = visualReuse, debugOnly = debugOnly)) {
+            if (raw == null || !currentRecoveryAllowed(primary) || !ocrRecovery.begin(primary.recoveryRead(),
+                    gameSelected = selectedGame || gameTranslationMemory != null, visualReuse = visualReuse,
+                    debugOnly = debugOnly, gameLookupMiss = primary.memory != null)) {
                 finish(primary, preprocessingMode, visualReuse)
                 return
             }
@@ -1044,8 +1063,8 @@ internal class SubtitleOcrController(
             val recoveryStartedAt = SystemClock.elapsedRealtime()
             val alternatives = ocrRecovery.modes(preprocessingMode)
             fun next(index: Int) {
-                if (index >= alternatives.size || !currentRecoveryAllowed() || !ocrRecovery.withinBudget(recoveryStartedAt)) {
-                    val chosen = if (currentRecoveryAllowed())
+                if (index >= alternatives.size || !currentRecoveryAllowed(primary) || !ocrRecovery.withinBudget(recoveryStartedAt)) {
+                    val chosen = if (currentRecoveryAllowed(primary))
                         ocrRecovery.best(values.map { it.recoveryRead() }, sourceLanguageCode) else 0
                     finish(values[chosen], modes[chosen], visualReuse)
                     return
@@ -1060,7 +1079,12 @@ internal class SubtitleOcrController(
                     catch (_: Exception) { next(index + 1); return }
                 task
                     .addOnSuccessListener(recognitionExecutor) {
-                        values.add(evaluate(it)); modes.add(mode); next(index + 1)
+                        val evaluated = evaluate(it)
+                        if (evaluated.selected.memoryMatch != null) {
+                            finish(evaluated, mode, visualReuse)
+                        } else {
+                            values.add(evaluated); modes.add(mode); next(index + 1)
+                        }
                     }
                     .addOnFailureListener(recognitionExecutor) { next(index + 1) }
             }
@@ -1094,7 +1118,8 @@ internal class SubtitleOcrController(
     private fun recognizeRegions(bitmaps: List<Bitmap>, indices: List<Int>, settings: List<OcrRegionSettings>, copyMs: Long, cropMs: Long) {
         if (bitmaps.isEmpty() || closed) { finishCapture(); return }
         val remaining = AtomicInteger(bitmaps.size)
-        val recoveryRegion = ocrRecovery.region(indices, selectedGame || gameTranslationMemory != null)
+        val recoveryRegion = ocrRecovery.region(indices, selectedGame || gameTranslationMemory != null,
+            gameLookupReady = matchingGameMemory() != null)
         bitmaps.forEachIndexed { offset, crop ->
             val index = indices[offset]
             // Process and submit each crop immediately. A slow enhancement on a
@@ -1154,8 +1179,11 @@ internal class SubtitleOcrController(
             return
         }
         // Punctuation-only detections (for example a subtitle separator ':')
-        // behave like an empty OCR result and never reach translation.
-        if (text.isEmpty() || text.none { it.isLetterOrDigit() }) {
+        // behave like an empty OCR result and never reach translation. Cloud
+        // clocks/numbers also take this path even with dialogue filtering off,
+        // before either cache lookup or API scheduling. JSON already returned above.
+        if (text.isEmpty() || text.none { it.isLetterOrDigit() } ||
+            (isCloudEngine() && isNonLinguisticCloudOcr(text))) {
             state.deepLOcrPolicy.discardPending()
             state.localOcrPolicy.discardPending()
             expireVisibleSubtitleIfNeeded(state, index, now)
@@ -1213,9 +1241,9 @@ internal class SubtitleOcrController(
             return
         }
         val deepLRead = if (isCloudEngine()) {
-            state.deepLOcrPolicy.observe(text, confidence, sourceLanguageCode,
+            state.deepLOcrPolicy.observeCloud(text, confidence, sourceLanguageCode,
                 regionSettings.getOrNull(index)?.sampleIntervalMillis ?: sampleIntervalMillis,
-                corroborateInitialCandidate = translationEngine == "gemini")
+                engine = translationEngine)
                 ?: run {
                     if (state.deepLOcrPolicy.requestKey != state.sourceKey) {
                         // OCR has already moved to a different, unconfirmed line.

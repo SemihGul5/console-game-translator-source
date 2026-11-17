@@ -1,0 +1,887 @@
+[
+  {
+    "time": "19:44:19.725",
+    "confidence": 0.77,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:22.467",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:22.599",
+    "confidence": 0.79,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:22.966",
+    "confidence": 0.6,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:23.125",
+    "confidence": 0.66,
+    "text": "00:14 00:14 351"
+  },
+  {
+    "time": "19:44:23.182",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:23.258",
+    "confidence": 0.76,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:23.406",
+    "confidence": 0.74,
+    "text": "00:14 O0:14"
+  },
+  {
+    "time": "19:44:23.517",
+    "confidence": 0.77,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:23.689",
+    "confidence": 0.75,
+    "text": "00:14 00:14 35]"
+  },
+  {
+    "time": "19:44:23.767",
+    "confidence": 0.79,
+    "text": "00:14 00:14 35"
+  },
+  {
+    "time": "19:44:23.866",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:23.977",
+    "confidence": 0.79,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:24.131",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:24.170",
+    "confidence": 0.73,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:24.253",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:24.386",
+    "confidence": 0.78,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:24.827",
+    "confidence": 0.79,
+    "text": "00:14 01:22"
+  },
+  {
+    "time": "19:44:24.867",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:25.205",
+    "confidence": 0.55,
+    "text": "o1:22"
+  },
+  {
+    "time": "19:44:25.394",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:25.912",
+    "confidence": 0.61,
+    "text": "o1:22"
+  },
+  {
+    "time": "19:44:25.967",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:26.069",
+    "confidence": 0.6,
+    "text": "01:22"
+  },
+  {
+    "time": "19:44:26.183",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:26.268",
+    "confidence": 0.64,
+    "text": "o1:22"
+  },
+  {
+    "time": "19:44:26.356",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:26.525",
+    "confidence": 0.77,
+    "text": "00:14 00:14"
+  },
+  {
+    "time": "19:44:27.767",
+    "confidence": 0.75,
+    "text": "00:14 O0:14"
+  },
+  {
+    "time": "19:44:27.928",
+    "confidence": 0.75,
+    "text": "01:22 00:14"
+  },
+  {
+    "time": "19:44:27.986",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:28.230",
+    "confidence": 0.55,
+    "text": "o1:22"
+  },
+  {
+    "time": "19:44:28.267",
+    "confidence": 0.53,
+    "text": "01:22"
+  },
+  {
+    "time": "19:44:28.366",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:28.649",
+    "confidence": 0.8,
+    "text": "00:14 01:22"
+  },
+  {
+    "time": "19:44:28.812",
+    "confidence": 0.71,
+    "text": "TORRISIl MAFIOSO: ldiota."
+  },
+  {
+    "time": "19:44:28.869",
+    "confidence": 0.76,
+    "text": "TORRISI MAFIOSO: ldiota."
+  },
+  {
+    "time": "19:44:29.635",
+    "confidence": 0.76,
+    "text": "TORRISI MAFIOSo: ldiota."
+  },
+  {
+    "time": "19:44:29.768",
+    "confidence": 0.77,
+    "text": "TORRISI MAFIOSO: ldiot."
+  },
+  {
+    "time": "19:44:29.855",
+    "confidence": 0.77,
+    "text": "TORRISI MAFIOS: ldiot."
+  },
+  {
+    "time": "19:44:29.935",
+    "confidence": 0.76,
+    "text": "TORRISI MAFIOSO: ldiota."
+  },
+  {
+    "time": "19:44:30.249",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:31.384",
+    "confidence": 0.79,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:31.820",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going!I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:31.885",
+    "confidence": 0.83,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:32.013",
+    "confidence": 0.81,
+    "text": "CESARE: Come on, let's get going!I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:32.111",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:32.416",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going!I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:32.494",
+    "confidence": 0.81,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:32.649",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going!I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:32.716",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:33.932",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going!I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:34.017",
+    "confidence": 0.81,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:36.500",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going!I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:36.588",
+    "confidence": 0.81,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:36.690",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going!I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:36.786",
+    "confidence": 0.82,
+    "text": "CESARE: Come on, let's get going! I need another drink. I need a woman!"
+  },
+  {
+    "time": "19:44:37.664",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:37.793",
+    "confidence": 0.88,
+    "text": "ENZO: Alright, alright. Where to again?"
+  },
+  {
+    "time": "19:44:41.513",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:41.648",
+    "confidence": 0.87,
+    "text": "LEO: You forgot already? San Celeste, and don't spare the horses."
+  },
+  {
+    "time": "19:44:46.677",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:50.520",
+    "confidence": 0.4,
+    "text": ":"
+  },
+  {
+    "time": "19:44:50.607",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:50.728",
+    "confidence": 0.38,
+    "text": ":"
+  },
+  {
+    "time": "19:44:50.894",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:51.345",
+    "confidence": 0.85,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:44:51.455",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:51.544",
+    "confidence": 0.85,
+    "text": "LEO: Sit down, idiota!"
+  },
+  {
+    "time": "19:44:51.875",
+    "confidence": 0.83,
+    "text": "LEO: Sit down, idio ta!"
+  },
+  {
+    "time": "19:44:51.949",
+    "confidence": 0.85,
+    "text": "LEO: Sit down, idiota!"
+  },
+  {
+    "time": "19:44:52.449",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:44:53.174",
+    "confidence": 0.81,
+    "text": "CESARE: So, you're in mine boy. How does it feel? 8868"
+  },
+  {
+    "time": "19:44:53.269",
+    "confidence": 0.86,
+    "text": "CESARE: So, you're in mine boy. How does it feel?"
+  },
+  {
+    "time": "19:44:53.470",
+    "confidence": 0.86,
+    "text": "CESARE: So, you're in mine boy.How does it feel?"
+  },
+  {
+    "time": "19:44:53.560",
+    "confidence": 0.85,
+    "text": "CESARE: So, you're in mine boy. How does it feel?"
+  },
+  {
+    "time": "19:44:53.680",
+    "confidence": 0.81,
+    "text": "CESARE: So, you're in mine boy. How does it feel? 8880"
+  },
+  {
+    "time": "19:44:53.768",
+    "confidence": 0.84,
+    "text": "CESARE: So, you're in mine boy. How does it feel? 8868"
+  },
+  {
+    "time": "19:44:53.970",
+    "confidence": 0.82,
+    "text": "CESARE: So, you're in mine boy. How does it feel? 88681"
+  },
+  {
+    "time": "19:44:54.088",
+    "confidence": 0.86,
+    "text": "CESARE: So, you're in mine boy. How does it feel?"
+  },
+  {
+    "time": "19:44:54.142",
+    "confidence": 0.46,
+    "text": "9988"
+  },
+  {
+    "time": "19:44:54.342",
+    "confidence": 0.85,
+    "text": "ENZO: Good. Really good."
+  },
+  {
+    "time": "19:44:54.406",
+    "confidence": 0.8,
+    "text": "ENZO: Good. Really good. 8860"
+  },
+  {
+    "time": "19:44:54.511",
+    "confidence": 0.77,
+    "text": "ENZO: Good. Really good. 868"
+  },
+  {
+    "time": "19:44:54.581",
+    "confidence": 0.77,
+    "text": "ENZO: Good. Really good. 8858"
+  },
+  {
+    "time": "19:44:54.714",
+    "confidence": 0.75,
+    "text": "ENZO: Good. Really good. 8868"
+  },
+  {
+    "time": "19:44:54.817",
+    "confidence": 0.84,
+    "text": "ENZO: Good. Really good."
+  },
+  {
+    "time": "19:44:56.648",
+    "confidence": 0.76,
+    "text": "888 ENZO: Good. Really good."
+  },
+  {
+    "time": "19:44:56.744",
+    "confidence": 0.45,
+    "text": "8868"
+  },
+  {
+    "time": "19:44:56.875",
+    "confidence": 0.88,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:44:56.996",
+    "confidence": 0.87,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck yu want."
+  },
+  {
+    "time": "19:44:57.189",
+    "confidence": 0.87,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:44:58.582",
+    "confidence": 0.82,
+    "text": "3888 CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:44:58.704",
+    "confidence": 0.88,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:45:00.117",
+    "confidence": 0.84,
+    "text": "8888 CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:45:00.290",
+    "confidence": 0.86,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:45:01.224",
+    "confidence": 0.86,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck yu want."
+  },
+  {
+    "time": "19:45:01.351",
+    "confidence": 0.86,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:45:01.750",
+    "confidence": 0.86,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck yu want."
+  },
+  {
+    "time": "19:45:01.853",
+    "confidence": 0.85,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck you want."
+  },
+  {
+    "time": "19:45:02.346",
+    "confidence": 0.86,
+    "text": "CESARE: Damn right, it's good. Now you can do whatever the fuck yu want."
+  },
+  {
+    "time": "19:45:02.452",
+    "confidence": 0.85,
+    "text": "LEO: Sit down, idiota!"
+  },
+  {
+    "time": "19:45:02.659",
+    "confidence": 0.83,
+    "text": "LEO: Sit down, idio ta!"
+  },
+  {
+    "time": "19:45:02.746",
+    "confidence": 0.85,
+    "text": "LEO: Sit down, idiota!"
+  },
+  {
+    "time": "19:45:03.197",
+    "confidence": 0.83,
+    "text": "LEO: Sit down, idio ta!"
+  },
+  {
+    "time": "19:45:03.251",
+    "confidence": 0.81,
+    "text": "LEO: Sit down, idiota!"
+  },
+  {
+    "time": "19:45:03.558",
+    "confidence": 0.83,
+    "text": "LEO: Sit down, idio ta!"
+  },
+  {
+    "time": "19:45:03.674",
+    "confidence": 0.84,
+    "text": "LEO: Sit down, idiota!"
+  },
+  {
+    "time": "19:45:04.148",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:04.285",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:04.399",
+    "confidence": 0.84,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:04.486",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:06.515",
+    "confidence": 0.84,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:06.638",
+    "confidence": 0.84,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:06.797",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:06.929",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:07.029",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:07.174",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:09.701",
+    "confidence": 0.84,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:09.811",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:10.875",
+    "confidence": 0.86,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:10.978",
+    "confidence": 0.86,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:11.049",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:11.131",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:11.461",
+    "confidence": 0.84,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:11.648",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:11.726",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:11.794",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:12.273",
+    "confidence": 0.86,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:12.423",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:12.522",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:12.616",
+    "confidence": 0.85,
+    "text": "CESARE: Hey! Keep those dainty hands to yourself and show some respect. I'll be boss of this crew one day."
+  },
+  {
+    "time": "19:45:12.836",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:12.923",
+    "confidence": 0.85,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:12.995",
+    "confidence": 0.85,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:13.139",
+    "confidence": 0.85,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:13.249",
+    "confidence": 0.87,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:13.526",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:13.707",
+    "confidence": 0.85,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:14.238",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:14.354",
+    "confidence": 0.87,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:14.541",
+    "confidence": 0.84,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:14.765",
+    "confidence": 0.85,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:14.868",
+    "confidence": 0.85,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:15.091",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:15.154",
+    "confidence": 0.85,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:15.486",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:15.666",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:15.766",
+    "confidence": 0.84,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:16.073",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:16.166",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:16.281",
+    "confidence": 0.84,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:16.392",
+    "confidence": 0.84,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:16.761",
+    "confidence": 0.86,
+    "text": "LEO: Bedda Matri. If things ever get that bad, lI'm moving to Palermo."
+  },
+  {
+    "time": "19:45:16.864",
+    "confidence": 0.87,
+    "text": "LEO: Bedda Matri. If things ever get that bad, I'm moving to Palermo."
+  },
+  {
+    "time": "19:45:17.255",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:18.465",
+    "confidence": 0.88,
+    "text": "VILLAGER: Do you know what time it is?!"
+  },
+  {
+    "time": "19:45:20.537",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:25.598",
+    "confidence": 0.48,
+    "text": ":"
+  },
+  {
+    "time": "19:45:25.731",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:28.251",
+    "confidence": 0.88,
+    "text": "LEO: Can't you just go behind a bush like everyone else?"
+  },
+  {
+    "time": "19:45:29.047",
+    "confidence": 0.87,
+    "text": "LEO: Can't you just go behinda bush like everyone else?"
+  },
+  {
+    "time": "19:45:29.177",
+    "confidence": 0.88,
+    "text": "LEO: Can't you just go behind a bush like everyone else?"
+  },
+  {
+    "time": "19:45:29.231",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:29.361",
+    "confidence": 0.8,
+    "text": "CESARE: I'm not everyone else. And neither are you, So don't act like them."
+  },
+  {
+    "time": "19:45:29.962",
+    "confidence": 0.8,
+    "text": "CESARE: I'm not everyone else. And neither are you, so don't act like them."
+  },
+  {
+    "time": "19:45:30.372",
+    "confidence": 0.83,
+    "text": "CESARE: I'm not everyone else. And neither are you, So don't act like them."
+  },
+  {
+    "time": "19:45:30.695",
+    "confidence": 0.8,
+    "text": "CESARE: I'm not everyone else. And neither are you, so don't act like them."
+  },
+  {
+    "time": "19:45:30.985",
+    "confidence": 0.83,
+    "text": "CESARE: I'm not everyone else. And neither are you, So don't act like them."
+  },
+  {
+    "time": "19:45:31.097",
+    "confidence": 0.8,
+    "text": "CESARE: not everyone else. And neither are you, so don't act like them."
+  },
+  {
+    "time": "19:45:31.192",
+    "confidence": 0.83,
+    "text": "CESARE: I'm not everyone else. And neither are you, So don't act like them."
+  },
+  {
+    "time": "19:45:32.492",
+    "confidence": 0.58,
+    "text": "CESARE:Im noteveryone else /And neither are you, So don't act like them"
+  },
+  {
+    "time": "19:45:32.510",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:33.925",
+    "confidence": 0.52,
+    "text": "01:22"
+  },
+  {
+    "time": "19:45:33.959",
+    "confidence": 0.0,
+    "text": ""
+  },
+  {
+    "time": "19:45:34.265",
+    "confidence": 0.49,
+    "text": "O1:22"
+  },
+  {
+    "time": "19:45:34.525",
+    "confidence": 0.0,
+    "text": ""
+  }
+]

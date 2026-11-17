@@ -6,11 +6,21 @@ import org.junit.Test
 class OcrRecoveryPolicyTest {
     private fun read(text: String, confidence: Float) = OcrRecoveryPolicy.Read(text, confidence, text, confidence)
 
-    @Test fun selectedGameAlwaysBypassesRecoveryEvenWhenDictionaryIsNotReadyOrNoLineMatches() {
+    @Test fun selectedGameWithoutAConfirmedLookupMissBypassesRecovery() {
         val policy = OcrRecoveryPolicy { 1000L }
         assertNull(policy.region(listOf(0, 1), gameSelected = true))
         assertFalse(policy.begin(read("Th|s sh1p is sinking", .3f), true, false, false))
         assertEquals(0, policy.region(listOf(0, 1), gameSelected = false))
+    }
+
+    @Test fun aLoadedSelectedGameCanRecoverAConfirmedMissWithTheSameRateBudget() {
+        val policy = OcrRecoveryPolicy { 1000L }
+        assertEquals(0, policy.region(listOf(0, 1), gameSelected = true, gameLookupReady = true))
+        val weak = read("Th|s b0at is sinking.", .4f)
+        assertTrue(policy.begin(weak, true, false, false, gameLookupMiss = true))
+        assertFalse(policy.begin(weak, true, false, false, gameLookupMiss = true))
+        assertNull(policy.region(listOf(0, 1), true, gameLookupReady = true))
+        assertEquals(2, policy.modes(0).size)
     }
 
     @Test fun healthyReadingVisualReuseAndDebugComparisonDoNotAddOcrPasses() {

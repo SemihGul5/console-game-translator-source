@@ -9,15 +9,16 @@ internal class OcrRecoveryPolicy(private val now: () -> Long) {
     @Synchronized fun reset() { lastAttempt = null; cursor = 0 }
 
     /** Retain an extra raw bitmap for at most one region per copied frame. */
-    @Synchronized fun region(indices: List<Int>, gameSelected: Boolean): Int? {
-        if (gameSelected || indices.isEmpty() || !ready()) return null
+    @Synchronized fun region(indices: List<Int>, gameSelected: Boolean, gameLookupReady: Boolean = false): Int? {
+        if ((gameSelected && !gameLookupReady) || indices.isEmpty() || !ready()) return null
         val index = indices[cursor % indices.size]
         cursor = (cursor + 1) % 12
         return index
     }
 
-    @Synchronized fun begin(read: Read, gameSelected: Boolean, visualReuse: Boolean, debugOnly: Boolean): Boolean {
-        if (gameSelected || visualReuse || debugOnly || !ready()) return false
+    @Synchronized fun begin(read: Read, gameSelected: Boolean, visualReuse: Boolean, debugOnly: Boolean,
+        gameLookupMiss: Boolean = false): Boolean {
+        if ((gameSelected && !gameLookupMiss) || visualReuse || debugOnly || !ready()) return false
         val letters = read.rawText.count(Char::isLetter)
         val digits = read.rawText.count(Char::isDigit)
         if (letters < 2 || digits > letters || isControllerOcrHint(read.rawText) ||

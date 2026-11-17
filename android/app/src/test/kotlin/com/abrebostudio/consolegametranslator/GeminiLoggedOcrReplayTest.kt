@@ -46,14 +46,14 @@ class GeminiLoggedOcrReplayTest {
                 for (time in start..minOf(until - 1, start + 2000) step 67) {
                     elapsed = time
                     val text = row.getString("text")
-                    if (text.isBlank() || row.getDouble("confidence") < .35) {
+                    if (text.isBlank() || isNonLinguisticCloudOcr(text) || row.getDouble("confidence") < .35) {
                         policy.discardPending()
                         if (time - lastNonempty >= 2000) policy.clear()
                         continue
                     }
                     lastNonempty = time
-                    val accepted = policy.observe(text, row.getDouble("confidence").toFloat(), "en", 67,
-                        corroborateInitialCandidate = true) ?: continue
+                    val accepted = policy.observeCloud(text, row.getDouble("confidence").toFloat(), "en", 67,
+                        engine = "gemini") ?: continue
                     engine.translate("en", "tr", accepted.key, accepted.text, "test-key")
                 }
             }
