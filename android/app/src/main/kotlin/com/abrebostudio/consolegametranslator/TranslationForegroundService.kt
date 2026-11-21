@@ -208,9 +208,10 @@ internal class TranslationForegroundService : Service() {
             }
         }
         if (wifiLock?.isHeld != true) {
-            val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            // Wi-Fi is an optional feature: without it there is no lock to hold.
+            val wifi = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
             @Suppress("DEPRECATION")
-            wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "$packageName:translation-wifi").apply {
+            wifiLock = wifi?.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "$packageName:translation-wifi")?.apply {
                 setReferenceCounted(false)
                 acquire()
             }

@@ -52,7 +52,7 @@ class HelpScreen extends StatelessWidget {
     ),
     _HelpQuestion(
       "İstediğim dil neden kaynak veya hedef listesinde görünmüyor?",
-      "Dil menüleri seçili model için indirilen paketleri gösterir. Ana sayfada Dilleri görüntüle ve indir’i açıp desteklenen dillerden gerekenleri indir. Model A’da kaynak dil İngilizcedir; hedef dil paketini seçersin. Model B’de kaynak ve hedef paketleri ayrı gerekir. Bir modelin listesinde bulunmayan dil için diğer modelin desteklediği dilleri kontrol et.",
+      "Dil menüleri seçili modelin desteklediği tüm dilleri gösterir; indirilmemiş olanlar “indirilmedi” olarak işaretlenir. Dili seçtikten sonra altındaki İndir’e dokun veya Dilleri görüntüle ve indir’den paketi indir. Model A’da kaynak dil İngilizcedir; hedef dil paketini seçersin. Model B’de kaynak ve hedef paketleri ayrı gerekir. Bir modelin listesinde bulunmayan dil için diğer modelin desteklediği dilleri kontrol et.",
     ),
     _HelpQuestion(
       "Model A ve Model B arasındaki fark nedir?",

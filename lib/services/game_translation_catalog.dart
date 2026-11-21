@@ -54,6 +54,7 @@ class GameTranslationCatalog {
   static const catalogFreshness = Duration(hours: 6);
   static const manualRefreshCooldown = Duration(seconds: 30);
   static const maxPackBytes = 25 * 1024 * 1024;
+  static const maxExpandedPackBytes = 64 * 1024 * 1024;
   static const maxCoverBytes = 5 * 1024 * 1024;
   static const maxFontBytes = 2 * 1024 * 1024;
   static const _catalogAsset = 'assets/games/catalog.json';
@@ -72,6 +73,7 @@ class GameTranslationCatalog {
   final GameCatalogCache _cache;
   final DateTime Function() _now;
   final _dataLoads = <String, Future<String>>{};
+  final _fileLoads = <String, Future<String?>>{};
   final _coverLoads = <String, Future<Uint8List?>>{};
   final _fontLoads = <String, Future<Uint8List>>{};
   final _downloadedPackKeys = <String>{};
@@ -102,8 +104,9 @@ class GameTranslationCatalog {
       games.map((game) async {
         if (_downloadedPackKeys.contains(game.contentKey)) return true;
         if (!_digest.hasMatch(game.sha256) || game.bytes <= 0) return false;
-        return await _cache.contains('pack-${game.sha256}.json', game.bytes) ||
-            await _cache.contains('pack-${game.sha256}.jsonl', game.bytes);
+        return await _cache.contains(_packCacheName(game), game.bytes) ||
+            !game.isCompressedPack &&
+                await _cache.contains('pack-${game.sha256}.jsonl', game.bytes);
       }),
     );
     final next = {..._downloadedPacks.value};
@@ -233,14 +236,18 @@ class GameTranslationCatalog {
     // Keep the same cache namespace and old endpoint available during rollout.
     Uint8List? multilingual;
     if (!allowLoopbackHttp && catalogUri.path.endsWith('/catalog.json')) {
-      try {
-        multilingual = await _download(
-          catalogUri.resolve('catalog-v2.json'),
-          maxManifestBytes,
-          const Duration(seconds: 15),
-        );
-      } on FormatException {
-        // An older deployment can still supply its verified Turkish catalog.
+      // v3 also lists .json.gz packs; v2 and v1 remain for older deployments.
+      for (final name in const ['catalog-v3.json', 'catalog-v2.json']) {
+        try {
+          multilingual = await _download(
+            catalogUri.resolve(name),
+            maxManifestBytes,
+            const Duration(seconds: 15),
+          );
+          break;
+        } on FormatException {
+          // An older deployment can still supply its verified Turkish catalog.
+        }
       }
     }
     final data =
@@ -263,7 +270,7 @@ class GameTranslationCatalog {
   List<GameCatalogEntry> _parseRemote(String json) {
     final decoded = jsonDecode(json);
     if (decoded is! Map ||
-        !const [1, 2].contains(decoded['schemaVersion']) ||
+        !const [1, 2, 3].contains(decoded['schemaVersion']) ||
         decoded['games'] is! List) {
       throw const FormatException('Oyun kataloğu kaydı geçersiz.');
     }
@@ -418,12 +425,75 @@ class GameTranslationCatalog {
     final deleting = _packDeletions[game.id];
     if (deleting != null) await deleting;
     if (!game.isRemote ||
-        !Uri.parse(game.file).path.endsWith('.json') ||
+        !(Uri.parse(game.file).path.endsWith('.json') ||
+            game.isCompressedPack) ||
         !_digest.hasMatch(game.sha256) ||
         game.bytes <= 0)
       return null;
-    return _cache.pathIfPresent('pack-${game.sha256}.json', game.bytes);
+    return _cache.pathIfPresent(_packCacheName(game), game.bytes);
   }
+
+  /// A `.json.gz` pack is downloaded, hash-checked and stored as-is; native
+  /// code expands and parses it in one streaming pass. It is never decoded in
+  /// Dart or sent over the platform channel, unlike the plain JSON path.
+  Future<String?> downloadPackFile(GameCatalogEntry game) async {
+    final deleting = _packDeletions[game.id];
+    if (deleting != null) await deleting;
+    if (!game.isRemote ||
+        !game.isCompressedPack ||
+        !_digest.hasMatch(game.sha256) ||
+        game.bytes <= 0 ||
+        game.bytes > maxPackBytes)
+      return null;
+    final pending = _fileLoads.putIfAbsent(
+      game.contentKey,
+      () => _downloadPackFile(game),
+    );
+    try {
+      return await pending;
+    } finally {
+      if (identical(_fileLoads[game.contentKey], pending)) {
+        _fileLoads.remove(game.contentKey);
+      }
+    }
+  }
+
+  Future<String?> _downloadPackFile(GameCatalogEntry game) async {
+    final name = _packCacheName(game);
+    final present = await _cache.pathIfPresent(name, game.bytes);
+    if (present != null) {
+      _markDownloaded(game);
+      return present;
+    }
+    late Uint8List bytes;
+    _downloadingPacks.value = {..._downloadingPacks.value, game.contentKey};
+    try {
+      bytes = await _download(
+        Uri.parse(game.file),
+        maxPackBytes,
+        const Duration(seconds: 90),
+        exactBytes: true,
+      );
+    } finally {
+      _downloadingPacks.value = {..._downloadingPacks.value}
+        ..remove(game.contentKey);
+    }
+    _verify(bytes, game.sha256);
+    if (bytes.length != game.bytes) {
+      throw const FormatException('Oyun çeviri dosyası doğrulanamadı.');
+    }
+    await _cache.write(name, bytes);
+    final path = await _cache.pathIfPresent(name, game.bytes);
+    if (path == null) {
+      throw const FileSystemException('Oyun çeviri dosyası kaydedilemedi.');
+    }
+    _markDownloaded(game);
+    return path;
+  }
+
+  String _packCacheName(GameCatalogEntry game) => game.isCompressedPack
+      ? 'pack-${game.sha256}.json.gz'
+      : 'pack-${game.sha256}.json';
 
   Future<Uint8List> loadFont(Map<String, dynamic> font) async {
     final hash = font['sha256'];
@@ -490,6 +560,7 @@ class GameTranslationCatalog {
         Uri.parse(game.file),
         maxPackBytes,
         const Duration(seconds: 90),
+        exactBytes: game.isCompressedPack,
       );
     } finally {
       _downloadingPacks.value = {..._downloadingPacks.value}
@@ -500,14 +571,14 @@ class GameTranslationCatalog {
       throw const FormatException('Oyun çeviri dosyası doğrulanamadı.');
     }
     final json = _decodePack(bytes, game);
-    await _cache.write('pack-${game.sha256}.json', bytes);
+    await _cache.write(_packCacheName(game), bytes);
     _markDownloaded(game);
     return json;
   }
 
   Future<Uint8List?> _readCachedPack(GameCatalogEntry game) async =>
       await _cache.read(
-        'pack-${game.sha256}.json',
+        _packCacheName(game),
         maxPackBytes,
         sha256: game.sha256,
       ) ??
@@ -521,6 +592,12 @@ class GameTranslationCatalog {
   Future<bool> hasDownloadedPack(GameCatalogEntry game) async {
     if (_downloadedPackKeys.contains(game.contentKey)) return true;
     if (!_digest.hasMatch(game.sha256)) return false;
+    if (game.isCompressedPack) {
+      // Native verifies the hash when it reads the file; presence is enough here.
+      if (!await _cache.contains(_packCacheName(game), game.bytes)) return false;
+      _markDownloaded(game);
+      return true;
+    }
     final cached = await _readCachedPack(game);
     if (cached == null) return false;
     _markDownloaded(game);
@@ -546,6 +623,7 @@ class GameTranslationCatalog {
     final keys = {
       game.contentKey,
       ..._dataLoads.keys.where((key) => key.startsWith(prefix)),
+      ..._fileLoads.keys.where((key) => key.startsWith(prefix)),
       ..._downloadedPackKeys.where((key) => key.startsWith(prefix)),
       ..._downloadedPacks.value.where((key) => key.startsWith(prefix)),
     };
@@ -553,6 +631,7 @@ class GameTranslationCatalog {
     for (final key in keys) {
       try {
         await _dataLoads[key];
+        await _fileLoads[key];
       } catch (_) {
         // A failed load has nothing to retain.
       }
@@ -562,6 +641,7 @@ class GameTranslationCatalog {
       if (_digest.hasMatch(hash)) {
         await _cache.remove('pack-$hash.json');
         await _cache.remove('pack-$hash.jsonl');
+        await _cache.remove('pack-$hash.json.gz');
       }
     }
     for (final key in keys) {
@@ -575,7 +655,7 @@ class GameTranslationCatalog {
 
   String _decodePack(Uint8List bytes, GameCatalogEntry game) => jsonEncode(
     GameTranslationPack.decode(
-      utf8.decode(bytes),
+      utf8.decode(game.isCompressedPack ? _gunzip(bytes) : bytes),
       gameId: game.gameId,
       sourceLanguage: game.sourceLanguage,
       targetLanguage: game.targetLanguage,
@@ -635,7 +715,26 @@ class GameTranslationCatalog {
     return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
   }
 
-  Future<Uint8List> _download(Uri uri, int limit, Duration timeout) async {
+  /// Expands a verified `.json.gz` pack, stopping as soon as it exceeds the
+  /// 64 MiB ceiling (a small file must not expand without bound).
+  static Uint8List _gunzip(Uint8List bytes) {
+    final output = _LimitedBytesSink(maxExpandedPackBytes);
+    final input = gzip.decoder.startChunkedConversion(output);
+    const chunk = 64 * 1024;
+    for (var start = 0; start < bytes.length; start += chunk) {
+      final end = start + chunk < bytes.length ? start + chunk : bytes.length;
+      input.addSlice(bytes, start, end, false);
+    }
+    input.close();
+    return output.takeBytes();
+  }
+
+  Future<Uint8List> _download(
+    Uri uri,
+    int limit,
+    Duration timeout, {
+    bool exactBytes = false,
+  }) async {
     _resolveUrl(uri.toString());
     final token = await _token().timeout(const Duration(seconds: 15));
     if (token.isEmpty) throw StateError('Oyun erişimi doğrulanamadı.');
@@ -646,6 +745,10 @@ class GameTranslationCatalog {
       // Never forward attestation tokens through a redirect or query string.
       request.followRedirects = false;
       request.headers.set('X-Firebase-AppCheck', token);
+      // A .json.gz hash covers its exact bytes: ask proxies not to re-encode it.
+      if (exactBytes) {
+        request.headers.set(HttpHeaders.acceptEncodingHeader, 'identity');
+      }
       final response = await request.close().timeout(timeout);
       if (response.statusCode != HttpStatus.ok ||
           response.contentLength > limit ||
@@ -673,6 +776,28 @@ class GameTranslationCatalog {
       throw const FormatException('Oyun çeviri dosyası doğrulanamadı.');
     }
   }
+}
+
+class _LimitedBytesSink implements Sink<List<int>> {
+  _LimitedBytesSink(this.limit);
+
+  final int limit;
+  final _builder = BytesBuilder();
+
+  @override
+  void add(List<int> data) {
+    if (_builder.length + data.length > limit) {
+      throw const FormatException(
+        'Açılmış oyun çeviri dosyası 64 MiB sınırını aşıyor.',
+      );
+    }
+    _builder.add(data);
+  }
+
+  @override
+  void close() {}
+
+  Uint8List takeBytes() => _builder.takeBytes();
 }
 
 class GameCatalogRefreshCooldown implements Exception {

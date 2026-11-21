@@ -44,6 +44,11 @@ class GameCatalogEntry {
   String get coverKey => coverSha256.isEmpty ? cover : coverSha256;
   bool get isRemote => Uri.tryParse(file)?.hasScheme == true;
 
+  /// Packs above Cloudflare's 25 MiB asset limit are published as `.json.gz`.
+  /// [sha256] and [bytes] then describe the compressed download.
+  bool get isCompressedPack =>
+      (Uri.tryParse(file)?.path ?? file).endsWith('.json.gz');
+
   factory GameCatalogEntry.fromJson(Map<String, dynamic> value) {
     final aspectRatio = value['coverAspectRatio'];
     if (aspectRatio != null && aspectRatio is! num) {

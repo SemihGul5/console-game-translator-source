@@ -85,6 +85,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
 
     private val worker = Executors.newSingleThreadExecutor()
     private val gameMemoryWorker = Executors.newSingleThreadExecutor()
+    private val gameMemoryIndexWriter = Executors.newSingleThreadExecutor()
     private val psnAuthWorker = Executors.newSingleThreadExecutor()
     private var psnTurnstileDialog: PsnTurnstileDialog? = null
     private var psnExchangeInFlight = false
@@ -113,6 +114,15 @@ internal class RemotePlayController private constructor(context: Context) : Cont
     @Volatile private var selectedGameMemory: GameTranslationMemory? = null
     private var selectedGameMemoryKey: GameTranslationMemoryKey? = null
     private val gameMemoryCache = GameTranslationMemoryCache()
+    private val gameMemoryIndexStore by lazy {
+        // Every install/update gets fresh indexes, so parser changes never meet old files.
+        val installed = runCatching {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+        }.getOrDefault(0L)
+        GameTranslationMemoryIndexStore(File(cacheDir, "game_memory_index"), "${BuildConfig.VERSION_CODE}-$installed")
+            .also { store -> gameMemoryIndexWriter.execute { store.deleteStale() } }
+    }
     @Volatile private var gameMemoryLoadGeneration = 0
     @Volatile private var latestSurface: Surface? = null
     @Volatile private var latestSurfaceOwner: Int? = null
@@ -1180,16 +1190,43 @@ internal class RemotePlayController private constructor(context: Context) : Cont
 
     private fun activateCachedGameTranslationMemory(call: MethodCall, result: MethodChannel.Result) {
         val started = System.nanoTime()
-        gameMemoryLoadGeneration++
+        val generation = ++gameMemoryLoadGeneration
         val key = gameMemoryKey(call.arguments as? Map<*, *>)
         val memory = if (key == null) null else
             selectedGameMemory?.takeIf { selectedGameMemoryKey == key } ?: gameMemoryCache.get(key)
+        if (memory == null && key != null && gameMemoryIndexStore.exists(key)) {
+            activateStoredGameTranslationMemory(key, generation, started, result)
+            return
+        }
         if (memory != null && (memory !== selectedGameMemory || key != selectedGameMemoryKey)) {
             applyGameMemory(memory, key.takeIf { memory != null })
         }
         if (BuildConfig.DEBUG) Log.i("GameMemory", "ACTIVATE game=${key?.gameId} cacheHit=${memory != null} elapsedMs=${(System.nanoTime() - started) / 1_000_000.0}")
         result.success(mapOf("loaded" to (memory != null), "entryCount" to (memory?.entryCount ?: 0), "cacheHit" to (memory != null),
             "gameProfile" to memory?.gameProfileJson))
+    }
+
+    /** A game prepared in an earlier app run opens from its disk index instead of its JSON. */
+    private fun activateStoredGameTranslationMemory(
+        key: GameTranslationMemoryKey,
+        generation: Int,
+        started: Long,
+        result: MethodChannel.Result,
+    ) {
+        gameMemoryWorker.execute {
+            val memory = if (generation == gameMemoryLoadGeneration) gameMemoryIndexStore.read(key) else null
+            runOnUiThread {
+                val loaded = memory != null && generation == gameMemoryLoadGeneration
+                if (loaded) {
+                    gameMemoryCache.put(key, memory!!)
+                    applyGameMemory(memory, key)
+                }
+                if (BuildConfig.DEBUG) Log.i("GameMemory", "ACTIVATE game=${key.gameId} diskHit=$loaded " +
+                    "elapsedMs=${(System.nanoTime() - started) / 1_000_000.0}")
+                result.success(mapOf("loaded" to loaded, "entryCount" to (if (loaded) memory!!.entryCount else 0),
+                    "cacheHit" to loaded, "gameProfile" to (if (loaded) memory!!.gameProfileJson else null)))
+            }
+        }
     }
 
     private fun forgetGameTranslationMemory(call: MethodCall, result: MethodChannel.Result) {
@@ -1200,6 +1237,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
         if (!gameId.isNullOrBlank()) {
             gameMemoryLoadGeneration++
             gameMemoryCache.removeGame(gameId, source, target)
+            gameMemoryIndexStore.removeGame(gameId, source, target)
             if (selectedGameMemory?.let { it.gameId == gameId && (source == null || source == it.sourceLanguage) && (target == null || target == it.targetLanguage) } == true) applyGameMemory(null, null)
         }
         result.success(true)
@@ -1230,22 +1268,43 @@ internal class RemotePlayController private constructor(context: Context) : Cont
         }
 
         val generation = ++gameMemoryLoadGeneration
+        val indexEpoch = gameMemoryIndexStore.epoch(gameId)
         gameMemoryWorker.execute {
+            // A newer selection made this request obsolete while it waited in the queue.
+            if (generation != gameMemoryLoadGeneration) {
+                runOnUiThread { result.success(mapOf("loaded" to false, "entryCount" to 0)) }
+                return@execute
+            }
             try {
                 val started = System.nanoTime()
-                val packText = json ?: GameTranslationPackFile.read(
-                    java.io.File(cacheDir, "game_catalog"), filePath!!,
-                    arguments?.get("sha256") as? String ?: "", (arguments?.get("bytes") as? Number)?.toLong() ?: 0L)
-                val readFinished = System.nanoTime()
-                val memory = GameTranslationMemory.parse(
-                    gameId,
-                    sourceLanguage,
-                    targetLanguage,
-                    packText,
-                )
-                if (BuildConfig.DEBUG) Log.i("GameMemory", "PREPARE game=$gameId source=${if (json == null) "file" else "channel"} " +
-                    "readMs=${(readFinished - started) / 1_000_000.0} parseMs=${(System.nanoTime() - readFinished) / 1_000_000.0} " +
-                    "elapsedMs=${(System.nanoTime() - started) / 1_000_000.0} estimatedBytes=${memory.estimatedRetainedBytes}")
+                val stored = key?.let(gameMemoryIndexStore::read)
+                val memory = stored ?: run {
+                    // Files (plain or .json.gz) are hashed, expanded and parsed in one
+                    // streaming pass; the JSON never exists as one String.
+                    val prepared = if (json != null) {
+                        GameTranslationMemory.parse(gameId, sourceLanguage, targetLanguage, json)
+                    } else {
+                        GameTranslationPackFile.read(
+                            java.io.File(cacheDir, "game_catalog"), filePath!!,
+                            arguments?.get("sha256") as? String ?: "", (arguments?.get("bytes") as? Number)?.toLong() ?: 0L,
+                        ) { reader -> GameTranslationMemory.parse(gameId, sourceLanguage, targetLanguage, reader) }
+                    }
+                    if (BuildConfig.DEBUG) Log.i("GameMemory", "PREPARE game=$gameId source=${if (json == null) "file" else "channel"} " +
+                        "gzip=${filePath?.endsWith(".gz") == true} parseMs=${(System.nanoTime() - started) / 1_000_000.0} " +
+                        "estimatedBytes=${prepared.estimatedRetainedBytes}")
+                    prepared
+                }
+                if (BuildConfig.DEBUG) Log.i("GameMemory", "READY game=$gameId diskHit=${stored != null} " +
+                    "elapsedMs=${(System.nanoTime() - started) / 1_000_000.0}")
+                if (stored == null && key != null) {
+                    // Save after the game is usable; the next app start skips the JSON.
+                    gameMemoryIndexWriter.execute {
+                        val writeStarted = System.nanoTime()
+                        gameMemoryIndexStore.write(key, memory, indexEpoch)
+                        if (BuildConfig.DEBUG) Log.i("GameMemory", "INDEX_SAVED game=$gameId " +
+                            "elapsedMs=${(System.nanoTime() - writeStarted) / 1_000_000.0}")
+                    }
+                }
                 runOnUiThread {
                     if (generation != gameMemoryLoadGeneration) {
                         result.success(mapOf("loaded" to false, "entryCount" to 0))
@@ -1264,6 +1323,19 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                         result.error(
                             "GAME_TRANSLATION_MEMORY_INVALID",
                             error.message ?: "Oyun çeviri dosyası okunamadı.",
+                            null,
+                        )
+                    }
+                }
+            } catch (error: OutOfMemoryError) {
+                // A very large pack must not crash the app; its partial index is unreachable now.
+                runOnUiThread {
+                    if (generation != gameMemoryLoadGeneration) {
+                        result.success(mapOf("loaded" to false, "entryCount" to 0))
+                    } else {
+                        result.error(
+                            "GAME_TRANSLATION_MEMORY_TOO_LARGE",
+                            "Bu oyunun çeviri paketi telefonun belleğine sığmadı. Diğer uygulamaları kapatıp tekrar dene.",
                             null,
                         )
                     }
@@ -2094,8 +2166,9 @@ internal class RemotePlayController private constructor(context: Context) : Cont
             return
         }
         try {
-            val wifi = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-            multicastLock = wifi.createMulticastLock("gametranslate-chiaki-discovery").apply {
+            // Devices without Wi-Fi (Ethernet) can still discover without a multicast lock.
+            val wifi = applicationContext.getSystemService(WIFI_SERVICE) as? WifiManager
+            multicastLock = wifi?.createMulticastLock("gametranslate-chiaki-discovery")?.apply {
                 setReferenceCounted(false)
                 acquire()
             }

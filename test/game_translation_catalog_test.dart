@@ -47,6 +47,19 @@ class _Assets extends CachingAssetBundle {
   Future<ByteData> load(String key) async => ByteData.sublistView(values[key]!);
 }
 
+/// A catalog v3 pack published as .json.gz: hash and size are the compressed file's.
+Map<String, Object> gzGame(List<int> compressed, {String id = 'large-game'}) => {
+  'id': id,
+  'name': 'Large Game',
+  'sourceLanguage': 'en',
+  'targetLanguage': 'tr',
+  'file': 'translations/$id.${digest(compressed)}.json.gz',
+  'sha256': digest(compressed),
+  'bytes': compressed.length,
+  'cover': 'covers/$id.${digest(coverBytes)}.png',
+  'coverSha256': digest(coverBytes),
+};
+
 Map<String, Object> game({String id = 'remote-game', String pack = firstPack}) {
   final bytes = utf8.encode(pack);
   return {
@@ -70,6 +83,8 @@ void main() {
   late List<String> requests;
   late Map<String, dynamic> manifest;
   late Map<String, String> packs;
+  late Map<String, List<int>> gzPacks;
+  late List<String?> gzAcceptEncodings;
   late int status;
   late bool corruptPack;
   late bool html;
@@ -108,6 +123,8 @@ void main() {
       digest(utf8.encode(firstPack)): firstPack,
       digest(utf8.encode(secondPack)): secondPack,
     };
+    gzPacks = {};
+    gzAcceptEncodings = [];
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
       requests.add(request.uri.path);
@@ -131,6 +148,16 @@ void main() {
         request.response.write(
           html ? '<html>hosting fallback</html>' : jsonEncode(manifest),
         );
+      } else if (request.uri.path.endsWith('.json.gz')) {
+        gzAcceptEncodings.add(
+          request.headers.value(HttpHeaders.acceptEncodingHeader),
+        );
+        request.response.headers.contentType = ContentType(
+          'application',
+          'gzip',
+        );
+        final key = request.uri.path.split('.').reversed.skip(2).first;
+        request.response.add(corruptPack ? utf8.encode('corrupt') : gzPacks[key]!);
       } else if (request.uri.path.startsWith('/translations/')) {
         if (packRequested?.isCompleted == false) packRequested!.complete();
         if (releasePack != null) await releasePack!.future;
@@ -707,4 +734,91 @@ void main() {
       expect(requests, ['/catalog.json']);
     },
   );
+
+  test(
+    'a .json.gz pack is stored as downloaded, verified by its compressed hash and deleted',
+    () async {
+      final compressed = gzip.encode(utf8.encode(secondPack));
+      gzPacks[digest(compressed)] = compressed;
+      manifest = {
+        'schemaVersion': 3,
+        'games': [
+          {...game(), 'name': 'Remote Game'},
+          {...gzGame(compressed), 'name': 'Large Game'},
+        ],
+        'languages': [
+          {
+            'code': 'tr',
+            'names': {'tr': 'Türkçe', 'en': 'Turkish'},
+            'nativeName': 'Türkçe',
+            'direction': 'ltr',
+          },
+        ],
+        'packs': [
+          {...game(), 'id': 'remote-game-en-tr', 'gameId': 'remote-game', 'formatVersion': 1},
+          {
+            ...gzGame(compressed),
+            'id': 'large-game-en-tr',
+            'gameId': 'large-game',
+            'formatVersion': 1,
+          },
+        ],
+      };
+      final service = catalog();
+      final large = (await service.refresh()).last;
+      expect(large.isCompressedPack, isTrue);
+      expect(await service.cachedJsonFile(large), isNull);
+      expect(await service.hasDownloadedPack(large), isFalse);
+      final path = await service.downloadPackFile(large);
+      expect(path, endsWith('pack-${digest(compressed)}.json.gz'));
+      expect(await File(path!).readAsBytes(), compressed);
+      expect(gzAcceptEncodings, ['identity']);
+      expect(await service.cachedJsonFile(large), path);
+      expect(await service.hasDownloadedPack(large), isTrue);
+      expect(service.downloadedPacks.value, contains(large.contentKey));
+      // Already on disk: no second download, also after an app restart.
+      expect(await catalog().downloadPackFile(large), path);
+      expect(gzAcceptEncodings, hasLength(1));
+      // The Dart fallback can still expand it (fonts, tests, older hosts).
+      expect(jsonDecode(await service.loadJson(large))['entries'][0]['turkish'], 'Selam');
+      await service.deleteDownloadedPack(large);
+      expect(File(path).existsSync(), isFalse);
+      expect(await service.hasDownloadedPack(large), isFalse);
+      // A plain pack still downloads exactly as before.
+      final plain = (await service.loadCatalog()).first;
+      expect(plain.isCompressedPack, isFalse);
+      expect(await service.downloadPackFile(plain), isNull);
+      expect(jsonDecode(await service.loadJson(plain))['entries'], hasLength(1));
+    },
+  );
+
+  test('a .json.gz download with a wrong hash or a gzip bomb is rejected', () async {
+    final compressed = gzip.encode(utf8.encode(secondPack));
+    gzPacks[digest(compressed)] = compressed;
+    manifest = {'schemaVersion': 1, 'games': [gzGame(compressed)]};
+    final service = catalog();
+    final large = (await service.refresh()).single;
+    corruptPack = true;
+    await expectLater(service.downloadPackFile(large), throwsFormatException);
+    expect(await service.cachedJsonFile(large), isNull);
+    expect(service.downloadedPacks.value, isEmpty);
+    corruptPack = false;
+    // 65 MiB of spaces compress to well under 1 MiB but must not be expanded.
+    late List<int> bomb;
+    final encoder = gzip.encoder.startChunkedConversion(
+      ByteConversionSink.withCallback((data) => bomb = data),
+    );
+    encoder.add(utf8.encode('{"game":"large-game","pad":"'));
+    final spaces = Uint8List(1024 * 1024)..fillRange(0, 1024 * 1024, 32);
+    for (var i = 0; i < 65; i++) {
+      encoder.add(spaces);
+    }
+    encoder.add(utf8.encode('"}'));
+    encoder.close();
+    expect(bomb.length, lessThan(1024 * 1024));
+    gzPacks[digest(bomb)] = bomb;
+    manifest = {'schemaVersion': 1, 'games': [gzGame(bomb, id: 'bomb')]};
+    final bombGame = (await service.refresh(force: true)).single;
+    await expectLater(service.loadJson(bombGame), throwsFormatException);
+  });
 }

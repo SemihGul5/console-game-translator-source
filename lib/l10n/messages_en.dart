@@ -2,6 +2,8 @@ import 'messages_tv_en.dart';
 
 // English interface messages, keyed by their Turkish source text.
 const englishMessages = <String, String>{
+  'Bu oyunun çeviri paketi telefonun belleğine sığmadı. Diğer uygulamaları kapatıp tekrar dene.':
+      "This game's translation pack did not fit in the phone's memory. Close other apps and try again.",
   'Ücretsiz denemen hazır. Remote Play bağlantısıyla başlar.':
       'Your free trial is ready. It starts when Remote Play connects.',
   'Geliştirmeye katkıda bulun': 'Help improve the app',
@@ -1031,6 +1033,9 @@ const englishMessages = <String, String>{
   "indirildi": "downloaded",
   "indirilmedi": "not downloaded",
   "{0} • indirilmedi": "{0} • not downloaded",
+  "Dil paketi gerekli": "Language pack required",
+  "Model B için seçili kaynak ve hedef dil paketlerini önce indir.":
+      "Download the selected source and target packs for Model B first.",
   "{0} Destek": "{0} Support",
   "Deneme için Google hesabınla giriş yap.": "Sign in with Google for a trial.",
   "Hesap zamanı doğrulanamadı.": "Couldn't verify account time.",
@@ -1274,8 +1279,8 @@ const englishMessages = <String, String>{
       "Open Subtitles → Subtitle appearance and adjust the yellow OCR area to contain only the complete text you want to read. Try the dialogue filter for spoken subtitles; leave it off for quest and menu text. Preprocessing and scale settings are separate for each OCR area. Try 1.5× or 2× for small text. Enabling the game subtitle background and increasing its text size may also improve recognition.",
   "İstediğim dil neden kaynak veya hedef listesinde görünmüyor?":
       "Why is my language missing from the source or target list?",
-  "Dil menüleri seçili model için indirilen paketleri gösterir. Ana sayfada Dilleri görüntüle ve indir’i açıp desteklenen dillerden gerekenleri indir. Model A’da kaynak dil İngilizcedir; hedef dil paketini seçersin. Model B’de kaynak ve hedef paketleri ayrı gerekir. Bir modelin listesinde bulunmayan dil için diğer modelin desteklediği dilleri kontrol et.":
-      "Language menus show packs downloaded for the selected model. On the home screen, open View and download languages and download the supported languages you need. Model A uses English as its source and a selected target pack. Model B needs separate source and target packs. If a model does not list a language, check the languages supported by the other model.",
+  "Dil menüleri seçili modelin desteklediği tüm dilleri gösterir; indirilmemiş olanlar “indirilmedi” olarak işaretlenir. Dili seçtikten sonra altındaki İndir’e dokun veya Dilleri görüntüle ve indir’den paketi indir. Model A’da kaynak dil İngilizcedir; hedef dil paketini seçersin. Model B’de kaynak ve hedef paketleri ayrı gerekir. Bir modelin listesinde bulunmayan dil için diğer modelin desteklediği dilleri kontrol et.":
+      "Language menus show every language the selected model supports; languages not downloaded yet are marked “not downloaded”. After selecting one, tap Download below it or download the pack from View and download languages. Model A uses English as its source and a selected target pack. Model B needs separate source and target packs. If a model does not list a language, check the languages supported by the other model.",
   "Model A ve Model B arasındaki fark nedir?":
       "What is the difference between Model A and Model B?",
   "Model A daha yavaş çalışır ancak daha doğru ve kaliteli çeviriler sunar. Model B daha hızlıdır; çevirileri zaman zaman daha az isabetli olabilir. Kalite önceliğinse Model A’yı, hız önceliğinse Model B’yi tercih edebilirsin.":
@@ -1361,6 +1366,7 @@ const englishMessages = <String, String>{
       "Play using your main PSN account and switch the TV to the PS5 HDMI input. The TV app does not need to stay on screen. Translation can continue with the phone app in the background or its screen off; if interrupted, check connections and phone battery restrictions.",
   "Bitirirken telefonda Çeviriyi Durdur’a veya çeviri bildirimindeki Durdur’a bas. Remote Play ve çeviri durur; PS5 kaydı, TV eşleştirmesi ve ayarların korunur.":
       "To finish, tap Stop Translation on the phone or Stop in the translation notification. Remote Play and translation stop; your PS5 registration, TV pairing, and settings are kept.",
-  'TV uygulaması henüz mağazada değil. Aşağıdaki düğmeden sitemize gidip TV için APK’yı indir.':
-      'The TV app is not in the store yet. Use the button below to visit our website and download the APK for your TV.',
+  'TV uygulaması artık Google Play’de. Android TV / Google TV cihazında Play Store’da **Oyun Çevirmeni TV** diye arayıp kur. TV’nin dili İngilizceyse **Console Game Translator TV** yaz. İstersen aşağıdaki düğmeyle mağaza sayfasını da açabilirsin.':
+      'The TV app is now on Google Play. On your Android TV / Google TV, search the Play Store for **Console Game Translator TV** and install it. You can also open the store page with the button below.',
+  'Google Play’de aç': 'Open in Google Play',
 };

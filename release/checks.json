@@ -1,5 +1,5 @@
 {
-  "preparedOn": "2026-11-17",
+  "preparedOn": "2026-11-22",
   "scope": "Manual source export only; app build/tests not run by this tool",
   "applicationTestsRun": false,
   "fullApkOrAabBuiltFromThisCopy": false,

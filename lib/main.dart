@@ -29,6 +29,7 @@ import 'screens/settings_tab.dart';
 import 'widgets/settings_section.dart';
 import 'widgets/setup_notice.dart';
 import 'widgets/premium_status_button.dart';
+import 'services/deepl_languages.dart';
 import 'widgets/deepl_settings_panel.dart';
 import 'widgets/gemini_settings_panel.dart';
 import 'widgets/subscription_offer_card.dart';
@@ -274,9 +275,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _LocalLanguageOption {
-  const _LocalLanguageOption({required this.code, required this.name});
+  const _LocalLanguageOption({
+    required this.code,
+    required this.name,
+    required this.downloaded,
+  });
   final String code;
   final String name;
+  final bool downloaded;
 }
 
 enum _AppTab { subtitles, home, profile, settings }
@@ -336,28 +342,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _translationEngineDropdownRevision = 0;
   bool _deepLConfigured = false;
   bool _geminiConfigured = false;
-  List<TranslationLanguageModel> _deepLSourceLanguages = const [
-    TranslationLanguageModel(code: 'en', name: 'English', downloaded: true),
-    TranslationLanguageModel(
-      code: 'tr',
-      name: 'Türkçe',
-      englishName: 'Turkish',
-      downloaded: true,
-    ),
-  ];
-  List<TranslationLanguageModel> _deepLTargetLanguages = const [
-    TranslationLanguageModel(
-      code: 'en-us',
-      name: 'English (US)',
-      downloaded: true,
-    ),
-    TranslationLanguageModel(
-      code: 'tr',
-      name: 'Türkçe',
-      englishName: 'Turkish',
-      downloaded: true,
-    ),
-  ];
+  List<TranslationLanguageModel> _deepLSourceLanguages = deepLSourceLanguages;
+  List<TranslationLanguageModel> _deepLTargetLanguages = deepLTargetLanguages;
   String? _deepLLanguagesError;
   bool _opusModelInstalled = false;
   bool _hpltModelInstalled = false;
@@ -1799,8 +1785,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
       Map<String, dynamic>? response;
       String? json;
-      final filePath = await _gameCatalog.cachedJsonFile(game);
+      var filePath = await _gameCatalog.cachedJsonFile(game);
       if (generation != _gameSelectionGeneration) return;
+      // A .json.gz pack is downloaded as a file and only ever read natively.
+      if (filePath == null && game.isCompressedPack) {
+        filePath = await _gameCatalog.downloadPackFile(game);
+        if (generation != _gameSelectionGeneration) return;
+      }
       if (filePath != null) {
         try {
           response = await _ps5Channel
@@ -1815,11 +1806,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               });
         } on PlatformException {
           // A purged cache, legacy metadata or older native host can use the
-          // existing verified download/conversion path instead.
+          // existing verified download/conversion path instead. A gzip pack
+          // has no such path: decoding it in Dart would cost far more memory.
+          if (game.isCompressedPack) rethrow;
         }
       }
       if (generation != _gameSelectionGeneration) return;
-      if (response?['loaded'] != true) {
+      if (response?['loaded'] != true && !game.isCompressedPack) {
         json = await _gameCatalog.loadJson(game);
         if (generation != _gameSelectionGeneration) return;
         response = await _ps5Channel
@@ -1914,6 +1907,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   String _gameMemoryErrorText(Object error) {
+    if (error is PlatformException &&
+        error.code == 'GAME_TRANSLATION_MEMORY_TOO_LARGE') {
+      return 'Bu oyunun çeviri paketi telefonun belleğine sığmadı. Diğer uygulamaları kapatıp tekrar dene.';
+    }
     final message = error.toString();
     if (message.contains('Unable to load asset')) {
       return 'Oyun çeviri dosyası bulunamadı.';
@@ -2517,6 +2514,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
       return;
     }
+    if (_translationEngine == 'mlkit' &&
+        !_loadingTranslationModels &&
+        _translationModels.isNotEmpty &&
+        (!_isLanguageDownloaded(sourceLanguageCode) ||
+            !_isLanguageDownloaded(targetLanguageCode))) {
+      showMessage(
+        "Dil paketi gerekli",
+        "Model B için seçili kaynak ve hedef dil paketlerini önce indir.",
+      );
+      return;
+    }
     if (_translationEngine == 'hplt' && !_hpltModelInstalled) {
       showMessage(
         "Model C paketi gerekli",
@@ -3087,7 +3095,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _visitedTabs.add(tab);
     });
     if (tab == _AppTab.subtitles && !_loadingGames) unawaited(_refreshGames());
-    if (tab == _AppTab.subtitles && _selectedGameId != null) _showGameLibrary();
   }
 
   Widget _buildBottomNavigation() => DecoratedBox(
@@ -4297,15 +4304,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ])
         : localEngine
         ? _offlineModels
-              .where((model) => model['installed'] == true)
               .map(
                 (model) => _LocalLanguageOption(
                   code: model['target'] as String,
                   name: model['label'] as String? ?? model['target'] as String,
+                  downloaded: model['installed'] == true,
                 ),
               )
               .toList()
-        : _translationModels.where((model) => model.downloaded).toList();
+        : _translationModels;
     final selectable = available.where((model) {
       final code = model is _LocalLanguageOption
           ? model.code
@@ -4325,6 +4332,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           )
         : _isLanguageDownloaded(value);
 
+    String optionCode(Object option) => option is _LocalLanguageOption
+        ? option.code
+        : (option as TranslationLanguageModel).code;
+    // Model A'da kaynak her zaman İngilizce; listede gösterilmez.
+    final selectedListed =
+        !(source && localEngine) &&
+        selectable.any((option) => optionCode(option) == value);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
@@ -4333,7 +4348,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: selectedDownloaded ? value : null,
+          value: selectedListed ? value : null,
           isExpanded: true,
           dropdownColor: panel,
           icon: const Icon(Icons.expand_more, size: 18),
@@ -4348,18 +4363,42 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 : context.tr("{0} • indirilmedi", [_languageName(value)]),
             overflow: TextOverflow.ellipsis,
           ),
+          selectedItemBuilder: (context) => selectable.map((language) {
+            return Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                selectedDownloaded
+                    ? _languageName(optionCode(language))
+                    : context.tr("{0} • indirilmedi", [
+                        _languageName(optionCode(language)),
+                      ]),
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
           items: selectable.map((language) {
-            final code = language is _LocalLanguageOption
-                ? language.code
-                : (language as TranslationLanguageModel).code;
+            final code = optionCode(language);
             final name = language is _LocalLanguageOption
                 ? language.name
                 : _translationLanguageName(
                     language as TranslationLanguageModel,
                   );
+            final downloaded = cloudEngine
+                ? true
+                : language is _LocalLanguageOption
+                ? language.downloaded
+                : (language as TranslationLanguageModel).downloaded;
             return DropdownMenuItem<String>(
               value: code,
-              child: Text(name, overflow: TextOverflow.ellipsis),
+              child: Text(
+                downloaded
+                    ? name
+                    : context.tr("{0} • indirilmedi", [name]),
+                overflow: TextOverflow.ellipsis,
+                style: downloaded
+                    ? null
+                    : const TextStyle(color: muted, fontSize: 12),
+              ),
             );
           }).toList(),
           onChanged: (source && localEngine) || selectable.isEmpty

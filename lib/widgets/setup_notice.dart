@@ -5,6 +5,24 @@ import '../services/app_links.dart';
 
 const setupNoticeColor = Color(0xFFFFC56D);
 
+/// Renders `**text**` segments in [message] as bold.
+List<InlineSpan> _boldSpans(String message) {
+  final parts = message.split('**');
+  return [
+    for (var i = 0; i < parts.length; i++)
+      if (parts[i].isNotEmpty)
+        TextSpan(
+          text: parts[i],
+          style: i.isOdd
+              ? const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                )
+              : null,
+        ),
+  ];
+}
+
 class SetupNotice extends StatelessWidget {
   const SetupNotice({
     super.key,
@@ -45,8 +63,8 @@ class SetupNotice extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                message,
+              Text.rich(
+                TextSpan(children: _boldSpans(message)),
                 style: const TextStyle(
                   color: Color(0xFFFFE6BF),
                   fontSize: 13,
@@ -81,15 +99,13 @@ class TvAppInstallNotice extends StatelessWidget {
   Widget build(BuildContext context) => SetupNotice(
     icon: Icons.install_desktop_rounded,
     title: context.tr("Önce TV uygulamasını indir"),
-    // TODO: Update the download instructions after the TV store release.
     message: context.tr(
-      'TV uygulaması henüz mağazada değil. Aşağıdaki düğmeden sitemize gidip TV için APK’yı indir.',
+      'TV uygulaması artık Google Play’de. Android TV / Google TV cihazında Play Store’da **Oyun Çevirmeni TV** diye arayıp kur. TV’nin dili İngilizceyse **Console Game Translator TV** yaz. İstersen aşağıdaki düğmeyle mağaza sayfasını da açabilirsin.',
     ),
-    // TODO: Remove the website download action when the TV app is in the store.
     action: OutlinedButton.icon(
-      onPressed: () => AppLinks.openTvSetup(context, 'android'),
-      icon: const Icon(Icons.download_rounded),
-      label: Text(context.tr('TV uygulamasını indir')),
+      onPressed: () => AppLinks.openWeb(context, AppLinks.tvAppPlayStoreUrl),
+      icon: const Icon(Icons.shop_rounded),
+      label: Text(context.tr('Google Play’de aç')),
     ),
   );
 }

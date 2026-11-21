@@ -45,6 +45,8 @@ class AppLinks {
   static const supportEmail = 'abrebostudio@gmail.com';
   static const xHandle = '@abreboStudio';
   static const xProfileUrl = 'https://x.com/abreboStudio';
+  static const tvAppPlayStoreUrl =
+      'https://play.google.com/store/apps/details?id=com.abrebostudio.consolegametranslator_tv';
 
   static Uri? tvSetupUri(AppInformation info, String brand, String language) {
     if (!const {'android', 'lg', 'samsung'}.contains(brand)) return null;
