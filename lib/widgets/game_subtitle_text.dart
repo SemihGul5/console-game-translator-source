@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/subtitle_cover.dart';
 import '../models/subtitle_settings.dart';
 import '../services/game_fonts.dart';
 
@@ -10,10 +11,15 @@ class GameSubtitleText extends StatelessWidget {
     required this.text,
     required this.settings,
     required this.fontSize,
+    this.icons = const <String>[],
   });
   final String text;
   final SubtitleSettings settings;
   final double fontSize;
+
+  /// Controller button icons (base64 PNG) drawn where [text] holds
+  /// [buttonIconPlaceholder]. Without them the text is drawn as before.
+  final List<String> icons;
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<LoadedGameFont?>(
@@ -57,7 +63,8 @@ class GameSubtitleText extends StatelessWidget {
           );
           bool fits(double size) {
             painter.text = TextSpan(
-              text: text,
+              // An icon takes about the room of two wide letters.
+              text: text.replaceAll(buttonIconPlaceholder, 'MM'),
               style: DefaultTextStyle.of(
                 context,
               ).style.merge(style.copyWith(fontSize: size)),
@@ -82,6 +89,42 @@ class GameSubtitleText extends StatelessWidget {
           }
           painter.dispose();
         }
+        final fittedStyle = style.copyWith(fontSize: fittedSize);
+        if (icons.isNotEmpty && text.contains(buttonIconPlaceholder)) {
+          final parts = text.split(buttonIconPlaceholder);
+          final spans = <InlineSpan>[];
+          for (var index = 0; index < parts.length; index++) {
+            if (parts[index].isNotEmpty) spans.add(TextSpan(text: parts[index]));
+            if (index == parts.length - 1) break;
+            final bytes = index < icons.length
+                ? buttonIconBytes(icons[index])
+                : null;
+            if (bytes == null) continue;
+            spans.add(
+              WidgetSpan(
+                alignment: PlaceholderAlignment.middle,
+                child: Image.memory(
+                  bytes,
+                  height: fittedSize * 1.15,
+                  gaplessPlayback: true,
+                  filterQuality: FilterQuality.medium,
+                ),
+              ),
+            );
+          }
+          return Text.rich(
+            TextSpan(children: spans),
+            textDirection: direction,
+            textAlign: alignment,
+            textScaler: scaler,
+            textWidthBasis: TextWidthBasis.longestLine,
+            textHeightBehavior: const TextHeightBehavior(
+              applyHeightToFirstAscent: false,
+              applyHeightToLastDescent: false,
+            ),
+            style: fittedStyle,
+          );
+        }
         return Text(
           text,
           textDirection: direction,
@@ -92,7 +135,7 @@ class GameSubtitleText extends StatelessWidget {
             applyHeightToFirstAscent: false,
             applyHeightToLastDescent: false,
           ),
-          style: style.copyWith(fontSize: fittedSize),
+          style: fittedStyle,
         );
       },
     ),

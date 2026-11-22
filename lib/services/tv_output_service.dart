@@ -237,17 +237,32 @@ class TvOutputService {
   }
 
   void updateSubtitle(String text, SubtitleSettings settings) =>
-      updateSubtitles([text], settings);
-  void updateSubtitles(List<String> texts, SubtitleSettings settings) {
+      updateSubtitles([text], settings, covers: const []);
+  void updateSubtitles(
+    List<String> texts,
+    SubtitleSettings settings, {
+    List<Map<String, Object>>? covers,
+    List<Map<String, Object>>? rich,
+  }) {
     _latestSettings = settings;
     switch (kind) {
       case TvOutputKind.android:
-        _android.updateSubtitles(texts, settings);
+        _android.updateSubtitles(texts, settings, covers: covers, rich: rich);
       case TvOutputKind.lg:
         _lg?.updateSubtitles(texts);
       case TvOutputKind.samsung:
         samsung.updateSubtitles(texts, settings);
     }
+  }
+
+  /// Translations drawn over the English subtitle lines. Only the Android TV
+  /// receiver understands them; other TVs keep the fixed subtitle area.
+  void updateCovers(
+    List<Map<String, Object>> covers,
+    SubtitleSettings settings,
+  ) {
+    _latestSettings = settings;
+    if (kind == TvOutputKind.android) _android.updateCovers(covers, settings);
   }
 
   void updateSettings(SubtitleSettings settings) {

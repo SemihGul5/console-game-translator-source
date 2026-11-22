@@ -102,8 +102,8 @@ class SubtitleSettings {
     this.ocrCaptureScale = 1,
     this.holdSeconds = 2.5,
     this.autoHideAfterSeconds = 2,
-    this.backgroundColor = 0xB3000000,
-    this.backgroundOpacity = 179 / 255,
+    this.backgroundColor = 0xFF000000,
+    this.backgroundOpacity = 1,
     this.textColor = 0xFFFFFFFF,
     this.fontSize = 22,
     this.useGameFont = true,
@@ -210,6 +210,52 @@ class SubtitleSettings {
             autoHideAfterSeconds: autoHideAfterSeconds,
           ),
   );
+
+  /// True when OCR 1 draws its translations over the English subtitle.
+  bool get coversEnglishSubtitle {
+    final settings = effectiveOcrSettings;
+    return settings.isNotEmpty && settings.first.coverEnglishSubtitle;
+  }
+
+  /// Puts every subtitle area that follows its OCR area back onto it.
+  SubtitleSettings withFollowingSubtitles() {
+    final ocr = effectiveOcrRegions;
+    final settings = effectiveOcrSettings;
+    final subtitles = List<NormalizedRect>.of(effectiveSubtitleRegions);
+    var changed = false;
+    for (var index = 0; index < ocr.length && index < subtitles.length; index++) {
+      if (index >= settings.length || !settings[index].subtitleFollowsOcr) {
+        continue;
+      }
+      final from = ocr[index];
+      final to = subtitles[index];
+      if (from.left == to.left &&
+          from.top == to.top &&
+          from.width == to.width &&
+          from.height == to.height) {
+        continue;
+      }
+      subtitles[index] = from;
+      changed = true;
+    }
+    return changed
+        ? copyWith(subtitleBounds: subtitles.first, subtitleRegions: subtitles)
+        : this;
+  }
+
+  /// Turns following on or off for the given areas, then lines them up.
+  SubtitleSettings withSubtitleFollowing(Map<int, bool> follows) {
+    final values = effectiveOcrSettings;
+    var changed = false;
+    follows.forEach((index, follow) {
+      if (index < 0 || index >= values.length) return;
+      if (values[index].subtitleFollowsOcr == follow) return;
+      values[index] = values[index].copyWith(subtitleFollowsOcr: follow);
+      changed = true;
+    });
+    if (!changed) return withFollowingSubtitles();
+    return copyWith(ocrRegionSettings: values).withFollowingSubtitles();
+  }
 
   SubtitleSettings withSubtitleStyle(int index, SubtitleSettings settings) {
     final styles = effectiveSubtitleStyles;
@@ -434,8 +480,8 @@ class SubtitleSettings {
 @immutable
 class SubtitleAppearance {
   const SubtitleAppearance({
-    this.backgroundColor = 0xB3000000,
-    this.backgroundOpacity = 179 / 255,
+    this.backgroundColor = 0xFF000000,
+    this.backgroundOpacity = 1,
     this.textColor = 0xFFFFFFFF,
     this.fontSize = 22,
     this.useGameFont = true,
@@ -489,11 +535,11 @@ class SubtitleAppearance {
     return SubtitleAppearance(
       backgroundColor: _regionNumber(
         map['backgroundColor'],
-        0xB3000000,
+        0xFF000000,
       ).toInt(),
       backgroundOpacity: _regionNumber(
         map['backgroundOpacity'],
-        ((_regionNumber(map['backgroundColor'], 0xB3000000).toInt() >> 24) &
+        ((_regionNumber(map['backgroundColor'], 0xFF000000).toInt() >> 24) &
                 255) /
             255,
       ).clamp(0.0, 1.0).toDouble(),
@@ -531,6 +577,8 @@ class OcrRegionSettings {
     this.ocrCaptureScale = 1,
     this.holdSeconds = 2.5,
     this.autoHideAfterSeconds = 2,
+    this.coverEnglishSubtitle = true,
+    this.subtitleFollowsOcr = false,
   });
 
   final double sampleRateHz;
@@ -540,6 +588,15 @@ class OcrRegionSettings {
   final double holdSeconds;
   final double autoHideAfterSeconds;
 
+  /// Draws each translation directly over the English subtitle it came from
+  /// instead of in the fixed subtitle box. Only offered for OCR 1.
+  final bool coverEnglishSubtitle;
+
+  /// The subtitle area with the same number sits exactly on this OCR area and
+  /// moves with it. Set for areas added later; moving the subtitle area by hand
+  /// turns it off.
+  final bool subtitleFollowsOcr;
+
   OcrRegionSettings copyWith({
     double? sampleRateHz,
     int? ocrPreprocessingMode,
@@ -547,6 +604,8 @@ class OcrRegionSettings {
     double? ocrCaptureScale,
     double? holdSeconds,
     double? autoHideAfterSeconds,
+    bool? coverEnglishSubtitle,
+    bool? subtitleFollowsOcr,
   }) => OcrRegionSettings(
     sampleRateHz: sampleRateHz ?? this.sampleRateHz,
     ocrPreprocessingMode: ocrPreprocessingMode ?? this.ocrPreprocessingMode,
@@ -554,6 +613,8 @@ class OcrRegionSettings {
     ocrCaptureScale: ocrCaptureScale ?? this.ocrCaptureScale,
     holdSeconds: holdSeconds ?? this.holdSeconds,
     autoHideAfterSeconds: autoHideAfterSeconds ?? this.autoHideAfterSeconds,
+    coverEnglishSubtitle: coverEnglishSubtitle ?? this.coverEnglishSubtitle,
+    subtitleFollowsOcr: subtitleFollowsOcr ?? this.subtitleFollowsOcr,
   );
 
   factory OcrRegionSettings.fromMap(Object? value) {
@@ -580,6 +641,10 @@ class OcrRegionSettings {
         map['autoHideAfterSeconds'],
         2,
       ).clamp(0.5, 30).toDouble(),
+      coverEnglishSubtitle: map['ocrCoverEnglish'] is bool
+          ? map['ocrCoverEnglish'] as bool
+          : true,
+      subtitleFollowsOcr: map['ocrSubtitleFollows'] == true,
     );
   }
 
@@ -590,6 +655,8 @@ class OcrRegionSettings {
     'ocrCaptureScale': ocrCaptureScale,
     'holdSeconds': holdSeconds,
     'autoHideAfterSeconds': autoHideAfterSeconds,
+    'ocrCoverEnglish': coverEnglishSubtitle,
+    'ocrSubtitleFollows': subtitleFollowsOcr,
   };
 }
 

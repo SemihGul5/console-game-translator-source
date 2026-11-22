@@ -46,7 +46,7 @@ class GeminiLoggedOcrReplayTest {
                 for (time in start..minOf(until - 1, start + 2000) step 67) {
                     elapsed = time
                     val text = row.getString("text")
-                    if (text.isBlank() || isNonLinguisticCloudOcr(text) || row.getDouble("confidence") < .35) {
+                    if (text.isBlank() || isNonLinguisticOcr(text) || row.getDouble("confidence") < .35) {
                         policy.discardPending()
                         if (time - lastNonempty >= 2000) policy.clear()
                         continue

@@ -897,11 +897,13 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                 "holdSeconds" to prefs.getFloat("hold_seconds", 2.5f).toDouble(),
                 "autoHideEnabled" to true,
                 "autoHideAfterSeconds" to prefs.getFloat("auto_hide_after_seconds", 2f).toDouble(),
-                "backgroundColor" to prefs.getLong("background_color", 0xB3000000L),
-                "backgroundOpacity" to if (prefs.contains("background_opacity")) {
-                    prefs.getFloat("background_opacity", 179f / 255f).toDouble()
-                } else {
-                    ((prefs.getLong("background_color", 0xB3000000L) ushr 24) and 0xFF).toDouble() / 255.0
+                "backgroundColor" to prefs.getLong("background_color", 0xFF000000L),
+                // New installs start fully opaque; older installs keep what they saved.
+                "backgroundOpacity" to when {
+                    prefs.contains("background_opacity") -> prefs.getFloat("background_opacity", 1f).toDouble()
+                    prefs.contains("background_color") ->
+                        ((prefs.getLong("background_color", 0xFF000000L) ushr 24) and 0xFF).toDouble() / 255.0
+                    else -> 1.0
                 },
                 "textColor" to prefs.getLong("text_color", 0xFFFFFFFFL),
                 "fontSize" to prefs.getFloat("font_size", 22f).toDouble(),
@@ -2208,7 +2210,8 @@ internal class RemotePlayController private constructor(context: Context) : Cont
 
     private fun emit(event: Map<String, Any?>) {
         runOnUiThread {
-            val subtitle = event["type"] == "subtitleText"
+            // Covers carry the same paid translations as subtitle text.
+            val subtitle = event["type"] == "subtitleText" || event["type"] == "subtitleCovers"
             val diagnostics = subtitle && BuildConfig.DEBUG
             val access = !subtitle || translationAccess.hasAccess()
             val sink = eventSink

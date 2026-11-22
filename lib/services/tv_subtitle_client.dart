@@ -36,6 +36,9 @@ class TvSubtitleClient {
   String _subtitle = '';
   List<String> _subtitles = const [];
   Map<String, Object> _presentation = const {};
+  List<Map<String, Object>> _covers = const [];
+  List<Map<String, Object>> _rich = const [];
+  bool _coverMode = false;
   double? _tvDisplayHeightDp;
   bool _manuallyDisconnected = false;
   bool _hasPaired = false;
@@ -299,19 +302,31 @@ class TvSubtitleClient {
   }
 
   void updateSubtitle(String text, SubtitleSettings settings) {
-    updateSubtitles(<String>[text], settings);
+    updateSubtitles(<String>[text], settings, covers: const [], rich: const []);
   }
 
-  void updateSubtitles(List<String> texts, SubtitleSettings settings) {
+  void updateSubtitles(
+    List<String> texts,
+    SubtitleSettings settings, {
+    List<Map<String, Object>>? covers,
+    List<Map<String, Object>>? rich,
+  }) {
     _subtitles = List<String>.of(texts);
     _subtitle = _subtitles.where((text) => text.isNotEmpty).join('\n');
+    if (covers != null) _covers = List.unmodifiable(covers);
+    if (rich != null) _rich = List.unmodifiable(rich);
     _presentation = _presentationFrom(settings);
-    _send(<String, Object>{
-      'type': _subtitle.isEmpty ? 'clear' : 'subtitle',
-      'text': _subtitle,
-      'texts': _subtitles,
-      'presentation': _presentation,
-    });
+    _send(_subtitleMessage());
+  }
+
+  /// Sends the translations that sit over the English subtitle lines.
+  void updateCovers(
+    List<Map<String, Object>> covers,
+    SubtitleSettings settings,
+  ) {
+    _covers = List.unmodifiable(covers);
+    _presentation = _presentationFrom(settings);
+    _send(_subtitleMessage());
   }
 
   void updateSettings(SubtitleSettings settings) {
@@ -321,8 +336,25 @@ class TvSubtitleClient {
       'text': _subtitle,
       'texts': _subtitles,
       'presentation': _presentation,
+      if (_coverMode) 'covers': _covers,
+      if (_hasRich) 'rich': _rich,
     });
   }
+
+  // `covers` is only added while the cover mode is on, so the message stays
+  // byte-for-byte the same as before for everyone using the fixed area.
+  Map<String, Object> _subtitleMessage() => <String, Object>{
+    'type': _subtitle.isEmpty && _covers.isEmpty ? 'clear' : 'subtitle',
+    'text': _subtitle,
+    'texts': _subtitles,
+    'presentation': _presentation,
+    if (_coverMode) 'covers': _covers,
+    // Translations with button icons, per area; only sent when there are any,
+    // so other messages stay exactly as before. Older receivers ignore it.
+    if (_hasRich) 'rich': _rich,
+  };
+
+  bool get _hasRich => _rich.any((entry) => entry.isNotEmpty);
 
   Future<void> _openSocket(_Endpoint endpoint, {int? generation}) async {
     // A saved TLS identity must never be sent to a plaintext discovery result.
@@ -408,12 +440,7 @@ class TvSubtitleClient {
         _emitConnectionState();
         _pairCompleter?.complete();
         _pairCompleter = null;
-        _send(<String, Object>{
-          'type': _subtitle.isEmpty ? 'clear' : 'subtitle',
-          'text': _subtitle,
-          'texts': _subtitles,
-          'presentation': _presentation,
-        });
+        _send(_subtitleMessage());
       } else if (value is Map && value['type'] == 'pairRejected') {
         _pairCompleter?.completeError(
           const WebSocketException('TV eşleştirme kodunu kabul etmedi.'),
@@ -642,8 +669,11 @@ class TvSubtitleClient {
     }
   }
 
-  Map<String, Object> _presentationFrom(SubtitleSettings settings) =>
-      subtitlePresentation(settings);
+  Map<String, Object> _presentationFrom(SubtitleSettings settings) {
+    _coverMode = settings.coversEnglishSubtitle;
+    if (!_coverMode) _covers = const [];
+    return subtitlePresentation(settings);
+  }
 }
 
 class _Endpoint {

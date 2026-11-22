@@ -20,6 +20,14 @@ Finder get _fontSlider => find.byWidgetPredicate(
   (widget) => widget is Slider && widget.min == 4 && widget.max == 64,
 );
 
+/// OCR settings are only shown in the OCR area mode.
+Future<void> _showOcrSettings(WidgetTester tester) async {
+  final target = find.text('OCR alanı').first;
+  await tester.ensureVisible(target);
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _openSettings(WidgetTester tester) async {
   await tester.pumpWidget(
     const TurkishTestApp(
@@ -29,6 +37,15 @@ Future<void> _openSettings(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// These tests cover the fixed subtitle area, so the over-the-English mode
+/// (on by default for OCR 1) is switched off for them.
+Map<Object?, Object?> _fixedArea(SubtitleSettings settings) => settings
+    .withOcrSettings(
+      0,
+      settings.effectiveOcrSettings.first.copyWith(coverEnglishSubtitle: false),
+    )
+    .toMap();
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Map<Object?, Object?> savedSettings;
@@ -37,7 +54,7 @@ void main() {
 
   setUp(() {
     GameFonts.active.value = null;
-    savedSettings = const SubtitleSettings().toMap();
+    savedSettings = _fixedArea(const SubtitleSettings());
     saveCount = 0;
     failSaving = false;
     final messenger =
@@ -87,7 +104,7 @@ void main() {
   testWidgets(
     'subtitle areas keep independent defaults, appearance and saved edits',
     (tester) async {
-      savedSettings = const SubtitleSettings(
+      savedSettings = _fixedArea(const SubtitleSettings(
         fontSize: 38,
         useGameFont: false,
         textColor: 0xFFFFFF00,
@@ -96,7 +113,7 @@ void main() {
         centered: false,
         bold: true,
         backgroundFitToText: false,
-      ).toMap();
+      ));
       await _openSettings(tester);
       Future<void> tap(String label) async {
         final target = find.text(label);
@@ -159,14 +176,14 @@ void main() {
   testWidgets(
     'OCR areas keep independent scan settings after adding, switching, saving and deleting',
     (tester) async {
-      savedSettings = const SubtitleSettings(
+      savedSettings = _fixedArea(const SubtitleSettings(
         sampleRateHz: 2,
         ocrCaptureScale: 2,
         ocrPreprocessingMode: 4,
         ocrDialogueFilter: true,
         holdSeconds: 6,
         autoHideAfterSeconds: 9,
-      ).toMap();
+      ));
       await _openSettings(tester);
       Future<void> tap(String label) async {
         final target = find.text(label);
@@ -184,6 +201,11 @@ void main() {
       );
       final scale = dropdown(DropdownButtonFormField<double>);
       final filter = dropdown(DropdownButtonFormField<int>);
+      // OCR 1 also shows the over-the-English switch; pick the dialogue filter.
+      final dialogueSwitch = find.ancestor(
+        of: find.textContaining('diyalog filtresi'),
+        matching: find.byType(SwitchListTile),
+      );
 
       await tap('OCR alanı');
       await tap('OCR alanı ekle');
@@ -197,7 +219,7 @@ void main() {
         0,
       );
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        tester.widget<SwitchListTile>(dialogueSwitch).value,
         isFalse,
       );
       tester.widget<DropdownButton<double>>(rate).onChanged!(5);
@@ -227,7 +249,7 @@ void main() {
         4,
       );
       expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        tester.widget<SwitchListTile>(dialogueSwitch).value,
         isTrue,
       );
       expect(tester.widget<Slider>(hold).value, 6);
@@ -285,14 +307,14 @@ void main() {
     (tester) async {
       final gameFont = LoadedGameFont(sha256: 'f' * 64, bytes: Uint8List(12));
       GameFonts.active.value = gameFont;
-      savedSettings = const SubtitleSettings(
+      savedSettings = _fixedArea(const SubtitleSettings(
         fontSize: 31,
         textColor: 0xFFFFEB3B,
         backgroundColor: 0xFF00315B,
         backgroundOpacity: 0.6,
         centered: false,
         bold: true,
-      ).toMap();
+      ));
       await _openSettings(tester);
       final systemChip = find.byKey(const ValueKey('subtitle-font-system'));
       await tester.ensureVisible(systemChip);
@@ -341,7 +363,7 @@ void main() {
     tester,
   ) async {
     savedSettings = <Object?, Object?>{
-      ...const SubtitleSettings(fontSize: 31).toMap(),
+      ..._fixedArea(const SubtitleSettings(fontSize: 31)),
       'enabled': false,
     };
     await _openSettings(tester);
@@ -379,6 +401,7 @@ void main() {
       (tester) async {
         savedSettings = <Object?, Object?>{};
         await _openSettings(tester);
+        await _showOcrSettings(tester);
         final rateDropdown = find.byWidgetPredicate(
           (widget) =>
               widget is DropdownButton<double> &&
@@ -407,6 +430,7 @@ void main() {
         expect(savedSettings['ocrCaptureScale'], 1);
         await tester.pumpWidget(const SizedBox.shrink());
         await _openSettings(tester);
+        await _showOcrSettings(tester);
         expect(tester.widget<DropdownButton<double>>(rateDropdown).value, rate);
         await tester.pumpWidget(const SizedBox.shrink());
       },
@@ -433,7 +457,7 @@ void main() {
   testWidgets(
     'background modes differ and filled bounds can be edited and saved',
     (tester) async {
-      savedSettings = const SubtitleSettings(fontSize: 10).toMap();
+      savedSettings = _fixedArea(const SubtitleSettings(fontSize: 10));
       await _openSettings(tester);
       final background = find.byKey(const ValueKey('subtitle-background-0'));
       final output = find.byKey(const ValueKey('subtitle-output-0'));

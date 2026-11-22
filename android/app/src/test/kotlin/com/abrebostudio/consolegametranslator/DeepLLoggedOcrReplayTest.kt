@@ -72,7 +72,7 @@ class DeepLLoggedOcrReplayTest {
                 val json = JSONObject(body.toString("UTF-8"))
                 val text = if (provider == "deepl") json.getJSONArray("text").getString(0)
                     else json.getJSONArray("contents").getJSONObject(0).getJSONArray("parts").getJSONObject(0).getString("text")
-                assertFalse("$provider must never receive standalone clock/number noise: $text", isNonLinguisticCloudOcr(text))
+                assertFalse("$provider must never receive standalone clock/number noise: $text", isNonLinguisticOcr(text))
                 val count = text.codePointCount(0, text.length)
                 sourceCharacters += count
                 val response = if (provider == "gemini") geminiResponse("translated: $text")
@@ -109,7 +109,7 @@ class DeepLLoggedOcrReplayTest {
                 // the held reading at the logged interval, bounded to the hide interval.
                 for (time in now..minOf(until - 1, now + 2_000) step intervalMs) {
                     elapsed = time
-                    if (text.isBlank() || isNonLinguisticCloudOcr(text) ||
+                    if (text.isBlank() || isNonLinguisticOcr(text) ||
                         row.getDouble("confidence") < .35 || isControllerOcrHint(text)) {
                         policy.discardPending()
                         if (time - lastNonempty >= 2_000) policy.clear()

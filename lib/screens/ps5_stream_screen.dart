@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/subtitle_cover.dart';
 import '../models/subtitle_settings.dart';
 import '../services/subtitle_settings_store.dart';
 import '../services/tv_output_service.dart';
@@ -66,6 +67,20 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
   List<String> _subtitleTexts = <String>[];
   String get _subtitleText =>
       _subtitleTexts.where((text) => text.isNotEmpty).join('\n');
+  List<SubtitleCover> _subtitleCovers = const <SubtitleCover>[];
+  // Areas whose translation carries controller button icons, by area index.
+  Map<int, SubtitleRichText> _subtitleRich = <int, SubtitleRichText>{};
+  List<Map<String, Object>> _richForTv() => [
+    for (var index = 0; index < _subtitleTexts.length; index++)
+      _subtitleRich[index]?.toMap() ?? const <String, Object>{},
+  ];
+  // One sticky font step for the whole session, so cover text does not change
+  // size from line to line.
+  double _coverFontScale = 1;
+  double? _coverFontBase;
+  bool get _coverModeActive => _subtitleSettings.coversEnglishSubtitle;
+  bool get _subtitleBoxLocked =>
+      _coverModeActive && _editingSubtitleBounds && _selectedSubtitleIndex == 0;
   String _ocrDebugText = '';
   String _ocrStatus = 'OCR bekliyor';
   String _ocrTiming = '';
@@ -302,13 +317,23 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
       case 'subtitleText':
         final text = event['text']?.toString() ?? '';
         final index = (event['regionIndex'] as num?)?.toInt() ?? 0;
+        final rich = SubtitleRichText.fromEvent(event);
         setState(() {
           while (_subtitleTexts.length <= index) {
             _subtitleTexts.add('');
           }
           _subtitleTexts[index] = text;
+          if (rich == null) {
+            _subtitleRich.remove(index);
+          } else {
+            _subtitleRich[index] = rich;
+          }
         });
-        _tvSubtitleClient.updateSubtitles(_subtitleTexts, _subtitleSettings);
+        _tvSubtitleClient.updateSubtitles(
+          _subtitleTexts,
+          _subtitleSettings,
+          rich: _richForTv(),
+        );
         if (event['diagnostics'] == true) {
           final memory = event['translationMemory'];
           final id = memory is Map ? memory['id'] : null;
@@ -346,11 +371,35 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         setState(() {
           if (rawIndex == null) {
             _subtitleTexts = <String>[];
+            _subtitleCovers = const <SubtitleCover>[];
+            _subtitleRich = <int, SubtitleRichText>{};
           } else if (rawIndex >= 0 && rawIndex < _subtitleTexts.length) {
             _subtitleTexts[rawIndex] = '';
+            _subtitleRich.remove(rawIndex);
           }
         });
-        _tvSubtitleClient.updateSubtitles(_subtitleTexts, _subtitleSettings);
+        _tvSubtitleClient.updateSubtitles(
+          _subtitleTexts,
+          _subtitleSettings,
+          covers: rawIndex == null ? const [] : null,
+          rich: _richForTv(),
+        );
+        break;
+      case 'subtitleCovers':
+        final index = (event['regionIndex'] as num?)?.toInt() ?? 0;
+        if (index != 0) break;
+        final rawItems = event['items'];
+        final covers = rawItems is List
+            ? rawItems
+                  .map(SubtitleCover.tryParse)
+                  .whereType<SubtitleCover>()
+                  .toList(growable: false)
+            : const <SubtitleCover>[];
+        setState(() => _subtitleCovers = covers);
+        _tvSubtitleClient.updateCovers(
+          covers.map((cover) => cover.toMap()).toList(growable: false),
+          _subtitleSettings,
+        );
         break;
     }
   }
@@ -371,8 +420,26 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         _subtitleSettings.withOcrSettings(_selectedOcrIndex, settings),
       );
 
+  void _setCoverEnglishSubtitle(bool enabled) {
+    final first = _subtitleSettings.effectiveOcrSettings.first;
+    if (first.coverEnglishSubtitle == enabled) return;
+    setState(() {
+      _subtitleCovers = const <SubtitleCover>[];
+      _coverFontScale = 1;
+      _coverFontBase = null;
+    });
+    _updateSubtitleSettings(
+      _subtitleSettings.withOcrSettings(
+        0,
+        first.copyWith(coverEnglishSubtitle: enabled),
+      ),
+    );
+  }
+
   void _updateSubtitleSettings(SubtitleSettings settings) {
     if (!_settingsLoaded) return;
+    // Subtitle areas that follow their OCR area move with it.
+    settings = settings.withFollowingSubtitles();
     setState(() {
       _subtitleSettings = settings;
     });
@@ -522,6 +589,23 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
 
   Future<void> _resetEditedRect() async {
     const defaults = SubtitleSettings();
+    final subtitleIndex = _selectedSubtitleIndex;
+    if (_editingSubtitleBounds &&
+        subtitleIndex > 0 &&
+        subtitleIndex < _subtitleSettings.effectiveOcrRegions.length) {
+      // An added area's subtitle goes back onto its OCR area and follows it again.
+      _updateSubtitleSettings(
+        _subtitleSettings.withSubtitleFollowing({subtitleIndex: true}),
+      );
+      if (await _persistSubtitleSettings() && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr("Seçili alan sıfırlandı ve kaydedildi.")),
+          ),
+        );
+      }
+      return;
+    }
     final updated = _subtitleSettings.copyWith(
       ocrRegion: _editingSubtitleBounds
           ? _subtitleSettings.ocrRegion
@@ -593,10 +677,11 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
           .map(centered)
           .toList(growable: false);
       _updateSubtitleSettings(
-        _subtitleSettings.copyWith(
-          subtitleBounds: regions.first,
-          subtitleRegions: regions,
-        ),
+        _subtitleSettings
+            .copyWith(subtitleBounds: regions.first, subtitleRegions: regions)
+            .withSubtitleFollowing({
+              for (var index = 0; index < regions.length; index++) index: false,
+            }),
       );
     } else {
       final regions = _subtitleSettings.effectiveOcrRegions
@@ -864,11 +949,12 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
 
   void _updateSelectedSubtitleRegion(NormalizedRect value) {
     final regions = _replaceSubtitleRegion(value);
+    final index = _selectedSubtitleIndex.clamp(0, regions.length - 1);
+    // Moving the subtitle area by hand gives it its own place.
     _updateSubtitleSettings(
-      _subtitleSettings.copyWith(
-        subtitleBounds: regions.first,
-        subtitleRegions: regions,
-      ),
+      _subtitleSettings
+          .copyWith(subtitleBounds: regions.first, subtitleRegions: regions)
+          .withSubtitleFollowing({index: false}),
     );
   }
 
@@ -902,10 +988,14 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
       _subtitleSettings.effectiveSubtitleRegions,
     );
     if (regions.length <= 1) return;
+    final removed = _selectedSubtitleIndex.clamp(0, regions.length - 1);
     final styles = _subtitleSettings.effectiveSubtitleStyles;
-    styles.removeAt(_selectedSubtitleIndex.clamp(0, regions.length - 1));
-    regions.removeAt(_selectedSubtitleIndex.clamp(0, regions.length - 1));
+    styles.removeAt(removed);
+    regions.removeAt(removed);
     setState(() => _selectedSubtitleIndex = 0);
+    // Later subtitle areas moved up a number, so they no longer match their
+    // OCR areas; they keep their places instead of following.
+    final ocrCount = _subtitleSettings.effectiveOcrRegions.length;
     _updateSubtitleSettings(
       styles.first
           .applyTo(_subtitleSettings)
@@ -913,7 +1003,71 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             subtitleBounds: regions.first,
             subtitleRegions: regions,
             subtitleStyles: styles,
-          ),
+          )
+          .withSubtitleFollowing({
+            for (var index = removed; index < ocrCount; index++) index: false,
+          }),
+    );
+  }
+
+  void _removeSelectedOcrRegion() {
+    final ocrSettings = _subtitleSettings.effectiveOcrSettings;
+    if (ocrSettings.length <= 1) return;
+    final index = _selectedOcrIndex.clamp(0, ocrSettings.length - 1);
+    final followed = ocrSettings[index].subtitleFollowsOcr;
+    final regions = List<NormalizedRect>.of(
+      _subtitleSettings.effectiveOcrRegions,
+    )..removeAt(index);
+    final settings = ocrSettings..removeAt(index);
+    final modes = List<int>.of(
+      _subtitleSettings.effectiveOcrPreprocessingModes,
+    )..removeAt(index);
+    final dialogueFilters = List<bool>.of(
+      _subtitleSettings.effectiveOcrDialogueFilters,
+    )..removeAt(index);
+    final subtitleRegions = List<NormalizedRect>.of(
+      _subtitleSettings.effectiveSubtitleRegions,
+    );
+    final styles = _subtitleSettings.effectiveSubtitleStyles;
+    // The subtitle area made for this OCR area goes with it. Otherwise the
+    // subtitle areas keep their numbers while later OCR areas move up, so
+    // those no longer follow.
+    final removeSubtitle =
+        followed && index < subtitleRegions.length && subtitleRegions.length > 1;
+    if (removeSubtitle) {
+      subtitleRegions.removeAt(index);
+      styles.removeAt(index);
+    } else {
+      for (var later = index; later < settings.length; later++) {
+        settings[later] = settings[later].copyWith(subtitleFollowsOcr: false);
+      }
+    }
+    setState(() {
+      _selectedOcrIndex = 0;
+      if (_selectedSubtitleIndex >= subtitleRegions.length) {
+        _selectedSubtitleIndex = 0;
+      }
+    });
+    final base = removeSubtitle
+        ? styles.first.applyTo(_subtitleSettings)
+        : _subtitleSettings;
+    _updateSubtitleSettings(
+      base.copyWith(
+        ocrRegion: regions.first,
+        ocrRegions: regions,
+        ocrRegionSettings: settings,
+        sampleRateHz: settings.first.sampleRateHz,
+        ocrCaptureScale: settings.first.ocrCaptureScale,
+        holdSeconds: settings.first.holdSeconds,
+        autoHideAfterSeconds: settings.first.autoHideAfterSeconds,
+        ocrPreprocessingMode: settings.first.ocrPreprocessingMode,
+        ocrDialogueFilter: settings.first.ocrDialogueFilter,
+        ocrPreprocessingModes: modes,
+        ocrDialogueFilters: dialogueFilters,
+        subtitleBounds: subtitleRegions.first,
+        subtitleRegions: subtitleRegions,
+        subtitleStyles: styles,
+      ),
     );
   }
 
@@ -928,11 +1082,23 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             height: 0.12,
           ),
         );
+    // A new OCR area gets its subtitle area in the same place, which follows
+    // it until the user moves the subtitle somewhere else.
+    final index = regions.length - 1;
+    final subtitleRegions = List<NormalizedRect>.of(
+      _subtitleSettings.effectiveSubtitleRegions,
+    );
+    final styles = _subtitleSettings.effectiveSubtitleStyles;
+    final createsSubtitle = subtitleRegions.length <= index;
+    while (subtitleRegions.length <= index) {
+      subtitleRegions.add(regions[subtitleRegions.length]);
+      styles.add(styles.first);
+    }
     final settings = [
       ..._subtitleSettings.effectiveOcrSettings,
-      const OcrRegionSettings(),
+      OcrRegionSettings(subtitleFollowsOcr: createsSubtitle),
     ];
-    setState(() => _selectedOcrIndex = regions.length - 1);
+    setState(() => _selectedOcrIndex = index);
     _updateSubtitleSettings(
       _subtitleSettings.copyWith(
         ocrRegions: regions,
@@ -941,6 +1107,9 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             .map((s) => s.ocrPreprocessingMode)
             .toList(),
         ocrDialogueFilters: settings.map((s) => s.ocrDialogueFilter).toList(),
+        subtitleBounds: subtitleRegions.first,
+        subtitleRegions: subtitleRegions,
+        subtitleStyles: styles,
       ),
     );
   }
@@ -1015,17 +1184,27 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                 index < _subtitleSettings.effectiveSubtitleRegions.length;
                 index++
               )
-                Positioned.fromRect(
-                  key: ValueKey('subtitle-output-$index'),
-                  rect: _pixelsFor(
-                    _subtitleSettings.effectiveSubtitleRegions[index],
-                    size,
+                if (index != 0 || !_coverModeActive)
+                  Positioned.fromRect(
+                    key: ValueKey('subtitle-output-$index'),
+                    rect: _pixelsFor(
+                      _subtitleSettings.effectiveSubtitleRegions[index],
+                      size,
+                    ),
+                    child: IgnorePointer(
+                      child: _buildSubtitlePreview(index, size),
+                    ),
                   ),
-                  child: IgnorePointer(
-                    child: _buildSubtitlePreview(index, size),
-                  ),
-                ),
-            if (_subtitleSettingsVisible)
+            if (_coverModeActive && _remotePlayConnected)
+              for (final cover in _subtitleCovers)
+                _buildSubtitleCover(cover, size),
+            if (_coverModeActive &&
+                _subtitleSettingsVisible &&
+                _editingSubtitleBounds &&
+                _selectedSubtitleIndex == 0 &&
+                (_subtitleCovers.isEmpty || !_remotePlayConnected))
+              _buildSubtitleCover(_sampleCover(), size),
+            if (_subtitleSettingsVisible && !_subtitleBoxLocked)
               NormalizedRectEditor(
                 value: _editingSubtitleBounds
                     ? _selectedSubtitleBounds
@@ -1062,6 +1241,183 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     ),
   );
 
+  /// A sample line over OCR 1 so the look can be tuned without live text.
+  SubtitleCover _sampleCover() {
+    final ocr = _subtitleSettings.effectiveOcrRegions.first;
+    final height = math.min(ocr.height * 0.4, 0.05);
+    return SubtitleCover(
+      id: -1,
+      text: context.tr("Altyazı önizlemesi"),
+      rect: NormalizedRect(
+        left: ocr.left + ocr.width * 0.25,
+        top: ocr.top + (ocr.height - height) / 2,
+        width: ocr.width * 0.5,
+        height: height,
+      ),
+      lineHeight: height,
+    );
+  }
+
+  double _coverFontScaleFor(
+    String text,
+    double fontSize,
+    double maxWidth,
+    SubtitleSettings settings,
+  ) {
+    if (_coverFontBase != settings.fontSize) {
+      _coverFontBase = settings.fontSize;
+      _coverFontScale = 1;
+    }
+    if (_coverFontScale < 1 || text.isEmpty || maxWidth <= 0) {
+      return _coverFontScale;
+    }
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: fontSize,
+          height: 1,
+          fontWeight: settings.bold ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: maxWidth);
+    final lines = painter.computeLineMetrics().length;
+    painter.dispose();
+    // Shrink once, then keep that size for the rest of the session.
+    if (lines > 3) _coverFontScale = 0.8;
+    return _coverFontScale;
+  }
+
+  /// Draws a translation over the English line it replaces. The box keeps a
+  /// margin around the English text and grows with the translation, but stays
+  /// centred on the original line.
+  Widget _buildSubtitleCover(SubtitleCover cover, Size size) {
+    final settings = _subtitleSettings
+        .settingsForSubtitle(0)
+        .copyWith(centered: true);
+    final tvHeightDp = _tvSubtitleClient.tvDisplayHeightDp;
+    final previewScale = tvHeightDp == null || tvHeightDp <= 0
+        ? 1.0
+        : size.height / tvHeightDp;
+    final box = _pixelsFor(cover.rect, size);
+    final margin = math.max(3.0, cover.lineHeight * size.height * 0.35);
+    final minWidth = math.min(size.width, box.width + margin * 2);
+    final minHeight = math.min(size.height, box.height + margin * 2);
+    final maxWidth = math.min(
+      size.width * 0.92,
+      math.max(minWidth, math.max(box.width * 1.6, size.width * 0.5)),
+    );
+    final baseFont = settings.fontSize * previewScale;
+    final fontSize =
+        baseFont *
+        _coverFontScaleFor(cover.text, baseFont, maxWidth - 8, settings);
+    final maxHeight = math.min(
+      size.height,
+      math.max(minHeight, fontSize * 4.6 + 6),
+    );
+    var rect = Rect.fromCenter(
+      center: box.center,
+      width: maxWidth,
+      height: maxHeight,
+    );
+    rect = rect.shift(
+      Offset(
+        rect.left < 0
+            ? -rect.left
+            : (rect.right > size.width ? size.width - rect.right : 0),
+        rect.top < 0
+            ? -rect.top
+            : (rect.bottom > size.height ? size.height - rect.bottom : 0),
+      ),
+    );
+    final background = Color(settings.effectiveBackgroundColor);
+    return Positioned.fromRect(
+      key: ValueKey('subtitle-cover-${cover.id}'),
+      rect: rect,
+      child: IgnorePointer(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: math.min(minWidth, maxWidth),
+              minHeight: math.min(minHeight, maxHeight),
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                // Always fully opaque: the English text must not show through.
+                color: background.withValues(alpha: 1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: GameSubtitleText(
+                    text: cover.text,
+                    settings: settings,
+                    fontSize: fontSize,
+                    icons: cover.icons,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoverModeInfo() => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0xFF36D6BE).withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: const Color(0xFF36D6BE).withValues(alpha: 0.45),
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.layers_outlined,
+              color: Color(0xFF36D6BE),
+              size: 19,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.tr("Altyazı 1 İngilizce altyazının üstünde"),
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          context.tr(
+            "Çeviri, OCR 1'in okuduğu İngilizce satırın tam üstünde görünür ve onunla birlikte yer değiştirir; art arda konuşan kişiler ayrı kutularda gösterilir. Bu yüzden sabit konum ayarı kapalı. Yazı boyutu, renk ve arka plan ayarları geçerli.",
+          ),
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFFB8C1D3),
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextButton.icon(
+          onPressed: () => _setCoverEnglishSubtitle(false),
+          icon: const Icon(Icons.push_pin_outlined, size: 18),
+          label: Text(context.tr("Sabit konuma dön")),
+        ),
+      ],
+    ),
+  );
+
   Widget _buildSubtitlePreview(int regionIndex, Size videoPreviewSize) {
     final settings = _subtitleSettings.settingsForSubtitle(regionIndex);
     final tvHeightDp = _tvSubtitleClient.tvDisplayHeightDp;
@@ -1071,14 +1427,18 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     final liveText = regionIndex < _subtitleTexts.length
         ? _subtitleTexts[regionIndex]
         : '';
+    final rich = liveText.isNotEmpty ? _subtitleRich[regionIndex] : null;
     final text = GameSubtitleText(
-      text: liveText.isNotEmpty
+      text: rich != null
+          ? rich.text
+          : liveText.isNotEmpty
           ? liveText
           : _subtitleSettingsVisible
           ? context.tr("Altyazı önizlemesi")
           : '',
       settings: settings,
       fontSize: settings.fontSize * previewScale,
+      icons: rich?.icons ?? const <String>[],
     );
     final decoration = BoxDecoration(
       color: Color(settings.effectiveBackgroundColor),
@@ -1279,37 +1639,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                     ActionChip(
                       avatar: const Icon(Icons.remove_circle_outline, size: 18),
                       label: Text(context.tr("Seçili OCR alanını sil")),
-                      onPressed: () {
-                        final regions = List<NormalizedRect>.of(
-                          _subtitleSettings.effectiveOcrRegions,
-                        )..removeAt(_selectedOcrIndex);
-                        final settings = _subtitleSettings.effectiveOcrSettings
-                          ..removeAt(_selectedOcrIndex);
-                        final modes = List<int>.of(
-                          _subtitleSettings.effectiveOcrPreprocessingModes,
-                        )..removeAt(_selectedOcrIndex);
-                        final dialogueFilters = List<bool>.of(
-                          _subtitleSettings.effectiveOcrDialogueFilters,
-                        )..removeAt(_selectedOcrIndex);
-                        setState(() => _selectedOcrIndex = 0);
-                        _updateSubtitleSettings(
-                          _subtitleSettings.copyWith(
-                            ocrRegion: regions.first,
-                            ocrRegions: regions,
-                            ocrRegionSettings: settings,
-                            sampleRateHz: settings.first.sampleRateHz,
-                            ocrCaptureScale: settings.first.ocrCaptureScale,
-                            holdSeconds: settings.first.holdSeconds,
-                            autoHideAfterSeconds:
-                                settings.first.autoHideAfterSeconds,
-                            ocrPreprocessingMode:
-                                settings.first.ocrPreprocessingMode,
-                            ocrDialogueFilter: settings.first.ocrDialogueFilter,
-                            ocrPreprocessingModes: modes,
-                            ocrDialogueFilters: dialogueFilters,
-                          ),
-                        );
-                      },
+                      onPressed: _removeSelectedOcrRegion,
                     ),
                 ],
               ),
@@ -1382,583 +1712,656 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         ),
       ],
       const SizedBox(height: 10),
-      KeyedSubtree(
-        key: _rectangleControlsKey,
-        child: _buildRectangleControls(),
-      ),
-      const SizedBox(height: 10),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: _resetEditedRect,
-          icon: const Icon(Icons.restart_alt),
-          label: Text(
-            _editingSubtitleBounds
-                ? context.tr("Altyazı kutusunu sıfırla")
-                : context.tr("Seçili OCR alanını sıfırla"),
-          ),
-        ),
-      ),
-      _settingsCard(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (_ocrDebugText.isNotEmpty) ...[
-              Text(
-                context.tr("Son OCR: {0}\n{1}", [
-                  _ocrDebugText,
-                  context.trMessage(_ocrTiming),
+      if (_subtitleBoxLocked) ...[
+        _buildCoverModeInfo(),
+        const SizedBox(height: 10),
+      ] else ...[
+        if (_editingSubtitleBounds &&
+            _selectedSubtitleIndex <
+                _subtitleSettings.effectiveOcrRegions.length) ...[
+          _settingsCard(
+            SwitchListTile.adaptive(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              activeThumbColor: const Color(0xFF36D6BE),
+              activeTrackColor: const Color(
+                0xFF36D6BE,
+              ).withValues(alpha: 0.45),
+              title: Text(
+                context.tr("Altyazı {0}, OCR {1} alanıyla birlikte taşınsın", [
+                  _selectedSubtitleIndex + 1,
+                  _selectedSubtitleIndex + 1,
                 ]),
-                style: const TextStyle(color: Color(0xFFB8C1D3), fontSize: 12),
               ),
-              const SizedBox(height: 6),
-            ],
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    context.trMessage(_ocrStatus),
-                    style: const TextStyle(color: Color(0xFFD8E1F0)),
-                  ),
+              subtitle: Text(
+                context.tr(
+                  "Açıkken altyazı OCR alanının tam üstünde durur ve onu taşıdıkça o da taşınır. Altyazı kutusunu elle taşırsan kendi yerinde kalır.",
                 ),
-                TextButton.icon(
-                  onPressed: _sessionActive ? _testOcrSelectedRegion : null,
-                  icon: const Icon(Icons.document_scanner_outlined),
-                  label: Text(context.tr("Ham/filtreli OCR kıyasla")),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      _settingsCard(
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr("OCR {0} tarama sıklığı: {1}", [
-                      _selectedOcrIndex + 1,
-                      _samplingRateLabel(_selectedOcrSettings.sampleRateHz),
-                    ]),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    context.tr(
-                      "Düşük değer daha az pil harcar; metni daha geç yakalayabilir.",
-                    ),
-                    style: TextStyle(color: Color(0xFF929DB4), fontSize: 11),
-                  ),
-                ],
+                style: const TextStyle(color: Color(0xFF929DB4), fontSize: 12),
+              ),
+              value: _subtitleSettings
+                  .effectiveOcrSettings[_selectedSubtitleIndex]
+                  .subtitleFollowsOcr,
+              onChanged: (follow) => _updateSubtitleSettings(
+                _subtitleSettings.withSubtitleFollowing({
+                  _selectedSubtitleIndex: follow,
+                }),
               ),
             ),
-            const SizedBox(width: 10),
-            DropdownButton<double>(
-              value: _selectedOcrSettings.sampleRateHz,
-              dropdownColor: const Color(0xFF131A2B),
-              items: subtitleOcrSamplingRatesHz
-                  .map(
-                    (rate) => DropdownMenuItem<double>(
-                      value: rate,
-                      child: Text(_samplingRateLabel(rate)),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  _updateSelectedOcrSettings(
-                    _selectedOcrSettings.copyWith(sampleRateHz: value),
-                  );
-                }
-              },
+          ),
+          const SizedBox(height: 10),
+        ],
+        KeyedSubtree(
+          key: _rectangleControlsKey,
+          child: _buildRectangleControls(),
+        ),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _resetEditedRect,
+            icon: const Icon(Icons.restart_alt),
+            label: Text(
+              _editingSubtitleBounds
+                  ? context.tr("Altyazı kutusunu sıfırla")
+                  : context.tr("Seçili OCR alanını sıfırla"),
             ),
-          ],
-        ),
-      ),
-      _settingsCard(
-        SwitchListTile.adaptive(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-          activeThumbColor: const Color(0xFF36D6BE),
-          activeTrackColor: const Color(0xFF36D6BE).withValues(alpha: 0.45),
-          title: Text(
-            context.tr("OCR {0} diyalog filtresi", [_selectedOcrIndex + 1]),
           ),
-          subtitle: Text(
-            _subtitleSettings.ocrDialogueFilterFor(_selectedOcrIndex)
-                ? context.tr(
-                    "Konuşmacı adı, cümle yapısı ve konuma göre diyalog benzeri satırları seçer.",
-                  )
-                : context.tr(
-                    "Kapalı: seçili OCR alanındaki tüm metinler tanınır.",
-                  ),
-            style: const TextStyle(color: Color(0xFF929DB4), fontSize: 12),
-          ),
-          value: _subtitleSettings.ocrDialogueFilterFor(_selectedOcrIndex),
-          onChanged: (enabled) {
-            _updateSelectedOcrSettings(
-              _selectedOcrSettings.copyWith(ocrDialogueFilter: enabled),
-            );
-          },
         ),
-      ),
-      _settingsCard(
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: DropdownButtonFormField<int>(
-                key: ValueKey(
-                  'ocr-preprocessing-$_selectedOcrIndex-${_selectedOcrSettings.ocrPreprocessingMode}',
-                ),
-                initialValue: _subtitleSettings.ocrPreprocessingModeFor(
-                  _selectedOcrIndex,
-                ),
-                decoration: InputDecoration(
-                  labelText: context.tr("OCR {0} görüntü ön işlemesi", [
-                    _selectedOcrIndex + 1,
+      ],
+      // OCR settings belong to the OCR area mode only.
+      if (!_editingSubtitleBounds) ...[
+        _settingsCard(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_ocrDebugText.isNotEmpty) ...[
+                Text(
+                  context.tr("Son OCR: {0}\n{1}", [
+                    _ocrDebugText,
+                    context.trMessage(_ocrTiming),
                   ]),
-                  filled: true,
-                  fillColor: const Color(0xFF0B1324),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF26364D)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF26364D)),
-                  ),
+                  style: const TextStyle(color: Color(0xFFB8C1D3), fontSize: 12),
                 ),
-                items: [
-                  DropdownMenuItem(
-                    value: 0,
-                    child: Text(context.tr("Ham görüntü")),
-                  ),
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text(context.tr("Gri tonlama + kontrast")),
-                  ),
-                  DropdownMenuItem(
-                    value: 2,
-                    child: Text(context.tr("Adaptif eşikleme")),
-                  ),
-                  DropdownMenuItem(
-                    value: 3,
-                    child: Text(context.tr("Kenar keskinleştirme")),
-                  ),
-                  DropdownMenuItem(
-                    value: 4,
-                    child: Text(context.tr("Yerel kontrast (ışık/parlama)")),
-                  ),
-                  DropdownMenuItem(
-                    value: 5,
-                    child: Text(context.tr("Hassas eşik · açık yazı")),
-                  ),
-                  DropdownMenuItem(
-                    value: 6,
-                    child: Text(context.tr("Hassas eşik · koyu yazı")),
-                  ),
-                  DropdownMenuItem(
-                    value: 7,
-                    child: Text(context.tr("Hassas eşik · otomatik yön")),
-                  ),
-                  DropdownMenuItem(
-                    value: 8,
-                    child: Text(context.tr("Sarı yazı · mavi/soğuk zemin")),
-                  ),
-                  DropdownMenuItem(
-                    value: 9,
-                    child: Text(context.tr("Otomatik renk kanalı")),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    _updateSelectedOcrSettings(
-                      _selectedOcrSettings.copyWith(
-                        ocrPreprocessingMode: value,
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
-            _settingInfoButton(
-              context.tr("OCR görüntü ön işlemesi"),
-              context.tr(
-                "Yalnızca seçili OCR kırpımına uygulanır. Otomatik renk kanalı her karede kırpımdaki RGB kanallarının kontrastını ölçüp o sahnede en çok ayrım sağlayanı seçer; farklı yazı ve arka plan renklerine uyum sağlamayı dener. Sarı yazı seçeneği yalnızca sarı yazı/mavi-soğuk zemin içindir.",
-              ),
-            ),
-          ],
-        ),
-      ),
-      _settingsCard(
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: DropdownButtonFormField<double>(
-                key: ValueKey(
-                  'ocr-scale-$_selectedOcrIndex-${_selectedOcrSettings.ocrCaptureScale}',
-                ),
-                initialValue: _selectedOcrSettings.ocrCaptureScale,
-                decoration: InputDecoration(
-                  labelText: context.tr("OCR alanı büyütme"),
-                  filled: true,
-                  fillColor: const Color(0xFF0B1324),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF26364D)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF26364D)),
-                  ),
-                ),
-                items: [
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text(context.tr("1× · hızlı")),
-                  ),
-                  DropdownMenuItem(value: 1.5, child: Text('1,5× · dengeli')),
-                  DropdownMenuItem(
-                    value: 2,
-                    child: Text(context.tr("2× · küçük yazı")),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    _updateSelectedOcrSettings(
-                      _selectedOcrSettings.copyWith(ocrCaptureScale: value),
-                    );
-                  }
-                },
-              ),
-            ),
-            _settingInfoButton(
-              context.tr("OCR alanı büyütme"),
-              context.tr(
-                "Ölçek uygulamadan seçilir ve yalnızca OCR kırpımına uygulanır; oyun görüntüsü değişmez. 1× en hızlısı, 1,5× genelde dengeli seçim, 2× küçük karakterler içindir. 1600 piksel genişlik sınırı korunur.",
-              ),
-            ),
-          ],
-        ),
-      ),
-      _sliderSetting(
-        label: context.tr("OCR alanı boş kalırsa tut: {0} sn", [
-          _selectedOcrSettings.holdSeconds.toStringAsFixed(1),
-        ]),
-        value: _selectedOcrSettings.holdSeconds,
-        min: 0,
-        max: 10,
-        divisions: 20,
-        onChanged: (value) => _updateSelectedOcrSettings(
-          _selectedOcrSettings.copyWith(holdSeconds: value),
-        ),
-      ),
-      _sliderSetting(
-        label: context.tr("Metin yenilenmezse gizle: {0} sn", [
-          _selectedOcrSettings.autoHideAfterSeconds.toStringAsFixed(1),
-        ]),
-        value: _selectedOcrSettings.autoHideAfterSeconds,
-        min: 0.5,
-        max: 30,
-        divisions: 59,
-        onChanged: (value) => _updateSelectedOcrSettings(
-          _selectedOcrSettings.copyWith(autoHideAfterSeconds: value),
-        ),
-        info: context.tr(
-          "OCR alanında yeni metin algılanmazsa altyazı seçtiğin süre sonunda gizlenir.",
-        ),
-      ),
-      _sliderSetting(
-        label: context.tr("Altyazı {0} genişliği: {1}%", [
-          _selectedSubtitleIndex + 1,
-          (_selectedSubtitleBounds.width * 100).round(),
-        ]),
-        value: _selectedSubtitleBounds.width.clamp(0.10, 1.0).toDouble(),
-        min: 0.10,
-        max: 1,
-        divisions: 180,
-        onChanged: (value) {
-          final bounds = _selectedSubtitleBounds;
-          final width = value.clamp(0.10, 1.0).toDouble();
-          _updateSelectedSubtitleRegion(
-            NormalizedRect(
-              left: bounds.left.clamp(0.0, 1.0 - width).toDouble(),
-              top: bounds.top,
-              width: width,
-              height: bounds.height,
-            ),
-          );
-        },
-      ),
-      _sliderSetting(
-        label: context.tr("Altyazı {0} yüksekliği: {1}%", [
-          _selectedSubtitleIndex + 1,
-          (_selectedSubtitleBounds.height * 100).round(),
-        ]),
-        value: _selectedSubtitleBounds.height.clamp(0.05, 0.70).toDouble(),
-        min: 0.05,
-        max: 0.70,
-        divisions: 130,
-        onChanged: (value) {
-          final bounds = _selectedSubtitleBounds;
-          final height = value.clamp(0.05, 0.70).toDouble();
-          _updateSelectedSubtitleRegion(
-            NormalizedRect(
-              left: bounds.left,
-              top: bounds.top.clamp(0.0, 1.0 - height).toDouble(),
-              width: bounds.width,
-              height: height,
-            ),
-          );
-        },
-      ),
-      _sliderSetting(
-        label: context.tr("Yazı boyutu: {0}", [
-          _selectedSubtitleSettings.fontSize.toStringAsFixed(1),
-        ]),
-        value: _selectedSubtitleSettings.fontSize,
-        min: 4,
-        max: 64,
-        divisions: 120,
-        onChanged: (value) => _updateSelectedSubtitleSettings(
-          _selectedSubtitleSettings.copyWith(fontSize: value),
-        ),
-      ),
-      _settingsCard(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(context.tr("Yazı tipi")),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              children: [
-                ChoiceChip(
-                  key: const ValueKey('subtitle-font-game'),
-                  label: Text(context.tr("Oyun fontu")),
-                  selected: _selectedSubtitleSettings.useGameFont,
-                  onSelected: (_) => _updateSelectedSubtitleSettings(
-                    _selectedSubtitleSettings.copyWith(useGameFont: true),
-                  ),
-                ),
-                ChoiceChip(
-                  key: const ValueKey('subtitle-font-system'),
-                  label: Text(context.tr("Sistem fontu")),
-                  selected: !_selectedSubtitleSettings.useGameFont,
-                  onSelected: (_) => _updateSelectedSubtitleSettings(
-                    _selectedSubtitleSettings.copyWith(useGameFont: false),
-                  ),
-                ),
+                const SizedBox(height: 6),
               ],
-            ),
-            Text(
-              context.tr(
-                "Oyun fontu yoksa sistem fontu kullanılır. Diğer görünüm ve konum ayarların korunur.",
-              ),
-              style: const TextStyle(fontSize: 12, color: Color(0xFF929DB4)),
-            ),
-          ],
-        ),
-      ),
-      _sliderSetting(
-        label: context.tr("Arka plan saydamlığı: {0}%", [
-          ((1 - _selectedSubtitleSettings.backgroundOpacity) * 100).round(),
-        ]),
-        value: 1 - _selectedSubtitleSettings.backgroundOpacity,
-        min: 0,
-        max: 1,
-        divisions: 100,
-        onChanged: (value) {
-          _updateSelectedSubtitleSettings(
-            _selectedSubtitleSettings.copyWith(backgroundOpacity: 1 - value),
-          );
-        },
-        info: context.tr(
-          "Saydamlık %0 iken arka plan tamamen opaktır. Saydamlık %100 iken arka plan tamamen görünmez olur.",
-        ),
-      ),
-      _settingsCard(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 6),
-            Text(context.tr("Arka plan kutusu")),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                ChoiceChip(
-                  label: Text(context.tr("Yalnızca yazı kadar")),
-                  selected: _selectedSubtitleSettings.backgroundFitToText,
-                  onSelected: (_) => _updateSelectedSubtitleSettings(
-                    _selectedSubtitleSettings.copyWith(
-                      backgroundFitToText: true,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.trMessage(_ocrStatus),
+                      style: const TextStyle(color: Color(0xFFD8E1F0)),
                     ),
                   ),
-                ),
-                ChoiceChip(
-                  label: Text(context.tr("Seçili alanı doldur")),
-                  selected: !_selectedSubtitleSettings.backgroundFitToText,
-                  onSelected: (_) {
-                    setState(() => _editingSubtitleBounds = true);
-                    _updateSelectedSubtitleSettings(
-                      _selectedSubtitleSettings.copyWith(
-                        backgroundFitToText: false,
+                  TextButton.icon(
+                    onPressed: _sessionActive ? _testOcrSelectedRegion : null,
+                    icon: const Icon(Icons.document_scanner_outlined),
+                    label: Text(context.tr("Ham/filtreli OCR kıyasla")),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        _settingsCard(
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.tr("OCR {0} tarama sıklığı: {1}", [
+                        _selectedOcrIndex + 1,
+                        _samplingRateLabel(_selectedOcrSettings.sampleRateHz),
+                      ]),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.tr(
+                        "Düşük değer daha az pil harcar; metni daha geç yakalayabilir.",
                       ),
+                      style: TextStyle(color: Color(0xFF929DB4), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              DropdownButton<double>(
+                value: _selectedOcrSettings.sampleRateHz,
+                dropdownColor: const Color(0xFF131A2B),
+                items: subtitleOcrSamplingRatesHz
+                    .map(
+                      (rate) => DropdownMenuItem<double>(
+                        value: rate,
+                        child: Text(_samplingRateLabel(rate)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    _updateSelectedOcrSettings(
+                      _selectedOcrSettings.copyWith(sampleRateHz: value),
                     );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        _settingsCard(
+          SwitchListTile.adaptive(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            activeThumbColor: const Color(0xFF36D6BE),
+            activeTrackColor: const Color(0xFF36D6BE).withValues(alpha: 0.45),
+            title: Text(
+              context.tr("OCR {0} diyalog filtresi", [_selectedOcrIndex + 1]),
+            ),
+            subtitle: Text(
+              _subtitleSettings.ocrDialogueFilterFor(_selectedOcrIndex)
+                  ? context.tr(
+                      "Konuşmacı adı, cümle yapısı ve konuma göre diyalog benzeri satırları seçer.",
+                    )
+                  : context.tr(
+                      "Kapalı: seçili OCR alanındaki tüm metinler tanınır.",
+                    ),
+              style: const TextStyle(color: Color(0xFF929DB4), fontSize: 12),
+            ),
+            value: _subtitleSettings.ocrDialogueFilterFor(_selectedOcrIndex),
+            onChanged: (enabled) {
+              _updateSelectedOcrSettings(
+                _selectedOcrSettings.copyWith(ocrDialogueFilter: enabled),
+              );
+            },
+          ),
+        ),
+        if (_selectedOcrIndex == 0)
+          _settingsCard(
+            SwitchListTile.adaptive(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              activeThumbColor: const Color(0xFF36D6BE),
+              activeTrackColor: const Color(0xFF36D6BE).withValues(alpha: 0.45),
+              title: Text(
+                context.tr("Çeviriyi İngilizce altyazının üstünde göster"),
+              ),
+              subtitle: Text(
+                _coverModeActive
+                    ? context.tr(
+                        "Açık: çeviri, okunan İngilizce satırın tam üstünde çıkar; art arda konuşan kişiler ayrı ayrı gösterilir. Altyazı 1'in sabit konum ayarı kullanılmaz.",
+                      )
+                    : context.tr(
+                        "Kapalı: çeviri, Altyazı 1 için seçtiğin sabit yerde gösterilir.",
+                      ),
+                style: const TextStyle(color: Color(0xFF929DB4), fontSize: 12),
+              ),
+              value: _coverModeActive,
+              onChanged: _setCoverEnglishSubtitle,
+            ),
+          ),
+        _settingsCard(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  key: ValueKey(
+                    'ocr-preprocessing-$_selectedOcrIndex-${_selectedOcrSettings.ocrPreprocessingMode}',
+                  ),
+                  initialValue: _subtitleSettings.ocrPreprocessingModeFor(
+                    _selectedOcrIndex,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: context.tr("OCR {0} görüntü ön işlemesi", [
+                      _selectedOcrIndex + 1,
+                    ]),
+                    filled: true,
+                    fillColor: const Color(0xFF0B1324),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF26364D)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF26364D)),
+                    ),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text(context.tr("Ham görüntü")),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text(context.tr("Gri tonlama + kontrast")),
+                    ),
+                    DropdownMenuItem(
+                      value: 2,
+                      child: Text(context.tr("Adaptif eşikleme")),
+                    ),
+                    DropdownMenuItem(
+                      value: 3,
+                      child: Text(context.tr("Kenar keskinleştirme")),
+                    ),
+                    DropdownMenuItem(
+                      value: 4,
+                      child: Text(context.tr("Yerel kontrast (ışık/parlama)")),
+                    ),
+                    DropdownMenuItem(
+                      value: 5,
+                      child: Text(context.tr("Hassas eşik · açık yazı")),
+                    ),
+                    DropdownMenuItem(
+                      value: 6,
+                      child: Text(context.tr("Hassas eşik · koyu yazı")),
+                    ),
+                    DropdownMenuItem(
+                      value: 7,
+                      child: Text(context.tr("Hassas eşik · otomatik yön")),
+                    ),
+                    DropdownMenuItem(
+                      value: 8,
+                      child: Text(context.tr("Sarı yazı · mavi/soğuk zemin")),
+                    ),
+                    DropdownMenuItem(
+                      value: 9,
+                      child: Text(context.tr("Otomatik renk kanalı")),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      _updateSelectedOcrSettings(
+                        _selectedOcrSettings.copyWith(
+                          ocrPreprocessingMode: value,
+                        ),
+                      );
+                    }
                   },
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              _selectedSubtitleSettings.backgroundFitToText
-                  ? context.tr("Arka plan yazıyla birlikte büyüyüp küçülür.")
-                  : context.tr(
-                      "Arka plan turkuaz alanın tamamını doldurur. Kutuyu sürükleyebilir, kenarlarından boyutlandırabilir veya alan ayarlarını kullanabilirsin.",
-                    ),
-              style: const TextStyle(fontSize: 12, color: Color(0xFF929DB4)),
-            ),
-            if (!_selectedSubtitleSettings.backgroundFitToText)
-              TextButton.icon(
-                onPressed: () {
-                  setState(() => _editingSubtitleBounds = true);
-                  final target = _rectangleControlsKey.currentContext;
-                  if (target != null) {
-                    Scrollable.ensureVisible(
-                      target,
-                      duration: const Duration(milliseconds: 250),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.crop_free),
-                label: Text(context.tr("Arka plan alanını ayarla")),
               ),
-            const SizedBox(height: 6),
-            Text(context.tr("Arka plan rengi")),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              children: [
-                for (final color in const [
-                  Color(0xB3000000),
-                  Color(0xB3333333),
-                  Color(0xB31B5E20),
-                  Color(0xB38E2400),
-                  Color(0xB300315B),
-                  Color(0xB34A148C),
-                  Color(0xB3AD1457),
-                  Color(0xB3F9A825),
-                ])
-                  _colorChoice(
-                    color: color,
-                    selected:
-                        (Color(
-                              _selectedSubtitleSettings.backgroundColor,
-                            ).toARGB32() &
-                            0x00FFFFFF) ==
-                        (color.toARGB32() & 0x00FFFFFF),
+              _settingInfoButton(
+                context.tr("OCR görüntü ön işlemesi"),
+                context.tr(
+                  "Yalnızca seçili OCR kırpımına uygulanır. Otomatik renk kanalı her karede kırpımdaki RGB kanallarının kontrastını ölçüp o sahnede en çok ayrım sağlayanı seçer; farklı yazı ve arka plan renklerine uyum sağlamayı dener. Sarı yazı seçeneği yalnızca sarı yazı/mavi-soğuk zemin içindir.",
+                ),
+              ),
+            ],
+          ),
+        ),
+        _settingsCard(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<double>(
+                  key: ValueKey(
+                    'ocr-scale-$_selectedOcrIndex-${_selectedOcrSettings.ocrCaptureScale}',
+                  ),
+                  initialValue: _selectedOcrSettings.ocrCaptureScale,
+                  decoration: InputDecoration(
+                    labelText: context.tr("OCR alanı büyütme"),
+                    filled: true,
+                    fillColor: const Color(0xFF0B1324),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF26364D)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF26364D)),
+                    ),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text(context.tr("1× · hızlı")),
+                    ),
+                    DropdownMenuItem(value: 1.5, child: Text('1,5× · dengeli')),
+                    DropdownMenuItem(
+                      value: 2,
+                      child: Text(context.tr("2× · küçük yazı")),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      _updateSelectedOcrSettings(
+                        _selectedOcrSettings.copyWith(ocrCaptureScale: value),
+                      );
+                    }
+                  },
+                ),
+              ),
+              _settingInfoButton(
+                context.tr("OCR alanı büyütme"),
+                context.tr(
+                  "Ölçek uygulamadan seçilir ve yalnızca OCR kırpımına uygulanır; oyun görüntüsü değişmez. 1× en hızlısı, 1,5× genelde dengeli seçim, 2× küçük karakterler içindir. 1600 piksel genişlik sınırı korunur.",
+                ),
+              ),
+            ],
+          ),
+        ),
+        _sliderSetting(
+          label: context.tr("OCR alanı boş kalırsa tut: {0} sn", [
+            _selectedOcrSettings.holdSeconds.toStringAsFixed(1),
+          ]),
+          value: _selectedOcrSettings.holdSeconds,
+          min: 0,
+          max: 10,
+          divisions: 20,
+          onChanged: (value) => _updateSelectedOcrSettings(
+            _selectedOcrSettings.copyWith(holdSeconds: value),
+          ),
+        ),
+        _sliderSetting(
+          label: context.tr("Metin yenilenmezse gizle: {0} sn", [
+            _selectedOcrSettings.autoHideAfterSeconds.toStringAsFixed(1),
+          ]),
+          value: _selectedOcrSettings.autoHideAfterSeconds,
+          min: 0.5,
+          max: 30,
+          divisions: 59,
+          onChanged: (value) => _updateSelectedOcrSettings(
+            _selectedOcrSettings.copyWith(autoHideAfterSeconds: value),
+          ),
+          info: context.tr(
+            "OCR alanında yeni metin algılanmazsa altyazı seçtiğin süre sonunda gizlenir.",
+          ),
+        ),
+      ],
+      // Subtitle look and size belong to the subtitle position mode only.
+      if (_editingSubtitleBounds) ...[
+        // The over-the-English subtitle has no fixed box to size.
+        if (!_subtitleBoxLocked) ...[
+          _sliderSetting(
+            label: context.tr("Altyazı {0} genişliği: {1}%", [
+              _selectedSubtitleIndex + 1,
+              (_selectedSubtitleBounds.width * 100).round(),
+            ]),
+            value: _selectedSubtitleBounds.width.clamp(0.10, 1.0).toDouble(),
+            min: 0.10,
+            max: 1,
+            divisions: 180,
+            onChanged: (value) {
+              final bounds = _selectedSubtitleBounds;
+              final width = value.clamp(0.10, 1.0).toDouble();
+              _updateSelectedSubtitleRegion(
+                NormalizedRect(
+                  left: bounds.left.clamp(0.0, 1.0 - width).toDouble(),
+                  top: bounds.top,
+                  width: width,
+                  height: bounds.height,
+                ),
+              );
+            },
+          ),
+          _sliderSetting(
+            label: context.tr("Altyazı {0} yüksekliği: {1}%", [
+              _selectedSubtitleIndex + 1,
+              (_selectedSubtitleBounds.height * 100).round(),
+            ]),
+            value: _selectedSubtitleBounds.height.clamp(0.05, 0.70).toDouble(),
+            min: 0.05,
+            max: 0.70,
+            divisions: 130,
+            onChanged: (value) {
+              final bounds = _selectedSubtitleBounds;
+              final height = value.clamp(0.05, 0.70).toDouble();
+              _updateSelectedSubtitleRegion(
+                NormalizedRect(
+                  left: bounds.left,
+                  top: bounds.top.clamp(0.0, 1.0 - height).toDouble(),
+                  width: bounds.width,
+                  height: height,
+                ),
+              );
+            },
+          ),
+        ],
+        _sliderSetting(
+          label: context.tr("Yazı boyutu: {0}", [
+            _selectedSubtitleSettings.fontSize.toStringAsFixed(1),
+          ]),
+          value: _selectedSubtitleSettings.fontSize,
+          min: 4,
+          max: 64,
+          divisions: 120,
+          onChanged: (value) => _updateSelectedSubtitleSettings(
+            _selectedSubtitleSettings.copyWith(fontSize: value),
+          ),
+        ),
+        _settingsCard(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.tr("Yazı tipi")),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    key: const ValueKey('subtitle-font-game'),
+                    label: Text(context.tr("Oyun fontu")),
+                    selected: _selectedSubtitleSettings.useGameFont,
+                    onSelected: (_) => _updateSelectedSubtitleSettings(
+                      _selectedSubtitleSettings.copyWith(useGameFont: true),
+                    ),
+                  ),
+                  ChoiceChip(
+                    key: const ValueKey('subtitle-font-system'),
+                    label: Text(context.tr("Sistem fontu")),
+                    selected: !_selectedSubtitleSettings.useGameFont,
+                    onSelected: (_) => _updateSelectedSubtitleSettings(
+                      _selectedSubtitleSettings.copyWith(useGameFont: false),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                context.tr(
+                  "Oyun fontu yoksa sistem fontu kullanılır. Diğer görünüm ve konum ayarların korunur.",
+                ),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF929DB4)),
+              ),
+            ],
+          ),
+        ),
+        _sliderSetting(
+          label: context.tr("Arka plan saydamlığı: {0}%", [
+            ((1 - _selectedSubtitleSettings.backgroundOpacity) * 100).round(),
+          ]),
+          value: 1 - _selectedSubtitleSettings.backgroundOpacity,
+          min: 0,
+          max: 1,
+          divisions: 100,
+          onChanged: (value) {
+            _updateSelectedSubtitleSettings(
+              _selectedSubtitleSettings.copyWith(backgroundOpacity: 1 - value),
+            );
+          },
+          info: context.tr(
+            "Saydamlık %0 iken arka plan tamamen opaktır. Saydamlık %100 iken arka plan tamamen görünmez olur.",
+          ),
+        ),
+        _settingsCard(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!_subtitleBoxLocked) ...[
+                const SizedBox(height: 6),
+                Text(context.tr("Arka plan kutusu")),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    ChoiceChip(
+                      label: Text(context.tr("Yalnızca yazı kadar")),
+                      selected: _selectedSubtitleSettings.backgroundFitToText,
+                      onSelected: (_) => _updateSelectedSubtitleSettings(
+                        _selectedSubtitleSettings.copyWith(
+                          backgroundFitToText: true,
+                        ),
+                      ),
+                    ),
+                    ChoiceChip(
+                      label: Text(context.tr("Seçili alanı doldur")),
+                      selected: !_selectedSubtitleSettings.backgroundFitToText,
+                      onSelected: (_) {
+                        setState(() => _editingSubtitleBounds = true);
+                        _updateSelectedSubtitleSettings(
+                          _selectedSubtitleSettings.copyWith(
+                            backgroundFitToText: false,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _selectedSubtitleSettings.backgroundFitToText
+                      ? context.tr("Arka plan yazıyla birlikte büyüyüp küçülür.")
+                      : context.tr(
+                          "Arka plan turkuaz alanın tamamını doldurur. Kutuyu sürükleyebilir, kenarlarından boyutlandırabilir veya alan ayarlarını kullanabilirsin.",
+                        ),
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF929DB4)),
+                ),
+                if (!_selectedSubtitleSettings.backgroundFitToText)
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() => _editingSubtitleBounds = true);
+                      final target = _rectangleControlsKey.currentContext;
+                      if (target != null) {
+                        Scrollable.ensureVisible(
+                          target,
+                          duration: const Duration(milliseconds: 250),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.crop_free),
+                    label: Text(context.tr("Arka plan alanını ayarla")),
+                  ),
+              ],
+              const SizedBox(height: 6),
+              Text(context.tr("Arka plan rengi")),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  for (final color in const [
+                    Color(0xB3000000),
+                    Color(0xB3333333),
+                    Color(0xB31B5E20),
+                    Color(0xB38E2400),
+                    Color(0xB300315B),
+                    Color(0xB34A148C),
+                    Color(0xB3AD1457),
+                    Color(0xB3F9A825),
+                  ])
+                    _colorChoice(
+                      color: color,
+                      selected:
+                          (Color(
+                                _selectedSubtitleSettings.backgroundColor,
+                              ).toARGB32() &
+                              0x00FFFFFF) ==
+                          (color.toARGB32() & 0x00FFFFFF),
+                      onTap: () => _updateSelectedSubtitleSettings(
+                        _selectedSubtitleSettings.copyWith(
+                          backgroundColor: color.toARGB32(),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _chooseBackgroundColor,
+                  icon: Icon(
+                    Icons.palette_outlined,
+                    color: Color(
+                      _selectedSubtitleSettings.effectiveBackgroundColor,
+                    ),
+                  ),
+                  label: Text(context.tr("Özel arka plan rengi seç")),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(context.tr("Yazı rengi")),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  for (final color in const [
+                    Colors.white,
+                    Color(0xFFFFEB3B),
+                    Color(0xFF80DEEA),
+                    Color(0xFFA5D6A7),
+                    Color(0xFFFFAB91),
+                    Color(0xFFCE93D8),
+                    Color(0xFF212121),
+                  ])
+                    _textColorChoice(color),
+                ],
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _chooseTextColor,
+                  icon: Icon(
+                    Icons.color_lens_outlined,
+                    color: Color(_selectedSubtitleSettings.textColor),
+                  ),
+                  label: Text(
+                    context.tr("Özel yazı rengi seç · #{0}", [
+                      _selectedSubtitleSettings.textColor
+                          .toRadixString(16)
+                          .padLeft(8, '0')
+                          .substring(2)
+                          .toUpperCase(),
+                    ]),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(context.tr("Hizalama ve kalınlık")),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  _formatChoice(
+                    label: _selectedSubtitleSettings.centered
+                        ? context.tr("Ortala")
+                        : context.tr("Sola hizala"),
+                    icon: _selectedSubtitleSettings.centered
+                        ? Icons.format_align_center
+                        : Icons.format_align_left,
                     onTap: () => _updateSelectedSubtitleSettings(
                       _selectedSubtitleSettings.copyWith(
-                        backgroundColor: color.toARGB32(),
+                        centered: !_selectedSubtitleSettings.centered,
                       ),
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _chooseBackgroundColor,
-                icon: Icon(
-                  Icons.palette_outlined,
-                  color: Color(
-                    _selectedSubtitleSettings.effectiveBackgroundColor,
-                  ),
-                ),
-                label: Text(context.tr("Özel arka plan rengi seç")),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(context.tr("Yazı rengi")),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              children: [
-                for (final color in const [
-                  Colors.white,
-                  Color(0xFFFFEB3B),
-                  Color(0xFF80DEEA),
-                  Color(0xFFA5D6A7),
-                  Color(0xFFFFAB91),
-                  Color(0xFFCE93D8),
-                  Color(0xFF212121),
-                ])
-                  _textColorChoice(color),
-              ],
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _chooseTextColor,
-                icon: Icon(
-                  Icons.color_lens_outlined,
-                  color: Color(_selectedSubtitleSettings.textColor),
-                ),
-                label: Text(
-                  context.tr("Özel yazı rengi seç · #{0}", [
-                    _selectedSubtitleSettings.textColor
-                        .toRadixString(16)
-                        .padLeft(8, '0')
-                        .substring(2)
-                        .toUpperCase(),
-                  ]),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(context.tr("Hizalama ve kalınlık")),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                _formatChoice(
-                  label: _selectedSubtitleSettings.centered
-                      ? context.tr("Ortala")
-                      : context.tr("Sola hizala"),
-                  icon: _selectedSubtitleSettings.centered
-                      ? Icons.format_align_center
-                      : Icons.format_align_left,
-                  onTap: () => _updateSelectedSubtitleSettings(
-                    _selectedSubtitleSettings.copyWith(
-                      centered: !_selectedSubtitleSettings.centered,
+                  _formatChoice(
+                    label: _selectedSubtitleSettings.bold
+                        ? context.tr("Kalın")
+                        : context.tr("Normal"),
+                    icon: Icons.format_bold,
+                    selected: _selectedSubtitleSettings.bold,
+                    onTap: () => _updateSelectedSubtitleSettings(
+                      _selectedSubtitleSettings.copyWith(
+                        bold: !_selectedSubtitleSettings.bold,
+                      ),
                     ),
                   ),
-                ),
-                _formatChoice(
-                  label: _selectedSubtitleSettings.bold
-                      ? context.tr("Kalın")
-                      : context.tr("Normal"),
-                  icon: Icons.format_bold,
-                  selected: _selectedSubtitleSettings.bold,
-                  onTap: () => _updateSelectedSubtitleSettings(
-                    _selectedSubtitleSettings.copyWith(
-                      bold: !_selectedSubtitleSettings.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     ],
   );
 
@@ -2426,7 +2829,11 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     final stopped = await _disconnect();
     if (!stopped || !mounted) return;
     _tvSubtitleClient.updateSubtitle('', _subtitleSettings);
-    setState(() => _subtitleTexts = <String>[]);
+    setState(() {
+      _subtitleTexts = <String>[];
+      _subtitleCovers = const <SubtitleCover>[];
+      _subtitleRich = <int, SubtitleRichText>{};
+    });
     _allowExitAfterTranslationStop = true;
     Navigator.of(context).pop(true);
   }

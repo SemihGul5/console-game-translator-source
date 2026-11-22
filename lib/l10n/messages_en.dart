@@ -752,6 +752,21 @@ const englishMessages = <String, String>{
       "Selects dialogue-like lines using speaker names, sentence structure and position.",
   "Kapalı: seçili OCR alanındaki tüm metinler tanınır.":
       "Off: recognizes all text in the selected OCR area.",
+  "Çeviriyi İngilizce altyazının üstünde göster":
+      "Show translation over the English subtitle",
+  "Açık: çeviri, okunan İngilizce satırın tam üstünde çıkar; art arda konuşan kişiler ayrı ayrı gösterilir. Altyazı 1'in sabit konum ayarı kullanılmaz.":
+      "On: the translation appears right over the English line that was read, and back-to-back speakers are shown separately. Subtitle 1's fixed position is not used.",
+  "Kapalı: çeviri, Altyazı 1 için seçtiğin sabit yerde gösterilir.":
+      "Off: the translation is shown at the fixed position you chose for Subtitle 1.",
+  "Altyazı 1 İngilizce altyazının üstünde":
+      "Subtitle 1 is over the English subtitle",
+  "Çeviri, OCR 1'in okuduğu İngilizce satırın tam üstünde görünür ve onunla birlikte yer değiştirir; art arda konuşan kişiler ayrı kutularda gösterilir. Bu yüzden sabit konum ayarı kapalı. Yazı boyutu, renk ve arka plan ayarları geçerli.":
+      "The translation appears right over the English line read by OCR 1 and moves with it; back-to-back speakers get separate boxes. That is why the fixed position setting is off. Text size, color and background settings still apply.",
+  "Sabit konuma dön": "Back to fixed position",
+  "Altyazı {0}, OCR {1} alanıyla birlikte taşınsın":
+      "Move Subtitle {0} with OCR {1} area",
+  "Açıkken altyazı OCR alanının tam üstünde durur ve onu taşıdıkça o da taşınır. Altyazı kutusunu elle taşırsan kendi yerinde kalır.":
+      "When on, the subtitle sits right on the OCR area and moves with it. If you move the subtitle box yourself, it keeps its own place.",
   "OCR {0} görüntü ön işlemesi": "OCR {0} image preprocessing",
   "Ham görüntü": "Raw image",
   "Gri tonlama + kontrast": "Grayscale + contrast",

@@ -7,6 +7,7 @@ import android.graphics.Rect
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
+import android.util.Base64
 import android.util.Log
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
@@ -20,6 +21,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.io.ByteArrayOutputStream
 import java.util.LinkedHashMap
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
@@ -125,6 +127,12 @@ internal class SubtitleOcrController(
     private val compareInFlight = mutableSetOf<Pair<String, String>>()
 
     @Volatile private var regions = listOf(floatArrayOf(0.10f, 0.78f, 0.80f, 0.22f))
+    /** Frame heights of certain subtitles this session; short lines there are not signs. */
+    private val subtitleBand = SubtitleBand()
+    /** "Over the English" covers per OCR area (only the first area offers the mode). */
+    private val coverTrackers = ConcurrentHashMap<Int, SubtitleCoverTracker>()
+    // Button icons found beside recent OCR reads, per area, keyed by the read's text.
+    private val iconReads = ConcurrentHashMap<Int, LinkedHashMap<String, List<ButtonIcon>>>()
     @Volatile private var enabled = false
     @Volatile private var sampleIntervalMillis = 100L
     @Volatile private var regionSettings = listOf(OcrRegionSettings())
@@ -272,8 +280,16 @@ internal class SubtitleOcrController(
         geminiConfiguredKeys = geminiKeys
         deepLConfigSource = sourceLanguage
         deepLConfigTarget = targetLanguage
+        val previousRegions = regions
         regions = normalizedRegions.filter { it.size >= 4 }.take(12).map { it.copyOfRange(0, 4) }
             .ifEmpty { listOf(floatArrayOf(0.10f, 0.78f, 0.80f, 0.22f)) }
+        // Remembered subtitle heights belong to the old OCR areas.
+        val regionsChanged = previousRegions.size != regions.size ||
+            previousRegions.zip(regions).any { (old, new) -> !old.contentEquals(new) }
+        if (regionsChanged) {
+            subtitleBand.clear()
+            iconReads.clear()
+        }
         while (regionStates.size < regions.size) regionStates.add(RegionState())
         while (regionStates.size > regions.size) regionStates.removeAt(regionStates.lastIndex)
         val shouldResetRecognizedText = isEnabled && !enabled
@@ -298,6 +314,8 @@ internal class SubtitleOcrController(
             )
         }
         sampleIntervalMillis = regionSettings.minOf { it.sampleIntervalMillis }
+        // Covers belong to the area's current place and mode; stale ones are taken down.
+        if (regionsChanged || !isEnabled || !coverEnabled(0)) resetCovers()
         val safeEngine = selectedTranslationEngine.takeIf { it in setOf("mlkit", "opus", "deepl", "gemini") } ?: "opus"
         val safeMarianTarget = if (safeEngine == "hplt") "tr" else
             targetLanguage.takeIf { it in OfflineMarianCatalog.targetCodes } ?: "tr"
@@ -935,11 +953,43 @@ internal class SubtitleOcrController(
             val selected: SubtitleOcrRead,
             val memory: GameTranslationMemory?,
             val lookupMillis: Long,
+            val coverUnits: List<CoverUnit>? = null,
+            val icons: List<ButtonIcon> = emptyList(),
         ) {
             fun recoveryRead() = OcrRecoveryPolicy.Read(rawText, rawConfidence, selected.text, selected.confidence)
         }
         fun evaluate(result: com.google.mlkit.vision.text.Text): Evaluated {
-            val lines = result.textBlocks.flatMap { it.lines }.sortedWith(
+            // In-world text (licence plates, signs, shirts, posters) is not a subtitle
+            // even inside the subtitle area: it never reaches JSON lookup or translation.
+            val region = regions.getOrNull(regionIndex)
+            // Only a wide, centred area holds subtitles; a phone or mission area
+            // keeps its short UI lines (plates and tilted text are dropped everywhere).
+            val subtitleRegion = region?.let(::isSubtitleShapedRegion) ?: true
+            val sceneBlocks = result.textBlocks.map { block ->
+                val sceneLines = block.lines.map { it.toSceneTextLine(bitmap.width, bitmap.height) }
+                Triple(block, sceneLines, region?.let { scenePlacement(sceneLines, it) })
+            }
+            // Learn this frame's certain subtitle heights first, so a short reply
+            // beside them in the same frame is judged with them.
+            if (!debugOnly && subtitleRegion) sceneBlocks.forEach { (_, sceneLines, placement) ->
+                if (placement != null && sceneTextReason(sceneLines) == null && isCertainSubtitle(sceneLines, placement))
+                    subtitleBand.remember(placement)
+            }
+            val textBlocks = sceneBlocks.filter { (block, sceneLines, placement) ->
+                val reason = sceneTextReason(sceneLines, placement, subtitleBand, subtitleRegion)
+                if (reason != null && !debugOnly && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
+                    "SCENE_TEXT_REJECTED area=${regionIndex + 1} reason=$reason text=${logText(block.text)}")
+                reason == null
+            }.map { it.first }
+            // Over-the-English mode: the kept lines, split into one subtitle per speaker.
+            val coverUnits = if (!debugOnly && region != null && coverEnabled(regionIndex)) {
+                groupCoverUnits(textBlocks.flatMap { it.lines }.mapNotNull { line ->
+                    coverLine(line, bitmap.width, bitmap.height, region)
+                }).filter { unit -> unit.text.count(Char::isLetter) >= 2 && !isNonLinguisticOcr(unit.text) }
+            } else null
+            // Controller button icons between the kept words ("Hold [L3] to …").
+            val icons = if (!debugOnly && region != null) findButtonIcons(textBlocks, bitmap, region) else emptyList()
+            val lines = textBlocks.flatMap { it.lines }.sortedWith(
                 compareBy<com.google.mlkit.vision.text.Text.Line> { it.boundingBox?.top ?: 0 }
                     .thenBy { it.boundingBox?.left ?: 0 })
             val rawText = lines.joinToString(" ") { it.text }
@@ -950,7 +1000,7 @@ internal class SubtitleOcrController(
                 else rawConfidenceValues.average().toFloat().coerceIn(0f, 1f)
             val lookupStartedAt = SystemClock.elapsedRealtime()
             val memory = if (debugOnly) null else matchingGameMemory()
-            val blocks = result.textBlocks.sortedBy { it.boundingBox?.top ?: 0 }
+            val blocks = textBlocks.sortedBy { it.boundingBox?.top ?: 0 }
                 .map { block -> block.lines.joinToString(" ") { it.text } }
             val candidates = (blocks + blocks.zipWithNext { left, right -> "$left $right" })
                 .filter { it.length >= 2 && it.any(Char::isLetterOrDigit) }.sortedByDescending(String::length).take(8)
@@ -958,7 +1008,7 @@ internal class SubtitleOcrController(
                 rawText, rawConfidence, memory, candidates,
             ) {
                 val acceptedLines = if (!debugOnly && dialogueFilter) {
-                    val candidates = result.textBlocks.flatMapIndexed { blockIndex, block ->
+                    val candidates = textBlocks.flatMapIndexed { blockIndex, block ->
                         block.lines.map { line ->
                             val box = line.boundingBox ?: Rect(0, 0, bitmap.width, bitmap.height)
                             val confidenceValues = line.elements.map { it.confidence }.filter { it > 0f }
@@ -989,7 +1039,7 @@ internal class SubtitleOcrController(
                 SubtitleOcrRead(text, confidence)
             }
             return Evaluated(result, rawText, rawConfidence, selected, memory,
-                SystemClock.elapsedRealtime() - lookupStartedAt)
+                SystemClock.elapsedRealtime() - lookupStartedAt, coverUnits, icons)
         }
         fun release() { owned.forEach { if (!it.isRecycled) it.recycle() } }
         fun currentFrameContext() = !closed && enabled &&
@@ -1044,8 +1094,13 @@ internal class SubtitleOcrController(
                 completion?.invoke(text.ifEmpty { "Seçili alanda metin bulunamadı" }, details)
                 return
             }
-            if (!closed && enabled && deepLRevision.get() == frameRevision)
+            if (!closed && enabled && deepLRevision.get() == frameRevision) {
+                rememberIcons(regionIndex, text, current.icons)
+                if (current.selected.text != text) rememberIcons(regionIndex, current.selected.text, current.icons)
                 onRecognized(regionIndex, text, confidence, selected.memoryMatch)
+                // The normal path above runs unchanged; covers only add placement.
+                current.coverUnits?.let { units -> updateCovers(regionIndex, units, current.memory, current.icons) }
+            }
             completion?.invoke(text, details)
         }
         fun recognized(result: com.google.mlkit.vision.text.Text, visualReuse: Boolean) {
@@ -1179,11 +1234,11 @@ internal class SubtitleOcrController(
             return
         }
         // Punctuation-only detections (for example a subtitle separator ':')
-        // behave like an empty OCR result and never reach translation. Cloud
-        // clocks/numbers also take this path even with dialogue filtering off,
-        // before either cache lookup or API scheduling. JSON already returned above.
-        if (text.isEmpty() || text.none { it.isLetterOrDigit() } ||
-            (isCloudEngine() && isNonLinguisticCloudOcr(text))) {
+        // behave like an empty OCR result and never reach translation. Clocks
+        // and numbers (a video player's "02:59 04:59") take this path for every
+        // engine, even with dialogue filtering off, before cache lookup or
+        // translation scheduling. JSON already returned above.
+        if (text.isEmpty() || text.none { it.isLetterOrDigit() } || isNonLinguisticOcr(text)) {
             state.deepLOcrPolicy.discardPending()
             state.localOcrPolicy.discardPending()
             expireVisibleSubtitleIfNeeded(state, index, now)
@@ -1208,6 +1263,7 @@ internal class SubtitleOcrController(
                     state.translatingKey = null
                     state.memoryMatchedKey = null
                     state.visibleSince = null
+                    coverTrackers[index]?.setLiveText(null)
                     emit(mapOf("type" to "subtitleCleared", "regionIndex" to index))
                 }
             } else if (state.sourceKey != null) {
@@ -1760,7 +1816,8 @@ internal class SubtitleOcrController(
                         marianTargetLanguageCode != target || regionStates.getOrNull(index) !== state) return@execute
                     // A completed translation is still useful if this line reappears.
                     // It must not be displayed over a genuinely different current line.
-                    if (translated.isNotBlank() && engine == "opus") translationCache[key] = translated
+                    val unknownToken = containsUnknownToken(translated)
+                    if (translated.isNotBlank() && !unknownToken && engine == "opus") translationCache[key] = translated
                     if (latestMarianKeyByRegion[index] != key || state.sourceKey != key ||
                         (engine == "opus" && state.localOcrPolicy.requestKey != key)) {
                         if (translationEngine == "compare") releaseComparison(sourceText, "OPUS-MT")
@@ -1772,6 +1829,8 @@ internal class SubtitleOcrController(
                         ?: "[OPUS-MT decoder output rejected]"
                     if (translated.isBlank()) {
                         Log.w(OCR_LOG_TAG, "OPUS_INVALID_OUTPUT area=${index + 1} reason=repeated-token-loop")
+                    } else if (unknownToken) {
+                        Log.w(OCR_LOG_TAG, "OPUS_INVALID_OUTPUT area=${index + 1} reason=unknown-token")
                     }
                     if (diagnosticsEnabled()) {
                         Log.i(OCR_LOG_TAG,
@@ -1790,7 +1849,7 @@ internal class SubtitleOcrController(
                         else releaseComparison(sourceText, "OPUS-MT")
                     }
                     if (state.translatingKey == key) state.translatingKey = null
-                    if (translated.isNotBlank()) {
+                    if (translated.isNotBlank() && !unknownToken) {
                         if (enabled && canUseLiveSubtitle(state.sourceKey, state.memoryMatchedKey, key) &&
                             translationEngine in setOf("opus", "compare")) {
                             state.visibleSince = SystemClock.elapsedRealtime()
@@ -1912,7 +1971,7 @@ internal class SubtitleOcrController(
                                 "source=${logText(sourceText)} translated=${logText(translated)}",
                         )
                     }
-                    if (translated.isNotBlank()) {
+                    if (translated.isNotBlank() && !containsUnknownToken(translated)) {
                         translationCache[key] = translated
                         if (enabled && canUseLiveSubtitle(state.sourceKey, state.memoryMatchedKey, key)) {
                             state.visibleSince = SystemClock.elapsedRealtime()
@@ -2141,6 +2200,172 @@ internal class SubtitleOcrController(
         }
     }
 
+    private fun coverEnabled(index: Int) = index == 0 && regionSettings.getOrNull(0)?.coverEnglish == true
+
+    private fun coverTracker(index: Int) = coverTrackers.getOrPut(index) { SubtitleCoverTracker() }
+
+    /** A crop-pixel rectangle mapped into the whole frame; [region] is [left, top, width, height]. */
+    /**
+     * One OCR line for the cover mode. Scene text glued in front of a speaker
+     * label ("YHO Lucia: …") is dropped from both the text and the box, so the
+     * translation is not stretched over the bottle or sign next to the subtitle.
+     */
+    private fun coverLine(line: com.google.mlkit.vision.text.Text.Line, width: Int, height: Int, region: FloatArray): CoverLine? {
+        val box = line.boundingBox ?: return null
+        val elements = line.elements
+        val drop = sceneWordsBeforeSpeaker(elements.map { it.text })
+        val kept = elements.drop(drop)
+        val keptBoxes = kept.mapNotNull { it.boundingBox }
+        if (drop == 0 || keptBoxes.size != kept.size || kept.isEmpty()) {
+            return CoverLine(line.text, frameBox(box, width, height, region))
+        }
+        return CoverLine(
+            kept.joinToString(" ") { it.text },
+            keptBoxes.map { frameBox(it, width, height, region) }.reduce(CoverBox::union),
+        )
+    }
+
+    private fun frameBox(box: Rect, width: Int, height: Int, region: FloatArray): CoverBox {
+        val w = width.coerceAtLeast(1).toFloat()
+        val h = height.coerceAtLeast(1).toFloat()
+        return CoverBox(
+            region[0] + box.left / w * region[2],
+            region[1] + box.top / h * region[3],
+            region[0] + box.right / w * region[2],
+            region[1] + box.bottom / h * region[3],
+        )
+    }
+
+    /** Each subtitle is looked up on its own, so two speakers get their own lines. */
+    private fun updateCovers(index: Int, units: List<CoverUnit>, memory: GameTranslationMemory?, icons: List<ButtonIcon>) {
+        val observations = units.map { unit ->
+            val match = memory?.let { it.findExact(unit.text) ?: it.find(unit.text) }
+            CoverObservation(unit, match?.let {
+                val text = subtitleTextEvent(index, it.target, "none", it)["text"] as String
+                val unitIcons = icons.filter { icon -> icon.box.centerX in unit.box.left..unit.box.right &&
+                    icon.box.centerY in (unit.box.top - unit.lineHeight)..(unit.box.bottom + unit.lineHeight) }
+                CoverMatch(
+                    key = "${it.gameId}:${it.entryId}:${it.segmentIndex ?: -1}",
+                    text = if (unitIcons.isEmpty()) text else insertButtonIcons(text, unitIcons.size, targetIsTurkish()),
+                    immediate = it.matchType in CERTAIN_COVER_MATCHES || it.score >= CERTAIN_COVER_SCORE,
+                    icons = unitIcons.map { icon -> icon.png },
+                )
+            })
+        }
+        coverTracker(index).observe(observations, SystemClock.elapsedRealtime())?.let { emitCovers(index, it) }
+    }
+
+    private fun targetIsTurkish() = targetLanguageCode.startsWith(TranslateLanguage.TURKISH)
+
+    /** Icons cut out of the crop where a wide word gap holds a drawn shape. */
+    private fun findButtonIcons(
+        blocks: List<com.google.mlkit.vision.text.Text.TextBlock>,
+        bitmap: Bitmap,
+        region: FloatArray,
+    ): List<ButtonIcon> {
+        if (bitmap.isRecycled) return emptyList()
+        val words = blocks.flatMap { it.lines }.flatMap { it.elements }.mapNotNull { element ->
+            element.boundingBox?.let { IconWord(it.left, it.top, it.right, it.bottom, element.text) }
+        }
+        if (words.size < 2) return emptyList()
+        return buttonIconGaps(words, bitmap.width, bitmap.height).mapNotNull { area ->
+            try {
+                val pixels = IntArray(area.width * area.height)
+                bitmap.getPixels(pixels, 0, area.width, area.left, area.top, area.width, area.height)
+                val ink = iconInk(pixels, area, (area.height / ICON_AREA_LINES).roundToInt()) ?: return@mapNotNull null
+                val left = (area.left + ink.left - 1).coerceAtLeast(0)
+                val top = (area.top + ink.top - 1).coerceAtLeast(0)
+                val right = (area.left + ink.right + 1).coerceAtMost(bitmap.width)
+                val bottom = (area.top + ink.bottom + 1).coerceAtMost(bitmap.height)
+                val crop = Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top)
+                val png = try {
+                    ByteArrayOutputStream().use { out ->
+                        crop.compress(Bitmap.CompressFormat.PNG, 100, out)
+                        Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+                    }
+                } finally {
+                    if (crop !== bitmap) crop.recycle()
+                }
+                ButtonIcon(png, frameBox(Rect(left, top, right, bottom), bitmap.width, bitmap.height, region))
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    private fun rememberIcons(index: Int, text: String, icons: List<ButtonIcon>) {
+        if (icons.isEmpty() || text.isBlank()) return
+        val reads = iconReads.getOrPut(index) { LinkedHashMap() }
+        synchronized(reads) {
+            reads.remove(text)
+            reads[text] = icons
+            while (reads.size > MAX_ICON_READS) reads.remove(reads.keys.first())
+        }
+    }
+
+    /** Icons seen beside [source], also when OCR spelt it slightly differently. */
+    private fun iconsFor(index: Int, source: String): List<ButtonIcon> {
+        val reads = iconReads[index] ?: return emptyList()
+        synchronized(reads) {
+            reads[source]?.let { return it }
+            val words = iconKeyWords(source)
+            if (words.isEmpty()) return emptyList()
+            return reads.entries.lastOrNull { (key, _) ->
+                val other = iconKeyWords(key)
+                other.isNotEmpty() && words.count { it in other } * 5 >= words.size * 4 &&
+                    other.count { it in words } * 5 >= other.size * 4
+            }?.value ?: emptyList()
+        }
+    }
+
+    private fun iconKeyWords(text: String): Set<String> =
+        ICON_KEY_WORD.findAll(text.lowercase(Locale.ROOT)).map { it.value }.toSet()
+
+    private fun resetCovers() {
+        coverTrackers.keys.toList().forEach { index -> coverTrackers.remove(index)?.reset()?.let { emitCovers(index, it) } }
+    }
+
+    private fun emitCovers(index: Int, items: List<CoverItem>) {
+        if (diagnosticsEnabled()) Log.i(OCR_LOG_TAG, "SUBTITLE_COVERS area=${index + 1} items=${items.size} " +
+            items.joinToString(" | ") { "#${it.id} top=${"%.3f".format(Locale.ROOT, it.box.top)} ${logText(it.text)}" })
+        emit(mapOf(
+            "type" to "subtitleCovers",
+            "regionIndex" to index,
+            "items" to items.map { item ->
+                mapOf(
+                    "id" to item.id,
+                    "text" to item.text,
+                    "left" to item.box.left.toDouble(),
+                    "top" to item.box.top.toDouble(),
+                    "width" to item.box.width.toDouble(),
+                    "height" to item.box.height.toDouble(),
+                    "lineHeight" to item.lineHeight.toDouble(),
+                ) + (if (item.icons.isEmpty()) emptyMap() else mapOf("icons" to item.icons))
+            },
+        ))
+    }
+
+    private fun com.google.mlkit.vision.text.Text.Line.toSceneTextLine(width: Int, height: Int): SceneTextLine {
+        val w = width.coerceAtLeast(1).toFloat()
+        val h = height.coerceAtLeast(1).toFloat()
+        val box = boundingBox ?: Rect(0, 0, width, height)
+        val words = elements.mapNotNull { element ->
+            element.boundingBox?.let { SceneTextWord(it.left / w, it.top / h, it.right / w, it.bottom / h) }
+        }
+        val confidences = elements.map { it.confidence }.filter { it > 0f }
+            .ifEmpty { listOfNotNull(confidence.takeIf { it > 0f }) }
+        return SceneTextLine(
+            text = text,
+            left = box.left / w,
+            top = box.top / h,
+            right = box.right / w,
+            bottom = box.bottom / h,
+            angle = angle,
+            confidence = if (confidences.isEmpty()) -1f else confidences.average().toFloat(),
+            words = words,
+        )
+    }
+
     private fun logText(value: String): String =
         "\"${value.replace("\\", "\\\\").replace("\r", "\\r").replace("\n", "\\n").take(1000)}\""
 
@@ -2152,9 +2377,39 @@ internal class SubtitleOcrController(
         engine: String,
         match: GameTranslationMatch? = null,
     ) {
-        val event = subtitleTextEvent(index, translatedText, engine, match)
-        val speaker = event["speaker"] as? String
-        val displayText = event["text"] as String
+        // Last guard for every live path (fresh, cached, comparison): a decoder's
+        // "<unk>" is never shown. Game pack translations are authored text.
+        val rejection = when {
+            match != null -> null
+            containsUnknownToken(translatedText) -> "unknown-token"
+            isUntranslatedEcho(sourceText, translatedText) -> "untranslated"
+            else -> null
+        }
+        if (rejection != null) {
+            if (diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
+                "SUBTITLE_REJECTED area=${index + 1} source=$origin reason=$rejection ocr=${logText(sourceText)}")
+            // The English on screen changed, so an older live translation must
+            // not stay drawn over it in the over-the-English mode.
+            if (coverEnabled(index)) coverTracker(index).setLiveText(null)
+            return
+        }
+        val baseEvent = subtitleTextEvent(index, translatedText, engine, match)
+        val speaker = baseEvent["speaker"] as? String
+        val displayText = baseEvent["text"] as String
+        // Button icons cut from the frame go back into the translation. "text"
+        // stays plain for receivers that cannot draw them.
+        val icons = iconsFor(index, sourceText)
+        val richText = if (icons.isEmpty()) null else insertButtonIcons(displayText, icons.size, targetIsTurkish())
+        val event = if (richText == null) baseEvent
+            else baseEvent + mapOf("richText" to richText, "icons" to icons.map { it.png })
+        // A live (non-pack) translation covers the whole English when no line is in the pack.
+        if (coverEnabled(index)) {
+            coverTracker(index).setLiveText(
+                if (match == null) richText ?: displayText else null,
+                sourceText,
+                if (match == null) icons.map { it.png } else emptyList(),
+            )
+        }
         if (diagnosticsEnabled()) {
             val engineName = when (engine) {
                 "none" -> "JSON"
@@ -2171,7 +2426,7 @@ internal class SubtitleOcrController(
                     "score=$score matchType=${match?.matchType ?: "-"} " +
                     "speaker=${speaker?.let(::logText) ?: "-"} " +
                     "ocr=${logText(sourceText)} matched=${match?.let { logText(it.source) } ?: "-"} " +
-                    "output=${logText(displayText)}",
+                    "output=${logText(displayText)}" + (if (icons.isEmpty()) "" else " icons=${icons.size}"),
             )
         }
         emit(event)
@@ -2205,6 +2460,8 @@ internal class SubtitleOcrController(
             .trim()
             .trim('/', '|', '\\')
             .trim()
+            // "YHO Lucia: …": a bottle's brand glued in front of the speaker.
+            .let(::stripSceneWordsBeforeSpeaker)
         if (sourceLanguageCode != TranslateLanguage.ENGLISH || cleaned.isEmpty()) {
             return cleaned
         }
@@ -2254,11 +2511,17 @@ internal class SubtitleOcrController(
         state.fallbackVisibleKey = null
         state.memoryMatchedKey = null
         state.clearSent = true
+        coverTrackers[index]?.setLiveText(null)
         emit(mapOf("type" to "subtitleCleared", "regionIndex" to index))
     }
 
     companion object {
         private const val OCR_LOG_TAG = "GameTranslateOCR"
+        private const val MAX_ICON_READS = 6
+        private const val ICON_AREA_LINES = 1.6f
+        private val ICON_KEY_WORD = Regex("""[\p{L}\p{N}]{2,}""")
+        private val CERTAIN_COVER_MATCHES = setOf("exact", "spacing_exact", "full_row_fuzzy", "one_word_context")
+        private const val CERTAIN_COVER_SCORE = 0.985
         private const val MAX_COPY_WIDTH = 1600
         private const val MIN_CONFIDENT_OCR_THRESHOLD = 0.35f
         private const val MODEL_RETRY_DELAY_MS = 10000L
