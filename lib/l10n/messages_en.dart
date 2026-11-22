@@ -550,11 +550,6 @@ const englishMessages = <String, String>{
   "Başlamak için Android TV’yi eşleştir": "Pair your Android TV to get started",
   "PS5’e bağlanır ve altyazılar TV’de başlar":
       "Connects to PS5 and starts subtitles on your TV",
-  "Kişiselleştir": "Personalization",
-  "Remote Play sırasında ekran açık kalsın":
-      "Keep screen on during Remote Play",
-  "Telefon ekranının uykuya geçmesini önler; pil tüketimini artırabilir.":
-      "Prevents your phone screen from sleeping; may increase battery use.",
   "Kurulum rehberi": "Setup guide",
   "Oyun kataloğunda \"{0}\" alanı eksik.":
       "The game catalog is missing the “{0}” field.",
@@ -629,8 +624,8 @@ const englishMessages = <String, String>{
   "Deneme süresi sona erdi": "Trial ended",
   "Erişim doğrulaması gerekiyor": "Access verification required",
   "Paketleri ve erişim durumunu görüntüle": "View plans and access status",
-  "Hesabın ve Premium erişimin. Yenilemek için aşağı çek.":
-      "Your account and Premium access. Pull down to refresh.",
+  "Hesabın, Premium erişimin ve uygulama ayarların. Yenilemek için aşağı çek.":
+      "Your account, Premium access and app settings. Pull down to refresh.",
   "Oyununa kaldığın yerden devam et": "Pick up where you left off",
   "Google hesabın": "Your Google account",
   "Deneme ve hesap işlemleri için Google hesabınla giriş yap.":
@@ -754,14 +749,14 @@ const englishMessages = <String, String>{
       "Off: recognizes all text in the selected OCR area.",
   "Çeviriyi İngilizce altyazının üstünde göster":
       "Show translation over the English subtitle",
-  "Açık: çeviri, okunan İngilizce satırın tam üstünde çıkar; art arda konuşan kişiler ayrı ayrı gösterilir. Altyazı 1'in sabit konum ayarı kullanılmaz.":
-      "On: the translation appears right over the English line that was read, and back-to-back speakers are shown separately. Subtitle 1's fixed position is not used.",
-  "Kapalı: çeviri, Altyazı 1 için seçtiğin sabit yerde gösterilir.":
-      "Off: the translation is shown at the fixed position you chose for Subtitle 1.",
-  "Altyazı 1 İngilizce altyazının üstünde":
-      "Subtitle 1 is over the English subtitle",
-  "Çeviri, OCR 1'in okuduğu İngilizce satırın tam üstünde görünür ve onunla birlikte yer değiştirir; art arda konuşan kişiler ayrı kutularda gösterilir. Bu yüzden sabit konum ayarı kapalı. Yazı boyutu, renk ve arka plan ayarları geçerli.":
-      "The translation appears right over the English line read by OCR 1 and moves with it; back-to-back speakers get separate boxes. That is why the fixed position setting is off. Text size, color and background settings still apply.",
+  "Açık: çeviri, okunan İngilizce metnin tam üstünde çıkar; art arda konuşan kişiler ayrı ayrı, düğme ipuçları (SEÇ, GERİ…) her biri kendi yazısının üstünde gösterilir ve oyundaki düğme simgeleri görünür kalır. Bu alanın sabit altyazı konumu kullanılmaz.":
+      "On: the translation appears right over the English text that was read; back-to-back speakers are shown separately, and button prompts (SELECT, BACK…) each go over their own label while the game's button icons stay visible. This area's fixed subtitle position is not used.",
+  "Kapalı: çeviri, Altyazı {0} için seçtiğin sabit yerde gösterilir.":
+      "Off: the translation is shown at the fixed position you chose for Subtitle {0}.",
+  "Altyazı {0} İngilizce metnin üstünde":
+      "Subtitle {0} is over the English text",
+  "Çeviri, OCR {0} alanının okuduğu İngilizce metnin tam üstünde görünür ve onunla birlikte yer değiştirir; art arda konuşan kişiler ayrı kutularda, düğme ipuçları tek tek gösterilir. Bu yüzden sabit konum ayarı kapalı. Yazı boyutu, renk ve arka plan ayarları geçerli.":
+      "The translation appears right over the English text read by OCR {0} and moves with it; back-to-back speakers get separate boxes and button prompts are covered one by one. That is why the fixed position setting is off. Text size, color and background settings still apply.",
   "Sabit konuma dön": "Back to fixed position",
   "Altyazı {0}, OCR {1} alanıyla birlikte taşınsın":
       "Move Subtitle {0} with OCR {1} area",
@@ -871,7 +866,6 @@ const englishMessages = <String, String>{
   "Yapıştır": "Paste",
   "PSN doğrulanıyor…": "Verifying PSN…",
   "Sonraki adım: PS5 konsolunu bağla": "Next step: connect your PS5",
-  "Uygulamayı kendine göre düzenle.": "Make the app your own.",
   "Yardım": "Help",
   "Bağlantı ve çeviri hakkında yanıtlar":
       "Answers about connections and translation",
@@ -1110,9 +1104,6 @@ const englishMessages = <String, String>{
   "PSN Account ID güvenli depoya yazılamadı.":
       "Couldn't save PSN Account ID to secure storage.",
   "Kayıtlı PSN Account ID geçersiz.": "Invalid saved PSN Account ID.",
-  "Kişiselleştirme ayarları geçersiz.": "Invalid personalization settings.",
-  "Kişiselleştirme ayarları kaydedilemedi.":
-      "Couldn't save personalization settings.",
   "Uyarı tercihi geçersiz.": "Invalid reminder preference.",
   "Uyarı tercihi kaydedilemedi.": "Couldn't save reminder preference.",
   "Kurulum işaretleri geçersiz.": "Invalid setup checklist.",

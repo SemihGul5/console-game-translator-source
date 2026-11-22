@@ -260,3 +260,169 @@ private val SCENE_WHITESPACE = Regex("\\s+")
 private val SCENE_WORD = Regex("""[\p{L}\p{N}]+(?:['’][\p{L}]+)*""")
 private val SCENE_SENTENCE_PUNCTUATION = Regex("""[.!?…,;"“”]""")
 private val SCENE_ANY_PUNCTUATION = Regex("""[.!?…,;:"“”'’]""")
+
+/**
+ * Upper-case words of [text] with at least [minLength] letters/digits. Digits
+ * OCR puts in place of letters inside a word ("1SA", "5UIT") read as letters.
+ */
+internal fun sceneTokens(text: String, minLength: Int = 3): List<String> =
+    SCENE_WORD.findAll(text).map { normalizeSceneToken(it.value) }.filter { it.length >= minLength }.toList()
+
+private fun normalizeSceneToken(value: String): String {
+    val upper = value.uppercase(java.util.Locale.ROOT).filter(Char::isLetterOrDigit)
+    if (upper.none(Char::isLetter)) return upper
+    return upper.map { when (it) { '1' -> 'I'; '5' -> 'S'; '0' -> 'O'; else -> it } }.joinToString("")
+}
+
+/** Two OCR readings of the same word: equal, one letter apart, or one inside the other ("TSUIT"/"SUIT"). */
+internal fun similarSceneToken(a: String, b: String): Boolean {
+    if (a == b) return true
+    val shorter = minOf(a.length, b.length)
+    val longer = maxOf(a.length, b.length)
+    if (shorter < 3 || longer < 4) return false
+    if (shorter >= 4 && (a.contains(b) || b.contains(a))) return true
+    return longer - shorter <= 1 && editDistanceAtMostOne(a, b)
+}
+
+private fun editDistanceAtMostOne(a: String, b: String): Boolean {
+    if (a.length == b.length) return a.indices.count { a[it] != b[it] } <= 1
+    val (short, long) = if (a.length < b.length) a to b else b to a
+    var i = 0
+    var j = 0
+    var skipped = false
+    while (i < short.length && j < long.length) {
+        if (short[i] == long[j]) { i++; j++ }
+        else { if (skipped) return false; skipped = true; j++ }
+    }
+    return true
+}
+
+/**
+ * A block starting with a speaker label, or a certain subtitle: never treated as
+ * scene text by the motion and seen-words checks.
+ */
+internal fun isSceneExempt(lines: List<SceneTextLine>, placement: ScenePlacement?): Boolean {
+    val text = lines.joinToString(" ") { it.text.trim() }.trim()
+    if (SCENE_SPEAKER_LABEL.containsMatchIn(text)) return true
+    return placement != null && isCertainSubtitle(lines, placement)
+}
+
+/**
+ * Words of signs and other world text rejected as tilted a moment ago in one
+ * OCR area. A sign seen at an angle is rejected as tilted, but OCR
+ * often also reads one straight part of it ("SUIT" under "THE ONLY GOOD SUIT
+ * IS A …"), which a pack then translates. A later block made only of those
+ * words is the same sign, not a subtitle.
+ */
+internal class SceneWordMemory(
+    private val holdMillis: Long = SCENE_WORD_HOLD_MS,
+    private val capacity: Int = SCENE_WORD_CAPACITY,
+) {
+    private val words = LinkedHashMap<String, Long>()
+
+    @Synchronized fun remember(text: String, now: Long) {
+        sceneTokens(text).filterNot { it in SCENE_STOP_WORDS }.forEach { word ->
+            words.remove(word)
+            words[word] = now
+        }
+        while (words.size > capacity) words.remove(words.keys.first())
+    }
+
+    /** True when every (or, from four words, three in four) word of [text] was just seen on a rejected sign. */
+    @Synchronized fun isSceneEcho(text: String, now: Long): Boolean {
+        words.entries.removeAll { now - it.value > holdMillis }
+        if (words.isEmpty()) return false
+        val tokens = sceneTokens(text).filterNot { it in SCENE_STOP_WORDS }
+        if (tokens.isEmpty()) {
+            // A two-letter scrap of a remembered word ("SA" of "ISA").
+            val short = sceneTokens(text, 2)
+            return short.isNotEmpty() && short.all { piece -> words.keys.any { it.length > piece.length && piece in it } }
+        }
+        if (tokens.size > MAX_SCENE_ECHO_WORDS) return false
+        val known = tokens.count { token -> words.keys.any { similarSceneToken(token, it) } }
+        return if (tokens.size < 4) known == tokens.size else known * 4 >= tokens.size * 3
+    }
+
+    @Synchronized fun clear() = words.clear()
+}
+
+/** A block's box in crop pixels and its line height. */
+internal data class SceneBox(val left: Float, val top: Float, val right: Float, val bottom: Float, val lineHeight: Float)
+
+/** [lines] (crop-relative) as a pixel box of a [width]×[height] crop. */
+internal fun sceneBox(lines: List<SceneTextLine>, width: Int, height: Int): SceneBox? {
+    if (lines.isEmpty() || width <= 0 || height <= 0) return null
+    val lineHeight = lines.map { it.bottom - it.top }.sorted()[lines.size / 2] * height
+    if (lineHeight <= 0f) return null
+    return SceneBox(lines.minOf { it.left } * width, lines.minOf { it.top } * height,
+        lines.maxOf { it.right } * width, lines.maxOf { it.bottom } * height, lineHeight)
+}
+
+/**
+ * HUD prompts and subtitles stay put on screen; signs, plates and posters move
+ * whenever the camera does. Compares each block with the same text in the
+ * previous OCR frame of one area: when it moved by more than a third of a line,
+ * it is world text. Several evaluations of one frame (OCR recovery) share
+ * [frameKey], so the check gives the same answer for all of them.
+ */
+internal class SceneMotionTracker(private val maxGapMillis: Long = SCENE_MOTION_MAX_GAP_MS) {
+    private class Seen(val words: List<String>, val box: SceneBox)
+    private var frame = Long.MIN_VALUE
+    private var frameAt = 0L
+    private var previous = emptyList<Seen>()
+    private var previousAt = Long.MIN_VALUE
+    private val current = mutableListOf<Seen>()
+
+    @Synchronized fun moved(frameKey: Long, now: Long, text: String, box: SceneBox): Boolean {
+        if (frameKey != frame) {
+            if (current.isNotEmpty()) {
+                previous = current.toList()
+                previousAt = frameAt
+            }
+            current.clear()
+            frame = frameKey
+            frameAt = now
+        }
+        val words = sceneTokens(text, 2)
+        if (words.isEmpty()) return false
+        current.add(Seen(words, box))
+        if (previousAt == Long.MIN_VALUE || now - previousAt > maxGapMillis) return false
+        val before = previous.filter { sameSceneWords(it.words, words) }
+            .minByOrNull { boxShift(it.box, box) } ?: return false
+        return boxShift(before.box, box) > max(before.box.lineHeight, box.lineHeight) * SCENE_MOTION_LINES
+    }
+
+    @Synchronized fun clear() {
+        previous = emptyList()
+        previousAt = Long.MIN_VALUE
+        current.clear()
+        frame = Long.MIN_VALUE
+    }
+
+    /**
+     * How far a block moved. A different reading of its first or last letter
+     * moves one edge only, and a new line moves only its bottom, so each axis
+     * takes the smaller of its two edge shifts.
+     */
+    private fun boxShift(a: SceneBox, b: SceneBox): Float = max(
+        minOf(abs(a.left - b.left), abs(a.right - b.right)),
+        minOf(abs(a.top - b.top), abs(a.bottom - b.bottom)),
+    )
+}
+
+/** Most words of the two readings match ([similarSceneToken]). */
+internal fun sameSceneWords(a: List<String>, b: List<String>): Boolean {
+    if (a.isEmpty() || b.isEmpty()) return false
+    val matched = a.count { word -> b.any { similarSceneToken(word, it) } }
+    return matched * 10 >= max(a.size, b.size) * 6
+}
+
+private const val SCENE_WORD_HOLD_MS = 6000L
+private const val SCENE_WORD_CAPACITY = 48
+private const val MAX_SCENE_ECHO_WORDS = 6
+private const val SCENE_MOTION_MAX_GAP_MS = 1500L
+private const val SCENE_MOTION_LINES = 0.35f
+private val SCENE_STOP_WORDS = setOf(
+    "THE", "AND", "YOU", "FOR", "ARE", "BUT", "NOT", "THIS", "THAT", "WITH", "WAS", "HAVE",
+    "YOUR", "ALL", "CAN", "HIS", "HER", "OUR", "ITS", "FROM", "THEY", "WHAT", "OUT", "GET",
+)

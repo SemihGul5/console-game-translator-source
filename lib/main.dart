@@ -25,7 +25,6 @@ import 'widgets/tv_platform_selector.dart';
 import 'services/access_service.dart';
 import 'screens/access_screen.dart';
 import 'screens/profile_tab.dart';
-import 'screens/settings_tab.dart';
 import 'widgets/settings_section.dart';
 import 'widgets/setup_notice.dart';
 import 'widgets/premium_status_button.dart';
@@ -285,7 +284,7 @@ class _LocalLanguageOption {
   final bool downloaded;
 }
 
-enum _AppTab { subtitles, home, profile, settings }
+enum _AppTab { subtitles, home, profile }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   static const _ps5Channel = MethodChannel(
@@ -328,7 +327,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     SetupGuideScreen.totalSteps,
     false,
   );
-  bool _keepScreenAwake = false;
   bool _setupWarningOpen = false;
   bool _refreshingAccess = false;
 
@@ -384,7 +382,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _refreshTranslationState();
     _gameMemoryLoadFuture = _loadGamesAndSelectedGame();
     _loadSavedPs5();
-    _loadPersonalizationSettings();
     _loadTranslationPreferences();
     _loadTranslationModels();
     _loadTranslationEngine();
@@ -458,35 +455,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     } catch (_) {
       // Keep Model A selected when the native preference cannot be read.
-    }
-  }
-
-  Future<void> _loadPersonalizationSettings() async {
-    try {
-      final settings = await _ps5Channel.invokeMapMethod<String, dynamic>(
-        'getPersonalizationSettings',
-      );
-      final keepAwake = settings?['keepScreenAwake'] == true;
-      if (!mounted) return;
-      setState(() => _keepScreenAwake = keepAwake);
-    } on PlatformException {
-      // Keep the default theme when an older native build lacks this method.
-    }
-  }
-
-  Future<void> _savePersonalizationSettings({bool? keepScreenAwake}) async {
-    final nextKeepAwake = keepScreenAwake ?? _keepScreenAwake;
-    try {
-      await _ps5Channel.invokeMethod<bool>('savePersonalizationSettings', {
-        'accentIndex': 0,
-        'keepScreenAwake': nextKeepAwake,
-      });
-      if (!mounted) return;
-      setState(() => _keepScreenAwake = nextKeepAwake);
-    } on PlatformException catch (error) {
-      if (mounted) {
-        showMessage("Ayar kaydedilemedi", error.message ?? error.code);
-      }
     }
   }
 
@@ -3061,15 +3029,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 if (_visitedTabs.contains(_AppTab.profile))
                   TickerMode(
                     enabled: _selectedTab == _AppTab.profile,
-                    child: ProfileTab(onOpenSubscription: _openAccess),
-                  )
-                else
-                  const SizedBox.shrink(),
-                if (_visitedTabs.contains(_AppTab.settings))
-                  TickerMode(
-                    enabled: _selectedTab == _AppTab.settings,
-                    child: SettingsTab(
-                      personalization: _buildSettingsCard(),
+                    child: ProfileTab(
+                      onOpenSubscription: _openAccess,
                       setupCompleted:
                           _setupGuideCompletedCount >=
                           SetupGuideScreen.totalSteps,
@@ -3145,11 +3106,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             icon: Icon(Icons.person_outline_rounded),
             selectedIcon: Icon(Icons.person_rounded),
             label: context.tr("Profil"),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: context.tr("Ayarlar"),
           ),
         ],
       ),
@@ -4578,46 +4534,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSettingsCard() {
-    return SettingsSection(
-      title: context.tr("Kişiselleştir"),
-      children: [
-        SwitchListTile(
-          value: _keepScreenAwake,
-          onChanged: (value) =>
-              _savePersonalizationSettings(keepScreenAwake: value),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 15,
-            vertical: 2,
-          ),
-          secondary: Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: purple.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: const Icon(
-              Icons.screen_lock_portrait_outlined,
-              color: purple,
-              size: 21,
-            ),
-          ),
-          title: Text(
-            context.tr("Remote Play sırasında ekran açık kalsın"),
-            style: TextStyle(fontSize: 13),
-          ),
-          subtitle: Text(
-            context.tr(
-              "Telefon ekranının uykuya geçmesini önler; pil tüketimini artırabilir.",
-            ),
-            style: TextStyle(fontSize: 10, color: muted),
-          ),
-        ),
-      ],
     );
   }
 

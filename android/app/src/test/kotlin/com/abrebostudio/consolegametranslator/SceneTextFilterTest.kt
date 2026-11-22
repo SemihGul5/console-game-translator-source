@@ -126,6 +126,69 @@ class SceneTextFilterTest {
 
     private fun at(y: Float, x: Float = .50f) = ScenePlacement(x, y, .04f)
 
+    @Test fun straightPieceOfARejectedSignIsSceneText() {
+        // Logged: "GOOD SUIT ISA" rejected as tilted, then "SUIT" alone hit the pack.
+        val memory = SceneWordMemory()
+        memory.remember("THE ONLY\nGOOD\nSUTT\nI5A", 1_000)
+        memory.remember("GOOD\nSUIT\n1SA", 2_000)
+        listOf("SUIT", "GOOD SuIT ISA TSUIT", "ISUIT", "SA", "THE ONLY GOOD SUIT").forEach {
+            assertTrue(it, memory.isSceneEcho(it, 3_000))
+        }
+        listOf("Hold to dive", "UNDER WATER", "SURFACE", "OK", "GOOD MORNING").forEach {
+            assertFalse(it, memory.isSceneEcho(it, 3_000))
+        }
+        // Forgotten a few seconds after the sign was last rejected.
+        assertFalse(memory.isSceneEcho("SUIT", 9_000))
+    }
+
+    @Test fun emptySceneWordMemoryRejectsNothing() {
+        assertFalse(SceneWordMemory().isSceneEcho("SUIT", 0))
+    }
+
+    @Test fun speakerLinesAndCertainSubtitlesAreExempt() {
+        assertTrue(isSceneExempt(listOf(line("Jason: Good suit.")), null))
+        val centred = ScenePlacement(.5f, .85f, .04f)
+        assertTrue(isSceneExempt(listOf(line("The only good suit is a wet suit.")), centred))
+        assertFalse(isSceneExempt(listOf(line("SUIT")), centred))
+    }
+
+    @Test fun blockMovingWithTheCameraIsWorldText() {
+        val tracker = SceneMotionTracker()
+        assertFalse(tracker.moved(1, 0, "A Map Game Store", SceneBox(100f, 50f, 300f, 70f, 20f)))
+        // Same frame evaluated again (OCR recovery): same answer.
+        assertFalse(tracker.moved(1, 5, "A Map Game Store", SceneBox(100f, 50f, 300f, 70f, 20f)))
+        assertTrue(tracker.moved(2, 400, "A Map Game Store", SceneBox(130f, 52f, 330f, 72f, 20f)))
+        assertTrue(tracker.moved(2, 410, "A Map Game", SceneBox(130f, 52f, 290f, 72f, 20f)))
+    }
+
+    @Test fun stillHudTextIsNotMoving() {
+        val tracker = SceneMotionTracker()
+        tracker.moved(1, 0, "DIVE RO SURFACE", SceneBox(40f, 120f, 260f, 140f, 20f))
+        // Box jitter and a misread last letter move one edge only.
+        assertFalse(tracker.moved(2, 300, "DIVE RI SURFACE %", SceneBox(41f, 121f, 275f, 141f, 20f)))
+        // A second line below grows the block downwards only.
+        assertFalse(tracker.moved(3, 600, "DIVE RI SURFACE", SceneBox(40f, 120f, 260f, 165f, 20f)))
+        // Different text is never compared.
+        assertFalse(tracker.moved(4, 900, "PULL OUT CHEST", SceneBox(200f, 10f, 300f, 30f, 20f)))
+    }
+
+    @Test fun motionNeedsARecentFrame() {
+        val tracker = SceneMotionTracker()
+        tracker.moved(1, 0, "SUIT", SceneBox(10f, 10f, 60f, 30f, 20f))
+        assertFalse(tracker.moved(2, 5_000, "SUIT", SceneBox(90f, 40f, 140f, 60f, 20f)))
+        tracker.clear()
+        assertFalse(tracker.moved(3, 5_100, "SUIT", SceneBox(10f, 10f, 60f, 30f, 20f)))
+    }
+
+    @Test fun similarTokensCoverCommonMisreads() {
+        assertTrue(similarSceneToken("SUIT", "SUT"))
+        assertTrue(similarSceneToken("TSUIT", "SUIT"))
+        assertTrue(similarSceneToken("SURFACE", "SURRACE"))
+        assertFalse(similarSceneToken("THE", "TIE"))
+        assertFalse(similarSceneToken("DIVE", "DOCK"))
+        assertEquals(listOf("ISA", "SUIT"), sceneTokens("1SA 5UIT r"))
+    }
+
     private fun word(left: Float, centerY: Float, height: Float = .10f) =
         SceneTextWord(left, centerY - height / 2, left + .15f, centerY + height / 2)
 

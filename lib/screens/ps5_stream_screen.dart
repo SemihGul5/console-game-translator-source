@@ -67,7 +67,10 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
   List<String> _subtitleTexts = <String>[];
   String get _subtitleText =>
       _subtitleTexts.where((text) => text.isNotEmpty).join('\n');
+  // Covers of every OCR area drawing over the English, flat for drawing and
+  // for the TV, and by area so each area's update replaces only its own.
   List<SubtitleCover> _subtitleCovers = const <SubtitleCover>[];
+  Map<int, List<SubtitleCover>> _coversByArea = <int, List<SubtitleCover>>{};
   // Areas whose translation carries controller button icons, by area index.
   Map<int, SubtitleRichText> _subtitleRich = <int, SubtitleRichText>{};
   List<Map<String, Object>> _richForTv() => [
@@ -78,9 +81,30 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
   // size from line to line.
   double _coverFontScale = 1;
   double? _coverFontBase;
-  bool get _coverModeActive => _subtitleSettings.coversEnglishSubtitle;
+  bool get _coverModeActive => _subtitleSettings.coversAnyEnglish;
+  bool _coversArea(int index) => _subtitleSettings.coversEnglishFor(index);
   bool get _subtitleBoxLocked =>
-      _coverModeActive && _editingSubtitleBounds && _selectedSubtitleIndex == 0;
+      _editingSubtitleBounds && _coversArea(_selectedSubtitleIndex);
+
+  /// Replaces one area's covers ([covers] empty removes them).
+  void _setAreaCovers(int area, List<SubtitleCover> covers) {
+    final byArea = Map<int, List<SubtitleCover>>.of(_coversByArea);
+    if (covers.isEmpty) {
+      byArea.remove(area);
+    } else {
+      byArea[area] = covers;
+    }
+    final areas = byArea.keys.toList()..sort();
+    _coversByArea = byArea;
+    _subtitleCovers = List<SubtitleCover>.unmodifiable([
+      for (final index in areas) ...byArea[index]!,
+    ]);
+  }
+
+  void _clearCovers() {
+    _coversByArea = <int, List<SubtitleCover>>{};
+    _subtitleCovers = const <SubtitleCover>[];
+  }
   String _ocrDebugText = '';
   String _ocrStatus = 'OCR bekliyor';
   String _ocrTiming = '';
@@ -371,7 +395,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         setState(() {
           if (rawIndex == null) {
             _subtitleTexts = <String>[];
-            _subtitleCovers = const <SubtitleCover>[];
+            _clearCovers();
             _subtitleRich = <int, SubtitleRichText>{};
           } else if (rawIndex >= 0 && rawIndex < _subtitleTexts.length) {
             _subtitleTexts[rawIndex] = '';
@@ -387,7 +411,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         break;
       case 'subtitleCovers':
         final index = (event['regionIndex'] as num?)?.toInt() ?? 0;
-        if (index != 0) break;
+        if (index < 0) break;
         final rawItems = event['items'];
         final covers = rawItems is List
             ? rawItems
@@ -395,9 +419,9 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                   .whereType<SubtitleCover>()
                   .toList(growable: false)
             : const <SubtitleCover>[];
-        setState(() => _subtitleCovers = covers);
+        setState(() => _setAreaCovers(index, covers));
         _tvSubtitleClient.updateCovers(
-          covers.map((cover) => cover.toMap()).toList(growable: false),
+          _subtitleCovers.map((cover) => cover.toMap()).toList(growable: false),
           _subtitleSettings,
         );
         break;
@@ -420,18 +444,20 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         _subtitleSettings.withOcrSettings(_selectedOcrIndex, settings),
       );
 
-  void _setCoverEnglishSubtitle(bool enabled) {
-    final first = _subtitleSettings.effectiveOcrSettings.first;
-    if (first.coverEnglishSubtitle == enabled) return;
+  void _setCoverEnglishSubtitle(int index, bool enabled) {
+    final all = _subtitleSettings.effectiveOcrSettings;
+    if (index < 0 || index >= all.length) return;
+    final current = all[index];
+    if (current.coverEnglishSubtitle == enabled) return;
     setState(() {
-      _subtitleCovers = const <SubtitleCover>[];
+      _setAreaCovers(index, const <SubtitleCover>[]);
       _coverFontScale = 1;
       _coverFontBase = null;
     });
     _updateSubtitleSettings(
       _subtitleSettings.withOcrSettings(
-        0,
-        first.copyWith(coverEnglishSubtitle: enabled),
+        index,
+        current.copyWith(coverEnglishSubtitle: enabled),
       ),
     );
   }
@@ -1184,7 +1210,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                 index < _subtitleSettings.effectiveSubtitleRegions.length;
                 index++
               )
-                if (index != 0 || !_coverModeActive)
+                if (!_coversArea(index))
                   Positioned.fromRect(
                     key: ValueKey('subtitle-output-$index'),
                     rect: _pixelsFor(
@@ -1197,13 +1223,12 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                   ),
             if (_coverModeActive && _remotePlayConnected)
               for (final cover in _subtitleCovers)
-                _buildSubtitleCover(cover, size),
-            if (_coverModeActive &&
-                _subtitleSettingsVisible &&
-                _editingSubtitleBounds &&
-                _selectedSubtitleIndex == 0 &&
-                (_subtitleCovers.isEmpty || !_remotePlayConnected))
-              _buildSubtitleCover(_sampleCover(), size),
+                if (_coversArea(cover.area)) _buildSubtitleCover(cover, size),
+            if (_subtitleSettingsVisible &&
+                _subtitleBoxLocked &&
+                ((_coversByArea[_selectedSubtitleIndex]?.isEmpty ?? true) ||
+                    !_remotePlayConnected))
+              _buildSubtitleCover(_sampleCover(_selectedSubtitleIndex), size),
             if (_subtitleSettingsVisible && !_subtitleBoxLocked)
               NormalizedRectEditor(
                 value: _editingSubtitleBounds
@@ -1241,9 +1266,10 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     ),
   );
 
-  /// A sample line over OCR 1 so the look can be tuned without live text.
-  SubtitleCover _sampleCover() {
-    final ocr = _subtitleSettings.effectiveOcrRegions.first;
+  /// A sample line over OCR area [area] so the look can be tuned without live text.
+  SubtitleCover _sampleCover(int area) {
+    final regions = _subtitleSettings.effectiveOcrRegions;
+    final ocr = regions[area.clamp(0, regions.length - 1)];
     final height = math.min(ocr.height * 0.4, 0.05);
     return SubtitleCover(
       id: -1,
@@ -1255,6 +1281,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         height: height,
       ),
       lineHeight: height,
+      area: area,
     );
   }
 
@@ -1295,13 +1322,16 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
   /// centred on the original line.
   Widget _buildSubtitleCover(SubtitleCover cover, Size size) {
     final settings = _subtitleSettings
-        .settingsForSubtitle(0)
+        .settingsForSubtitle(cover.area)
         .copyWith(centered: true);
     final tvHeightDp = _tvSubtitleClient.tvDisplayHeightDp;
     final previewScale = tvHeightDp == null || tvHeightDp <= 0
         ? 1.0
         : size.height / tvHeightDp;
     final box = _pixelsFor(cover.rect, size);
+    if (cover.fit) {
+      return _buildLabelCover(cover, box, settings, previewScale);
+    }
     final margin = math.max(3.0, cover.lineHeight * size.height * 0.35);
     final minWidth = math.min(size.width, box.width + margin * 2);
     final minHeight = math.min(size.height, box.height + margin * 2);
@@ -1369,6 +1399,105 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     );
   }
 
+  /// One label of a button-prompt row or a HUD line: written at the English
+  /// label's size (never larger than the subtitle font) and shrunk to its
+  /// width, so the game's buttons beside it stay visible. Matches the TV.
+  Widget _buildLabelCover(
+    SubtitleCover cover,
+    Rect box,
+    SubtitleSettings settings,
+    double previewScale,
+  ) {
+    final maxFont = settings.fontSize * previewScale;
+    final background = Color(settings.effectiveBackgroundColor);
+    // Several English lines (a phone message): the translation wraps inside the
+    // same block, starting at the English line height; GameSubtitleText shrinks
+    // it until it fits there. Matches the TV.
+    if (cover.rect.height >= cover.lineHeight * 1.6) {
+      final lineHeightPx = box.height * cover.lineHeight / cover.rect.height;
+      return Positioned.fromRect(
+        key: ValueKey('subtitle-cover-${cover.id}'),
+        rect: box.inflate(2),
+        child: IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              // Always fully opaque: the English text must not show through.
+              color: background.withValues(alpha: 1),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: GameSubtitleText(
+                  text: cover.text,
+                  settings: settings.copyWith(centered: false),
+                  fontSize: math.max(6.0, math.min(maxFont, lineHeightPx * 0.95)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    var fontSize = math.max(6.0, math.min(maxFont, box.height * 0.95));
+    double measure(double size) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: cover.text,
+          style: TextStyle(
+            fontSize: size,
+            height: 1,
+            fontWeight: settings.bold ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    // Exactly over the English label: the translation shrinks (to half size
+    // at most) instead of growing the box over the button beside it.
+    final allowed = box.width * 1.05;
+    final width = measure(fontSize);
+    if (width > allowed && width > 0) {
+      fontSize = math.max(fontSize * 0.5, fontSize * allowed / width);
+    }
+    final textWidth = measure(fontSize) + 4;
+    final rect = Rect.fromCenter(
+      center: box.center,
+      width: math.max(box.width + 2, textWidth),
+      height: math.max(box.height + 2, fontSize * 1.1 + 2),
+    );
+    return Positioned.fromRect(
+      key: ValueKey('subtitle-cover-${cover.id}'),
+      rect: rect,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            // Always fully opaque: the English text must not show through.
+            color: background.withValues(alpha: 1),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Center(
+              child: GameSubtitleText(
+                text: cover.text,
+                settings: settings,
+                fontSize: fontSize,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCoverModeInfo() => Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
@@ -1391,7 +1520,9 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                context.tr("Altyazı 1 İngilizce altyazının üstünde"),
+                context.tr("Altyazı {0} İngilizce metnin üstünde", [
+                  _selectedSubtitleIndex + 1,
+                ]),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -1400,7 +1531,8 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         const SizedBox(height: 6),
         Text(
           context.tr(
-            "Çeviri, OCR 1'in okuduğu İngilizce satırın tam üstünde görünür ve onunla birlikte yer değiştirir; art arda konuşan kişiler ayrı kutularda gösterilir. Bu yüzden sabit konum ayarı kapalı. Yazı boyutu, renk ve arka plan ayarları geçerli.",
+            "Çeviri, OCR {0} alanının okuduğu İngilizce metnin tam üstünde görünür ve onunla birlikte yer değiştirir; art arda konuşan kişiler ayrı kutularda, düğme ipuçları tek tek gösterilir. Bu yüzden sabit konum ayarı kapalı. Yazı boyutu, renk ve arka plan ayarları geçerli.",
+            [_selectedSubtitleIndex + 1],
           ),
           style: const TextStyle(
             fontSize: 12,
@@ -1410,7 +1542,8 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         ),
         const SizedBox(height: 4),
         TextButton.icon(
-          onPressed: () => _setCoverEnglishSubtitle(false),
+          onPressed: () =>
+              _setCoverEnglishSubtitle(_selectedSubtitleIndex, false),
           icon: const Icon(Icons.push_pin_outlined, size: 18),
           label: Text(context.tr("Sabit konuma dön")),
         ),
@@ -1875,29 +2008,31 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             },
           ),
         ),
-        if (_selectedOcrIndex == 0)
-          _settingsCard(
-            SwitchListTile.adaptive(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              activeThumbColor: const Color(0xFF36D6BE),
-              activeTrackColor: const Color(0xFF36D6BE).withValues(alpha: 0.45),
-              title: Text(
-                context.tr("Çeviriyi İngilizce altyazının üstünde göster"),
-              ),
-              subtitle: Text(
-                _coverModeActive
-                    ? context.tr(
-                        "Açık: çeviri, okunan İngilizce satırın tam üstünde çıkar; art arda konuşan kişiler ayrı ayrı gösterilir. Altyazı 1'in sabit konum ayarı kullanılmaz.",
-                      )
-                    : context.tr(
-                        "Kapalı: çeviri, Altyazı 1 için seçtiğin sabit yerde gösterilir.",
-                      ),
-                style: const TextStyle(color: Color(0xFF929DB4), fontSize: 12),
-              ),
-              value: _coverModeActive,
-              onChanged: _setCoverEnglishSubtitle,
+        _settingsCard(
+          SwitchListTile.adaptive(
+            key: ValueKey('cover-english-$_selectedOcrIndex'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            activeThumbColor: const Color(0xFF36D6BE),
+            activeTrackColor: const Color(0xFF36D6BE).withValues(alpha: 0.45),
+            title: Text(
+              context.tr("Çeviriyi İngilizce altyazının üstünde göster"),
             ),
+            subtitle: Text(
+              _coversArea(_selectedOcrIndex)
+                  ? context.tr(
+                      "Açık: çeviri, okunan İngilizce metnin tam üstünde çıkar; art arda konuşan kişiler ayrı ayrı, düğme ipuçları (SEÇ, GERİ…) her biri kendi yazısının üstünde gösterilir ve oyundaki düğme simgeleri görünür kalır. Bu alanın sabit altyazı konumu kullanılmaz.",
+                    )
+                  : context.tr(
+                      "Kapalı: çeviri, Altyazı {0} için seçtiğin sabit yerde gösterilir.",
+                      [_selectedOcrIndex + 1],
+                    ),
+              style: const TextStyle(color: Color(0xFF929DB4), fontSize: 12),
+            ),
+            value: _coversArea(_selectedOcrIndex),
+            onChanged: (enabled) =>
+                _setCoverEnglishSubtitle(_selectedOcrIndex, enabled),
           ),
+        ),
         _settingsCard(
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -2831,7 +2966,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     _tvSubtitleClient.updateSubtitle('', _subtitleSettings);
     setState(() {
       _subtitleTexts = <String>[];
-      _subtitleCovers = const <SubtitleCover>[];
+      _clearCovers();
       _subtitleRich = <int, SubtitleRichText>{};
     });
     _allowExitAfterTranslationStop = true;

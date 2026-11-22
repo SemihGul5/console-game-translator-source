@@ -243,7 +243,6 @@ void main() {
   late bool consoleSaved;
   late bool tvSaved;
   late bool translationRunning;
-  late bool keepAwake;
   late bool setupWarningDismissed;
   String? smartTvPairing;
   late List<Uri> launched;
@@ -262,7 +261,6 @@ void main() {
     consoleSaved = false;
     tvSaved = false;
     translationRunning = false;
-    keepAwake = false;
     setupWarningDismissed = false;
     smartTvPairing = null;
     launched = [];
@@ -341,11 +339,6 @@ void main() {
           return tvSaved
               ? {'address': 'saved-tv', 'sessionToken': 'saved-token'}
               : null;
-        case 'getPersonalizationSettings':
-          return {'keepScreenAwake': keepAwake};
-        case 'savePersonalizationSettings':
-          keepAwake = (call.arguments as Map)['keepScreenAwake'] as bool;
-          return true;
         case 'getAppInfo':
           return {
             'version': '1.2.3',
@@ -407,14 +400,13 @@ void main() {
   });
 
   testWidgets(
-    'tabs retain the home, live translation and personalization state',
+    'tabs retain the home and live translation state',
     (tester) async {
       consoleSaved = true;
       translationRunning = true;
       await _openApp(tester);
       final homeState = tester.state(find.byType(HomeScreen));
       expect(find.text('ÇEVİRİYİ DURDUR'), findsOneWidget);
-      expect(find.text('Kişiselleştir'), findsNothing);
       expect(find.text('Sık Sorulan Sorular'), findsNothing);
       expect(find.text('Premium'), findsNothing);
       expect(find.text('Oyun Kütüphanesi'), findsNothing);
@@ -438,12 +430,8 @@ void main() {
       await _selectTab(tester, 'Profil');
       expect(find.text('Aboneliğim'), findsOneWidget);
       expect(find.text('Hediye kodunu kullan'), findsOneWidget);
-      await _selectTab(tester, 'Ayarlar');
-      expect(find.text('Kişiselleştir'), findsOneWidget);
       expect(find.text('Altyazı görünümü'), findsNothing);
-      await tester.tap(find.byType(SwitchListTile));
-      await tester.pumpAndSettle();
-      expect(keepAwake, isTrue);
+      expect(find.byType(SwitchListTile), findsNothing);
       await _selectTab(tester, 'Ana sayfa');
       expect(tester.state(find.byType(HomeScreen)), same(homeState));
       expect(
@@ -465,11 +453,7 @@ void main() {
         ),
         isEmpty,
       );
-      await _selectTab(tester, 'Ayarlar');
-      expect(
-        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-        isTrue,
-      );
+      await _selectTab(tester, 'Profil');
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(
@@ -832,7 +816,6 @@ void main() {
           await tester.pump();
           expect(savedGameId, isNull);
           for (final tab in {
-            'Ayarlar': 3,
             'Profil': 2,
             'Ana sayfa': 1,
           }.entries) {
@@ -907,16 +890,16 @@ void main() {
       await _openApp(tester);
       expect(find.text('Kurulum rehberi'), findsOneWidget);
       await _capture(tester, 'home');
-      await _selectTab(tester, 'Ayarlar');
+      await _selectTab(tester, 'Profil');
       expect(find.text('Kurulum rehberi'), findsNothing);
+      await tester.ensureVisible(find.text('Sık Sorulan Sorular'));
       await tester.tap(find.text('Sık Sorulan Sorular'));
       await tester.pumpAndSettle();
       expect(find.byType(HelpScreen), findsOneWidget);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      await _capture(tester, 'settings');
-      await _selectTab(tester, 'Profil');
       await _capture(tester, 'profile');
+      await tester.ensureVisible(find.text('Aboneliğim'));
       await tester.tap(find.text('Aboneliğim'));
       await tester.pumpAndSettle();
       expect(find.byType(AccessScreen), findsOneWidget);
@@ -998,7 +981,7 @@ void main() {
         navigation.destinations.cast<NavigationDestination>().map(
           (destination) => destination.label,
         ),
-        ['Altyazı', 'Ana sayfa', 'Profil', 'Ayarlar'],
+        ['Altyazı', 'Ana sayfa', 'Profil'],
       );
       expect(navigation.selectedIndex, 1);
       expect(find.text('Oyun Kütüphanesi'), findsNothing);
@@ -1051,7 +1034,7 @@ void main() {
       final memoryCallCount = gameMemoryCalls.length;
       await _selectTab(tester, 'Ana sayfa');
       expect(find.text('Oyun Kütüphanesi'), findsNothing);
-      await _selectTab(tester, 'Ayarlar');
+      await _selectTab(tester, 'Profil');
       await _selectTab(tester, 'Altyazı');
       expect(tester.widget<GameCoverCard>(selectedCard).selected, isTrue);
       expect(gameMemoryCalls.length, memoryCallCount);
@@ -1678,7 +1661,15 @@ void main() {
       tvSaved = true;
       await _openApp(tester);
       expect(find.text('Kurulum rehberi'), findsNothing);
-      await _selectTab(tester, 'Ayarlar');
+      await _selectTab(tester, 'Profil');
+      await tester.scrollUntilVisible(
+        find.text('Kurulum rehberi'),
+        250,
+        scrollable: find.descendant(
+          of: find.byKey(const PageStorageKey('profile-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
       expect(find.text('Kurulum rehberi'), findsOneWidget);
       await tester.tap(find.text('Kurulum rehberi'));
       await tester.pumpAndSettle();
@@ -1744,12 +1735,12 @@ void main() {
     'support email, policy links, version and gift redemption are wired',
     (tester) async {
       await _openApp(tester);
-      await _selectTab(tester, 'Ayarlar');
+      await _selectTab(tester, 'Profil');
       await tester.scrollUntilVisible(
         find.text('1.2.3'),
         250,
         scrollable: find.descendant(
-          of: find.byKey(const PageStorageKey('settings-scroll')),
+          of: find.byKey(const PageStorageKey('profile-scroll')),
           matching: find.byType(Scrollable),
         ),
       );
@@ -1776,12 +1767,10 @@ void main() {
       await tester.tap(find.text('Kullanım şartları'));
       await tester.pumpAndSettle();
       expect(launched.last.toString(), 'https://example.com/terms');
-      await _selectTab(tester, 'Profil');
       await tester.ensureVisible(find.text('Hediye kodunu kullan'));
       await tester.tap(find.text('Hediye kodunu kullan'));
       await tester.pumpAndSettle();
       expect(launched.last.toString(), 'https://play.google.com/redeem');
-      await _selectTab(tester, 'Ayarlar');
       launchSucceeds = false;
       await tester.ensureVisible(find.text('Bize e-posta gönder'));
       await tester.tap(find.text('Bize e-posta gönder'));
@@ -1806,7 +1795,6 @@ void main() {
       await _selectTab(tester, 'Altyazı');
       await _capture(tester, 'subtitles-large-text');
       await _selectTab(tester, 'Profil');
-      await _selectTab(tester, 'Ayarlar');
       await tester.drag(find.byType(ListView), const Offset(0, -600));
       await tester.pumpAndSettle();
       expect(find.byType(NavigationBar), findsOneWidget);

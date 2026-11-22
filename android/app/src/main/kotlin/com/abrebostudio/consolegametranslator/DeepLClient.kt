@@ -45,12 +45,14 @@ internal class DeepLClient(
     fun translate(text: String, source: String, target: String): String =
         translateWithUsage(text, source, target).text
 
-    fun translateWithUsage(text: String, source: String, target: String): DeepLTranslation = parseResponse {
+    /** [context] describes where the text appears; DeepL uses it but does not translate or bill it. */
+    fun translateWithUsage(text: String, source: String, target: String, context: String? = null): DeepLTranslation = parseResponse {
         val body = JSONObject().put("text", JSONArray().put(text))
             .put("source_lang", source.uppercase(Locale.ROOT))
             .put("target_lang", target.uppercase(Locale.ROOT))
             .put("split_sentences", "nonewlines")
             .put("show_billed_characters", true)
+        if (!context.isNullOrBlank()) body.put("context", context)
         val response = JSONObject(request("/v2/translate", body.toString()))
         val row = response.getJSONArray("translations").getJSONObject(0)
         val translated = row.getString("text")

@@ -62,4 +62,24 @@ class CloudOcrPreflightTest {
         assertEquals("On dört saniye.", requireNotNull(read.memoryMatch).target)
         assertTrue(isNonLinguisticOcr(read.text))
     }
+
+    @Test fun callTimerIsDroppedFromAShortLabel() {
+        assertEquals("Kenton", stripLabelClock("Kenton O0:05"))
+        assertEquals("Kenton", stripLabelClock("Kenton 00:14"))
+        assertEquals("Mission Time", stripLabelClock("Mission Time 02:5e"))
+        assertEquals("Kenton", stripLabelClock("01:12 Kenton"))
+        listOf(
+            "Kenton Call Ended",
+            "Meet me there at 10:30.",
+            "We leave at 10:30, okay",
+            "00:14",
+            "Kenton: be there 10:30",
+            "One two three four 00:14",
+        ).forEach { assertEquals(it, it, stripLabelClock(it)) }
+    }
+
+    @Test fun clockGlyphsCorrectedByTheModelAreStillAnEcho() {
+        assertTrue(isUntranslatedEcho("Kenton O0:07", "Kenton 00:07"))
+        assertFalse(isUntranslatedEcho("Kenton Call Ended", "Kenton Görüşmesi Sona Erdi"))
+    }
 }

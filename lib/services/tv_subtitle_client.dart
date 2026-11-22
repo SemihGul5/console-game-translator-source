@@ -670,7 +670,7 @@ class TvSubtitleClient {
   }
 
   Map<String, Object> _presentationFrom(SubtitleSettings settings) {
-    _coverMode = settings.coversEnglishSubtitle;
+    _coverMode = settings.coversAnyEnglish;
     if (!_coverMode) _covers = const [];
     return subtitlePresentation(settings);
   }

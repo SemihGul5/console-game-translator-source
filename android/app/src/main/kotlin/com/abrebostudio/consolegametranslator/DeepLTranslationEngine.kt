@@ -11,7 +11,7 @@ internal class DeepLTranslationEngine(
     private var requestSequence = 0L
 
     fun translate(source: String, target: String, key: String, text: String,
-        apiKey: String, regionIndex: Int): Result {
+        apiKey: String, regionIndex: Int, context: String? = null): Result {
         val chars = text.codePointCount(0, text.length)
         cache.get(source, target, key)?.let {
             diagnostic("DEEPL_CACHE_HIT area=${regionIndex + 1} sourceChars=$chars")
@@ -20,7 +20,7 @@ internal class DeepLTranslationEngine(
         val id = ++requestSequence
         val started = elapsedMillis()
         diagnostic("DEEPL_REQUEST id=$id area=${regionIndex + 1} $source->$target sourceChars=$chars")
-        val translated = client(apiKey).translateWithUsage(text, source, target)
+        val translated = client(apiKey).translateWithUsage(text, source, target, context)
         diagnostic("DEEPL_RESPONSE id=$id latencyMs=${elapsedMillis() - started} billedChars=${translated.billedCharacters ?: "unknown"}")
         cache.put(source, target, key, translated.text)
         return Result(translated.text, false)

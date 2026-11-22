@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gametranslate/screens/settings_tab.dart';
+import 'package:gametranslate/screens/profile_tab.dart';
 import 'package:gametranslate/screens/translation_cache_screen.dart';
 
 import 'support/turkish_test_app.dart';
@@ -327,13 +327,13 @@ void main() {
   );
 
   testWidgets(
-    'cache management is reachable from the advanced settings entry',
+    'cache management is reachable from the profile tab',
     (tester) async {
       await tester.pumpWidget(
         TurkishTestApp(
           home: Scaffold(
-            body: SettingsTab(
-              personalization: const SizedBox(),
+            body: ProfileTab(
+              onOpenSubscription: () {},
               setupCompleted: false,
               onOpenSetup: () {},
               onOpenFaq: () {},
@@ -341,6 +341,8 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Çeviri önbelleği'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Çeviri önbelleği'));
       await tester.pumpAndSettle();

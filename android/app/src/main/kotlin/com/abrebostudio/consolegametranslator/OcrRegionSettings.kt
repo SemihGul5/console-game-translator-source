@@ -10,7 +10,7 @@ internal data class OcrRegionSettings(
     val captureScale: Float = 1f,
     val holdMillis: Long = 2500L,
     val autoHideMillis: Long = 2000L,
-    /** Draw the translation over the English subtitle itself (first area only). On by default. */
+    /** Draw the translation over the English text this area read (each area's own switch). On by default. */
     val coverEnglish: Boolean = true,
 ) {
     val sampleIntervalMillis: Long get() = (1000.0 / sampleRateHz).roundToLong().coerceIn(50L, 4000L)

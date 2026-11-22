@@ -87,7 +87,7 @@ void main() {
     },
   );
 
-  test('cover mode is on by default and can be turned off for OCR 1', () {
+  test('cover mode is on by default and can be turned off per OCR area', () {
     const bounds = SubtitleSettings();
     final base = SubtitleSettings.fromMap({
       'subtitleRegions': [
@@ -99,21 +99,63 @@ void main() {
     // New installs and saved settings without the key start in cover mode.
     expect(const SubtitleSettings().coversEnglishSubtitle, isTrue);
     expect(base.coversEnglishSubtitle, isTrue);
+    expect(base.coversEnglishFor(1), isTrue);
     final onStyles = subtitlePresentation(base)['subtitleStyles'] as List;
     expect((onStyles.first as Map)['coverEnglish'], isTrue);
-    expect((onStyles.last as Map).containsKey('coverEnglish'), isFalse);
+    expect((onStyles.last as Map)['coverEnglish'], isTrue);
 
-    final disabled = base.withOcrSettings(
+    // Turning OCR 1 off leaves OCR 2 drawing over its English.
+    final firstOff = base.withOcrSettings(
       0,
       base.effectiveOcrSettings.first.copyWith(coverEnglishSubtitle: false),
     );
-    final restored = SubtitleSettings.fromMap(disabled.toMap());
+    final restored = SubtitleSettings.fromMap(firstOff.toMap());
     expect(restored.coversEnglishSubtitle, isFalse);
-    final offStyles = subtitlePresentation(restored)['subtitleStyles'] as List;
+    expect(restored.coversEnglishFor(1), isTrue);
+    expect(restored.coversAnyEnglish, isTrue);
+    final mixed = subtitlePresentation(restored)['subtitleStyles'] as List;
+    expect((mixed.first as Map).containsKey('coverEnglish'), isFalse);
+    expect((mixed.last as Map)['coverEnglish'], isTrue);
+
+    final allOff = restored.withOcrSettings(
+      1,
+      restored.effectiveOcrSettings[1].copyWith(coverEnglishSubtitle: false),
+    );
+    expect(allOff.coversAnyEnglish, isFalse);
+    expect(allOff.coversEnglishFor(5), isFalse);
+    final offStyles = subtitlePresentation(allOff)['subtitleStyles'] as List;
     expect(
       offStyles.every((style) => !(style as Map).containsKey('coverEnglish')),
       isTrue,
     );
+  });
+
+  test('prompt label covers keep their area and size flag', () {
+    final cover = SubtitleCover.tryParse({
+      'id': 1000001,
+      'text': 'GERİ',
+      'left': 0.7,
+      'top': 0.9,
+      'width': 0.04,
+      'height': 0.03,
+      'area': 1,
+      'fit': true,
+    })!;
+    expect(cover.area, 1);
+    expect(cover.fit, isTrue);
+    expect(cover.toMap()['area'], 1);
+    expect(cover.toMap()['fit'], isTrue);
+    final plain = SubtitleCover.tryParse({
+      'id': 2,
+      'text': 'Selam',
+      'left': 0.2,
+      'top': 0.7,
+      'width': 0.3,
+      'height': 0.04,
+    })!;
+    expect(plain.area, 0);
+    expect(plain.fit, isFalse);
+    expect(plain.toMap().containsKey('fit'), isFalse);
   });
 
   test('new installs start with a fully opaque subtitle background', () {
@@ -142,6 +184,7 @@ void main() {
       'width': 0.4,
       'height': 0.05,
       'lineHeight': 0.025,
+      'area': 0,
     });
     expect(SubtitleCover.tryParse({'id': 1, 'text': ' '}), isNull);
     expect(

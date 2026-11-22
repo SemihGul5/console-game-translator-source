@@ -273,28 +273,6 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                         "privacyUrl" to BuildConfig.PRIVACY_POLICY_URL,
                         "termsUrl" to BuildConfig.TERMS_OF_USE_URL,
                     ))
-                    "getPersonalizationSettings" -> result.success(
-                        mapOf(
-                            "accentIndex" to personalizationPrefs.getInt("accent_index", 0),
-                            "keepScreenAwake" to personalizationPrefs.getBoolean("keep_screen_awake", false),
-                        ),
-                    )
-                    "savePersonalizationSettings" -> {
-                        val settings = call.arguments as? Map<*, *>
-                        val accentIndex = (settings?.get("accentIndex") as? Number)?.toInt()
-                        val keepAwake = settings?.get("keepScreenAwake") as? Boolean
-                        if (accentIndex == null || accentIndex !in 0..3 || keepAwake == null) {
-                            result.error("INVALID_PERSONALIZATION", "Kişiselleştirme ayarları geçersiz.", null)
-                        } else if (!personalizationPrefs.edit()
-                                .putInt("accent_index", accentIndex)
-                                .putBoolean("keep_screen_awake", keepAwake)
-                                .commit()) {
-                            result.error("PERSONALIZATION_SAVE_FAILED", "Kişiselleştirme ayarları kaydedilemedi.", null)
-                        } else {
-                            updateKeepScreenAwake()
-                            result.success(true)
-                        }
-                    }
                     "registerPs5" -> startRegistration(call, result)
                     "getSavedConsole" -> getSavedConsole(result)
                     "getSubtitleSettings" -> getSubtitleSettings(result)
@@ -579,7 +557,6 @@ internal class RemotePlayController private constructor(context: Context) : Cont
     fun onResume() {
         activityVisible = true
         translationAccess.onResume()
-        updateKeepScreenAwake()
         recoverVideoOutput()
         if (sessionConnected) showBackgroundPowerExplanation()
     }
@@ -602,17 +579,6 @@ internal class RemotePlayController private constructor(context: Context) : Cont
             videoFrames?.setPreviewSurface(surface)
         } catch (error: Exception) {
             Log.w("GameTranslateRemotePlay", "Could not attach video preview; translation continues", error)
-        }
-    }
-
-    private fun updateKeepScreenAwake() {
-        runOnUiThread {
-            val window = activityReference.get()?.window ?: return@runOnUiThread
-            if (sessionConnected && personalizationPrefs.getBoolean("keep_screen_awake", false)) {
-                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            } else {
-                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            }
         }
     }
 
@@ -2059,7 +2025,6 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                         activeSession === session && sessionConnected && !sessionStopPending,
                     )
                 }
-                updateKeepScreenAwake()
                 configureSubtitleOcr()
                 runOnUiThread(::showBackgroundPowerExplanation)
                 val session = activeSession
@@ -2082,7 +2047,6 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                 sessionConnected = false
                 runOnUiThread { translationAccess.onRemotePlayConnectionChanged(sessionConnected && activeSession != null) }
                 decoderSurface = null
-                updateKeepScreenAwake()
                 configureSubtitleOcr()
                 emit(mapOf("type" to "subtitleCleared"))
                 Log.w(
@@ -2126,7 +2090,6 @@ internal class RemotePlayController private constructor(context: Context) : Cont
             sessionConnected = false
             runOnUiThread { translationAccess.onRemotePlayConnectionChanged(sessionConnected && activeSession != null) }
             decoderSurface = null
-            updateKeepScreenAwake()
             configureSubtitleOcr()
             emit(mapOf("type" to "subtitleCleared"))
             var stopError: String? = null

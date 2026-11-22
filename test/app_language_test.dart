@@ -32,12 +32,10 @@ Future<void> _tab(WidgetTester tester, String title) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late String savedLanguage;
-  late bool keepAwake;
   late List<MethodCall> calls;
 
   setUp(() {
     savedLanguage = 'system';
-    keepAwake = false;
     calls = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(_events, (_) async => null);
@@ -51,11 +49,6 @@ void main() {
               return savedLanguage;
             case 'setAppLanguage':
               savedLanguage = call.arguments as String;
-              return true;
-            case 'getPersonalizationSettings':
-              return {'keepScreenAwake': keepAwake};
-            case 'savePersonalizationSettings':
-              keepAwake = (call.arguments as Map)['keepScreenAwake'] == true;
               return true;
             default:
               return null;
@@ -88,8 +81,8 @@ void main() {
         final turkish = code == 'tr';
         for (final title
             in turkish
-                ? ['Altyazı', 'Ana sayfa', 'Profil', 'Ayarlar']
-                : ['Subtitles', 'Home', 'Profile', 'Settings']) {
+                ? ['Altyazı', 'Ana sayfa', 'Profil']
+                : ['Subtitles', 'Home', 'Profile']) {
           expect(
             find.widgetWithText(NavigationDestination, title),
             findsOneWidget,
@@ -128,11 +121,8 @@ void main() {
       savedLanguage = 'en';
       await _open(tester, const Locale('tr'));
       final home = tester.state(find.byType(HomeScreen));
-      await _tab(tester, 'Ayarlar');
+      await _tab(tester, 'Profil');
       expect(find.text('Uygulama dili'), findsNothing);
-      await tester.tap(find.byType(SwitchListTile));
-      await tester.pumpAndSettle();
-      expect(keepAwake, isTrue);
 
       for (final code in ['en', 'de', 'ar', 'tr']) {
         tester.platformDispatcher.localesTestValue = [Locale(code)];
@@ -140,17 +130,13 @@ void main() {
         expect(
           find.widgetWithText(
             NavigationDestination,
-            code == 'tr' ? 'Ayarlar' : 'Settings',
+            code == 'tr' ? 'Profil' : 'Profile',
           ),
           findsOneWidget,
         );
         expect(find.text('Uygulama dili'), findsNothing);
         expect(find.text('App language'), findsNothing);
         expect(tester.state(find.byType(HomeScreen)), same(home));
-        expect(
-          tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
-          isTrue,
-        );
       }
       expect(calls.where((c) => c.method == 'saveSubtitleSettings'), isEmpty);
       expect(
@@ -176,7 +162,8 @@ void main() {
   ) async {
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await _open(tester, const Locale('de'));
-    await _tab(tester, 'Settings');
+    await _tab(tester, 'Profile');
+    await tester.ensureVisible(find.text('Frequently asked questions'));
     await tester.tap(find.text('Frequently asked questions'));
     await tester.pumpAndSettle();
     final question = find.text(
@@ -261,7 +248,7 @@ void main() {
       );
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      await _tab(tester, 'Settings');
+      await _tab(tester, 'Profile');
       expect(find.widgetWithText(SettingsEntry, 'App language'), findsNothing);
       expect(find.text('System language'), findsNothing);
       await _tab(tester, 'Home');

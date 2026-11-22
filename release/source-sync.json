@@ -1,12 +1,14 @@
 {
-  "preparedOn": "2026-11-22",
-  "applicationVersion": "1.1.6+18",
+  "preparedOn": "2026-11-23",
+  "applicationVersion": "1.1.7+20",
   "comparison": "reviewed seed snapshot",
   "added": [
     "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/ButtonIcons.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflight.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicy.kt",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CoverComposition.kt",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CoverPrompts.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLClient.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLCredentialStore.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLOcrPolicy.kt",
@@ -30,6 +32,7 @@
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrTextDistance.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrVariantGate.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrVisualCache.kt",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/PartialReadHold.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RemotePlayTrialGate.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RgbaReadback.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SceneTextFilter.kt",
@@ -46,6 +49,8 @@
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/ButtonIconsTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflightTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicyTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CoverCompositionTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CoverPromptsTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLClientTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLLoggedOcrReplayTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLOcrPolicyTest.kt",
@@ -70,6 +75,7 @@
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrPipelineTimingTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrRecoveryPolicyTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/OcrRegionSettingsTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/PartialReadHoldTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/RemotePlayTrialGateTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SceneTextFilterTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SubtitleCoverTrackerTest.kt",
@@ -3160,7 +3166,6 @@
     "lib/screens/help_screen.dart",
     "lib/screens/profile_tab.dart",
     "lib/screens/ps5_stream_screen.dart",
-    "lib/screens/settings_tab.dart",
     "lib/screens/setup_guide_screen.dart",
     "lib/services/access_service.dart",
     "lib/services/app_links.dart",
@@ -3203,6 +3208,7 @@
   ],
   "removed": [
     "assets/games/mafia-old-country.cover.jpg",
+    "lib/screens/settings_tab.dart",
     "lib/widgets/app_language_picker.dart"
   ],
   "embeddedArchiveChecks": [

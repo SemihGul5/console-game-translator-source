@@ -68,6 +68,8 @@ class SubtitleCover {
     required this.rect,
     required this.lineHeight,
     this.icons = const <String>[],
+    this.area = 0,
+    this.fit = false,
   });
 
   final int id;
@@ -77,6 +79,13 @@ class SubtitleCover {
 
   /// Button icons (base64 PNG) drawn where [text] holds the placeholder.
   final List<String> icons;
+
+  /// The OCR area it came from; that area's subtitle look is used.
+  final int area;
+
+  /// One label of a button-prompt row ("SELECT", "BACK"): drawn at the English
+  /// label's size so the game's buttons beside it stay visible.
+  final bool fit;
 
   static SubtitleCover? tryParse(Object? value) {
     if (value is! Map) return null;
@@ -109,6 +118,10 @@ class SubtitleCover {
       ),
       lineHeight: (read('lineHeight') ?? height).clamp(0.005, 0.5).toDouble(),
       icons: _iconList(value['icons']),
+      area: value['area'] is num
+          ? (value['area'] as num).toInt().clamp(0, 11).toInt()
+          : 0,
+      fit: value['fit'] == true,
     );
   }
 
@@ -118,5 +131,7 @@ class SubtitleCover {
     ...rect.toMap(),
     'lineHeight': lineHeight,
     if (icons.isNotEmpty) 'icons': icons,
+    'area': area,
+    if (fit) 'fit': true,
   };
 }

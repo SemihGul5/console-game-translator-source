@@ -48,5 +48,34 @@ internal fun isUntranslatedEcho(source: String, translation: String): Boolean {
     return sourceKey.isNotEmpty() && sourceKey == echoKey(translation)
 }
 
+// OCR writes clock digits as look-alike letters ("O0:07" -> "00:07"), which the
+// model then corrects: both sides map those letters to digits before comparing.
 private fun echoKey(text: String): String =
     text.filter(Char::isLetterOrDigit).lowercase(java.util.Locale.ROOT)
+        .map { when (it) { 'o' -> '0'; 'i', 'l' -> '1'; else -> it } }.joinToString("")
+
+/**
+ * A running call or mission timer beside a short label ("Kenton O0:05"): the
+ * clock changes every second, so the text would go to a translation engine every
+ * second. Drops the clock at the start or end when the rest is a short label of
+ * at most three words without sentence punctuation; dialogue keeps its times.
+ */
+internal fun stripLabelClock(text: String): String {
+    val tokens = text.trim().split(CLOCK_WHITESPACE).filter { it.isNotEmpty() }
+    if (tokens.size < 2) return text
+    val rest = when {
+        isClockToken(tokens.last()) -> tokens.dropLast(1)
+        isClockToken(tokens.first()) -> tokens.drop(1)
+        else -> return text
+    }
+    if (rest.size > MAX_CLOCK_LABEL_WORDS || rest.none { token -> token.any(Char::isLetter) }) return text
+    val label = rest.joinToString(" ")
+    if (CLOCK_LABEL_PUNCTUATION.containsMatchIn(label)) return text
+    return label
+}
+
+private fun isClockToken(token: String): Boolean =
+    token.any(Char::isDigit) && CLOUD_CLOCK_TOKEN.matches(Normalizer.normalize(token, Normalizer.Form.NFKC))
+
+private const val MAX_CLOCK_LABEL_WORDS = 3
+private val CLOCK_LABEL_PUNCTUATION = Regex("""[.!?…,;:"“”]""")

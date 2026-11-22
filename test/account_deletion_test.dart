@@ -372,7 +372,14 @@ void main() {
         await tester.pumpWidget(
           TurkishTestApp(
             home: profile
-                ? Scaffold(body: ProfileTab(onOpenSubscription: () {}))
+                ? Scaffold(
+                    body: ProfileTab(
+                      onOpenSubscription: () {},
+                      setupCompleted: false,
+                      onOpenSetup: () {},
+                      onOpenFaq: () {},
+                    ),
+                  )
                 : const AccessScreen(),
           ),
         );

@@ -5,11 +5,21 @@ import '../services/access_service.dart';
 import '../services/access_action_guard.dart';
 import '../services/app_links.dart';
 import '../widgets/settings_section.dart';
+import 'translation_cache_screen.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key, required this.onOpenSubscription});
+  const ProfileTab({
+    super.key,
+    required this.onOpenSubscription,
+    required this.setupCompleted,
+    required this.onOpenSetup,
+    required this.onOpenFaq,
+  });
 
   final VoidCallback onOpenSubscription;
+  final bool setupCompleted;
+  final VoidCallback onOpenSetup;
+  final VoidCallback onOpenFaq;
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -19,15 +29,22 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
   final _service = AccessService.instance;
   bool _busy = false;
   String? _error;
+  AppInformation _information = const AppInformation();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _service.addListener(_updated);
+    _loadInformation();
     _run(() async {
       await _service.refresh();
     });
+  }
+
+  Future<void> _loadInformation() async {
+    final information = await AppInformation.load();
+    if (mounted) setState(() => _information = information);
   }
 
   @override
@@ -135,7 +152,7 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
           SettingsPageHeader(
             title: context.tr("Profil"),
             description: context.tr(
-              "Hesabın ve Premium erişimin. Yenilemek için aşağı çek.",
+              "Hesabın, Premium erişimin ve uygulama ayarların. Yenilemek için aşağı çek.",
             ),
           ),
           Container(
@@ -236,6 +253,74 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
                 onTap: busy || !_service.actions.canRun(AccessAction.restore)
                     ? null
                     : () => _run(_service.restore),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: context.tr('Gelişmiş'),
+            children: [
+              SettingsEntry(
+                icon: Icons.storage_rounded,
+                title: context.tr('Çeviri önbelleği'),
+                subtitle: context.tr(
+                  'Saklama sınırları, yedekleme ve temizleme',
+                ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TranslationCacheScreen(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: context.tr("Yardım"),
+            children: [
+              SettingsEntry(
+                icon: Icons.quiz_outlined,
+                title: context.tr("Sık Sorulan Sorular"),
+                subtitle: context.tr("Bağlantı ve çeviri hakkında yanıtlar"),
+                onTap: widget.onOpenFaq,
+              ),
+              if (widget.setupCompleted)
+                SettingsEntry(
+                  icon: Icons.checklist_rounded,
+                  title: context.tr("Kurulum rehberi"),
+                  subtitle: context.tr("Tamamladığın adımları yeniden incele"),
+                  onTap: widget.onOpenSetup,
+                ),
+              SettingsEntry(
+                icon: Icons.mail_outline_rounded,
+                title: context.tr("Bize e-posta gönder"),
+                subtitle: AppLinks.supportEmail,
+                onTap: () => AppLinks.contactSupport(context),
+              ),
+              SettingsEntry(
+                icon: Icons.alternate_email_rounded,
+                title: 'X (Twitter)',
+                subtitle: AppLinks.xHandle,
+                onTap: () => AppLinks.openWeb(context, AppLinks.xProfileUrl),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: context.tr("Uygulama hakkında"),
+            children: [
+              SettingsEntry(
+                icon: Icons.privacy_tip_outlined,
+                title: context.tr("Gizlilik politikası"),
+                onTap: () =>
+                    AppLinks.openWeb(context, _information.privacyUrl),
+              ),
+              SettingsEntry(
+                icon: Icons.description_outlined,
+                title: context.tr("Kullanım şartları"),
+                onTap: () => AppLinks.openWeb(context, _information.termsUrl),
+              ),
+              SettingsEntry(
+                icon: Icons.info_outline_rounded,
+                title: context.tr("Sürüm"),
+                subtitle: context.tr(_information.versionLabel),
               ),
             ],
           ),

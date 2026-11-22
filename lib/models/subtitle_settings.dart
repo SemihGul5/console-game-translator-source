@@ -212,10 +212,20 @@ class SubtitleSettings {
   );
 
   /// True when OCR 1 draws its translations over the English subtitle.
-  bool get coversEnglishSubtitle {
+  bool get coversEnglishSubtitle => coversEnglishFor(0);
+
+  /// True when OCR area [index] draws its translations over the English it
+  /// read instead of in subtitle area [index]'s fixed box.
+  bool coversEnglishFor(int index) {
     final settings = effectiveOcrSettings;
-    return settings.isNotEmpty && settings.first.coverEnglishSubtitle;
+    return index >= 0 &&
+        index < settings.length &&
+        settings[index].coverEnglishSubtitle;
   }
+
+  /// True when at least one OCR area draws over the English.
+  bool get coversAnyEnglish =>
+      effectiveOcrSettings.any((settings) => settings.coverEnglishSubtitle);
 
   /// Puts every subtitle area that follows its OCR area back onto it.
   SubtitleSettings withFollowingSubtitles() {
@@ -588,8 +598,9 @@ class OcrRegionSettings {
   final double holdSeconds;
   final double autoHideAfterSeconds;
 
-  /// Draws each translation directly over the English subtitle it came from
-  /// instead of in the fixed subtitle box. Only offered for OCR 1.
+  /// Draws each translation directly over the English text it came from
+  /// instead of in the fixed subtitle box. Every OCR area has its own switch;
+  /// a row of button prompts is covered label by label.
   final bool coverEnglishSubtitle;
 
   /// The subtitle area with the same number sits exactly on this OCR area and

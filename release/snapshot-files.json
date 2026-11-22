@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "date": "2026-11-22",
-  "applicationVersion": "1.1.6+18",
+  "date": "2026-11-23",
+  "applicationVersion": "1.1.7+20",
   "kind": "manually refreshed source snapshot; binary/source pairing not verified",
   "files": [
     {
@@ -216,8 +216,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflight.kt",
-      "sha256": "268e25ec256a6294f609206de9b4bc5a0ed6a154f361fefd277aab04cc527d38",
-      "bytes": 2428,
+      "sha256": "761d016a480fe05d238c3f028f537ca212a8f8e25749f334177d8e5c4c766db6",
+      "bytes": 3855,
       "category": "application"
     },
     {
@@ -227,9 +227,21 @@
       "category": "application"
     },
     {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CoverComposition.kt",
+      "sha256": "32d4b7fb3e539f6d84afeeb973e3dbab78200b8dd9babdcdb1894889227c7bd4",
+      "bytes": 2480,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CoverPrompts.kt",
+      "sha256": "fab348844a6f08abcc3fd28fe927d9140b7d12734a2f4942feaf0265361f8ef1",
+      "bytes": 7926,
+      "category": "application"
+    },
+    {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLClient.kt",
-      "sha256": "6b13e760f2ff0ded2f0fa9428012a3ae7bbbfec11a54d42751329aa2c5dfa958",
-      "bytes": 5819,
+      "sha256": "2f88dc7a00bf1c5ad72abfcf99d87b886d71ffdc4859a1b69eb138a4c48f27fc",
+      "bytes": 6015,
       "category": "application"
     },
     {
@@ -252,8 +264,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLTranslationEngine.kt",
-      "sha256": "c2f36663448ee3b7cb52f15554bbb561d865a4dc4bc3e5b6315c8f7b696dafc3",
-      "bytes": 1398,
+      "sha256": "cfd3e979cfc799780b1ca3cacff8b9b8b8e789dc5189644e9c494725631bec94",
+      "bytes": 1432,
       "category": "application"
     },
     {
@@ -396,8 +408,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrRegionSettings.kt",
-      "sha256": "40b9aa392c3b4b7f20d75df1cc07e289ebf64793d92324ce834373aab741df98",
-      "bytes": 2682,
+      "sha256": "1cef891c505aa211dd6276f422a3cfb57672ede24d2dd9f1ba09022fb3e0c49f",
+      "bytes": 2693,
       "category": "application"
     },
     {
@@ -422,6 +434,12 @@
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OfflineMarianCatalog.kt",
       "sha256": "04a0fcdb01b7f60e3fc670f8ba3b5f0171f14ff998749ef5be203e00b866c80b",
       "bytes": 2469,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/PartialReadHold.kt",
+      "sha256": "a7872bcd139bd85c28ce1d9f03e1f3eebb7e003c764a48a4620d00b1e3a1edea",
+      "bytes": 1881,
       "category": "application"
     },
     {
@@ -450,8 +468,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RemotePlayController.kt",
-      "sha256": "c03839c41c85ab5836002678aa38bb23eb8d2a3816821dd7e041b18bf73d1012",
-      "bytes": 115316,
+      "sha256": "6d9233a96e738a604011dad853794cc404f93af112cd837e7c9ff40119a79732",
+      "bytes": 113258,
       "category": "application"
     },
     {
@@ -468,8 +486,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SceneTextFilter.kt",
-      "sha256": "7369c7c8826ee17397bec842a708eb88745ff78832faafac071fc05190eefb4b",
-      "bytes": 12118,
+      "sha256": "b6d1335700e0a6e1552da91a261016a48906c34987bb44c3f46ec036c717d95c",
+      "bytes": 19549,
       "category": "application"
     },
     {
@@ -486,20 +504,20 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleCoverTracker.kt",
-      "sha256": "9009bbda7ffb9a3632a9ababea854bc89355eb8aa70ec523defe39f2101e7378",
-      "bytes": 13564,
+      "sha256": "5bae8cf308263f6dbe954bc2378cc45abd2b6c80156cad64bd77fd2eb2b1463e",
+      "bytes": 14439,
       "category": "application"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleOcrController.kt",
-      "sha256": "4bcc4062c12df277324049ab5300ea34779e7f0a6bba42ce8c274d195b0aaa5d",
-      "bytes": 135231,
+      "sha256": "0bbc5a5cd15ba10c3f28810d78f3746e7eee267e100f098b05aaf57258c3ede1",
+      "bytes": 148067,
       "category": "application"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleSourceSelector.kt",
-      "sha256": "9cebb7e3e0f4e69d2a5c5549f469c496ffb13229ef83ca2746bde69898cf3faa",
-      "bytes": 1409,
+      "sha256": "c6a4ebf53b418078c20d8581d15fba3fece2d5e0125a7d5cb5875b571832a90c",
+      "bytes": 2458,
       "category": "application"
     },
     {
@@ -726,14 +744,26 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudOcrPreflightTest.kt",
-      "sha256": "553ab3f50fd9e8461ca29fd1eaff77c70d762c6eaf8254419a14a0def4eb987f",
-      "bytes": 3227,
+      "sha256": "7f894c32a6b93022c05fec6898e1af2ef3404f32a67a4ff82b945c917834193b",
+      "bytes": 4079,
       "category": "application"
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CloudTranslationRetryPolicyTest.kt",
       "sha256": "5bc9b95395bce306f0dabd634a73ecc446da6b6c68edbdb0c3343a2b132dd635",
       "bytes": 2246,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CoverCompositionTest.kt",
+      "sha256": "02e7febeeefdc217efad93b64470bf2aa252c14b593e68596ac86ca737ecc2b8",
+      "bytes": 2012,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CoverPromptsTest.kt",
+      "sha256": "f0167831748a4419ccafa4f0b9eb6559892cce54924d2fb916007b071e7b61cc",
+      "bytes": 6748,
       "category": "application"
     },
     {
@@ -905,6 +935,12 @@
       "category": "application"
     },
     {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/PartialReadHoldTest.kt",
+      "sha256": "bf66c4165e886c8b92474eefeb7f27eb3e9b1f5b52b9f846ba7ce52a41566373",
+      "bytes": 1266,
+      "category": "application"
+    },
+    {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/PsnBrokerClientTest.kt",
       "sha256": "025f65bf6953754fe88ffc0ecb56fc329f9864009163f412b90288b9d8cb2f8b",
       "bytes": 1649,
@@ -924,8 +960,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SceneTextFilterTest.kt",
-      "sha256": "29561d86fa505947c0ecbbfa523fbffa21175d418b8b49e8638001bbc5d02948",
-      "bytes": 8686,
+      "sha256": "59eac812600b3672a2613a6e7f89a757247c2c32a0dd21d64e691cc7459f91d0",
+      "bytes": 11888,
       "category": "application"
     },
     {
@@ -948,8 +984,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SubtitleSourceSelectorTest.kt",
-      "sha256": "fb265393c63a1a966293ca00423755468f1598a9535d3b7fff5878a896c9ef45",
-      "bytes": 10473,
+      "sha256": "2d0d368f2a4a70312ca3331c28674e4945a6a8201592a0c493b8b0077a57c719",
+      "bytes": 11981,
       "category": "application"
     },
     {
@@ -31308,8 +31344,8 @@
     },
     {
       "path": "lib/l10n/messages_en.dart",
-      "sha256": "85cdf48174fda7a30965b685a31f746fe2d3a678c6ca64c78366de48eaf5b16b",
-      "bytes": 112133,
+      "sha256": "980d4afbfefca0e0919b90ad29267cfd08d51a1a42bcd23c424f9b2c5f13e7b8",
+      "bytes": 111943,
       "category": "application"
     },
     {
@@ -31320,8 +31356,8 @@
     },
     {
       "path": "lib/main.dart",
-      "sha256": "1a13ef41d5529c85721e823cef342d3c5f42197ba7304205d4269030542299b1",
-      "bytes": 171756,
+      "sha256": "3755336037a9a68b68d43adb0f8b2770ef16eb81df8df06d93c0981cdf35a82e",
+      "bytes": 168924,
       "category": "application"
     },
     {
@@ -31338,14 +31374,14 @@
     },
     {
       "path": "lib/models/subtitle_cover.dart",
-      "sha256": "b3daf28d2ea7a7b20f16d4319307171d9f85f13c2e8971c47117da66f3b05570",
-      "bytes": 3771,
+      "sha256": "14dae61559cfd09c7c82a0518097fa75c1c2732158968b9845d05aa08e89a7bc",
+      "bytes": 4252,
       "category": "application"
     },
     {
       "path": "lib/models/subtitle_settings.dart",
-      "sha256": "ff352ce94824aac43ac8c50febbc2720c68806b2ce74b024f49d3f022097a85d",
-      "bytes": 23904,
+      "sha256": "7677099e1ffef71c1ed6a50d7526e61cccc71da65c21843a6226716f451efb4e",
+      "bytes": 24370,
       "category": "application"
     },
     {
@@ -31362,8 +31398,8 @@
     },
     {
       "path": "lib/screens/profile_tab.dart",
-      "sha256": "484962c6f37f5ebf7780ec0a644d57f62c9f181cfcc7f7a3fe98eb012ae814e2",
-      "bytes": 9028,
+      "sha256": "9eaf1216fb706b4dde0f84144426eef4c069ec7b17693225b6d67fd4d4ccde40",
+      "bytes": 12210,
       "category": "application"
     },
     {
@@ -31374,20 +31410,14 @@
     },
     {
       "path": "lib/screens/ps5_stream_screen.dart",
-      "sha256": "565725f719c7db1180d7da78f27557398e23c83734ef276d230c196264a91b6f",
-      "bytes": 117334,
+      "sha256": "f0f26c70c581c4b194741529fe72e83bb60930f3df0fa6cc57f12289cf0bbda7",
+      "bytes": 122517,
       "category": "application"
     },
     {
       "path": "lib/screens/psn_login_screen.dart",
       "sha256": "9d16c9de31a9ea56308f24afebfeb3499be7f23d09ec58133232d2b710a72170",
       "bytes": 17345,
-      "category": "application"
-    },
-    {
-      "path": "lib/screens/settings_tab.dart",
-      "sha256": "5f4742ddce265c057fb2d6f02950a3f89d0f8ef48f0e13120f45da60effc20da",
-      "bytes": 3711,
       "category": "application"
     },
     {
@@ -31500,8 +31530,8 @@
     },
     {
       "path": "lib/services/subtitle_presentation.dart",
-      "sha256": "2e89ef293bb0c99e98420a99eee22e0d9ea62562047351004466691516e7a860",
-      "bytes": 1808,
+      "sha256": "a6aa0834cc9a7d87605e2df6120297ce1c7f2c0d7da4c4a2623ed401d611efc7",
+      "bytes": 1792,
       "category": "application"
     },
     {
@@ -31530,8 +31560,8 @@
     },
     {
       "path": "lib/services/tv_subtitle_client.dart",
-      "sha256": "96f599fb92c25efa308ce7ff6c82f0d3958f19a3c4b653e258cdc53ecf1cfed6",
-      "bytes": 22683,
+      "sha256": "3cdcf0b301da8cf8d3e315249856ac247ff36331b732a1ffebb820773ff62f4e",
+      "bytes": 22678,
       "category": "application"
     },
     {
@@ -31620,19 +31650,19 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "79917b1486d31206cca8f9b0b272a730f5a7b163acd932bc55403ffe6a2fa885",
+      "sha256": "e73276665ad63de023a1c337450b9e1b798a8018cc5c56f2c3024dad995237c3",
       "bytes": 3305,
       "category": "retained-public-source"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "69cf90a48f5ca2ccbe6e8524aa4075ed3a0fdb923794198899470fae9b1fb2fe",
+      "sha256": "f2505b747c92aaa202181b7bed350c9f2c3f7c839f7251789a8135fea4573278",
       "bytes": 2048,
       "category": "retained-public-source"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "d4e2ea77b48df85e50e95ec28163dbf59de0cd989fc5621bc8f6271d9ca9a9af",
+      "sha256": "379639445739f16e18daeeed7b1195b59ab45584d0ca48e63a76dbda0924065a",
       "bytes": 1902,
       "category": "retained-public-source"
     },
@@ -31644,19 +31674,19 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "17ba51310046ba9458857d9aa93d40fe3289b643674d706ff3458c293717a53f",
+      "sha256": "472989669bc0e271e84e92e81e8777160227d4166b8b741726d0570435bb9728",
       "bytes": 4366,
       "category": "application"
     },
     {
       "path": "README.md",
-      "sha256": "22a4f3dc34d1540fef52885bb3fb212d757078179a0806b5591796e22981522d",
+      "sha256": "494b0e84777f4574b9dc7d6368bda188bf4dfa42a5c9049c831abd53901d717b",
       "bytes": 4990,
       "category": "retained-public-source"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "d03667e6eeca45b4154fbf58d55d8e5562d4f947b364e7bb0d6b614daf975378",
+      "sha256": "d3619c7be5480a30d802bb8c8d1efad15a1e93c6efa3848a43156d1c44d5fdd9",
       "bytes": 5999,
       "category": "retained-public-source"
     },
@@ -31842,8 +31872,8 @@
     },
     {
       "path": "test/account_deletion_test.dart",
-      "sha256": "4f0930fc91069e9541cf202ff0c4cd8c43fab87ffe2dd87ec6fffb69396e82a1",
-      "bytes": 12511,
+      "sha256": "9c943d213fcbbfb3a15154ecd8ed220628be3ef4d29c81849749e254b8ef89e5",
+      "bytes": 12724,
       "category": "application"
     },
     {
@@ -31854,8 +31884,8 @@
     },
     {
       "path": "test/app_language_test.dart",
-      "sha256": "0d10f510a5eb28f4123437f700b8eed3d28802dd21e77203fed925734a492428",
-      "bytes": 11900,
+      "sha256": "da659b53baacdcb2661f92ae2226ac1a7e294b12cdda425063ee8fae92e7d2ee",
+      "bytes": 11403,
       "category": "application"
     },
     {
@@ -31950,8 +31980,8 @@
     },
     {
       "path": "test/navigation_test.dart",
-      "sha256": "c0adc148c1aed6debc19cf7cd14cf0ec3f6b0ca0d72a3e1c1f06e86b50e8322d",
-      "bytes": 71979,
+      "sha256": "8b73a78e7f69d28bbce485c0aaa62d7aaa435e67572681cd0408bde4d9daecdd",
+      "bytes": 71476,
       "category": "application"
     },
     {
@@ -31998,14 +32028,14 @@
     },
     {
       "path": "test/subtitle_region_settings_test.dart",
-      "sha256": "87af13ec5d5a8c30285c1b2aac2bd2e896f08048baabc040514a75d34f91c540",
-      "bytes": 8162,
+      "sha256": "203102f3887902da1743704b22d4ef42d2ce64ea2009fd00a1de37ad4708738e",
+      "bytes": 9518,
       "category": "application"
     },
     {
       "path": "test/subtitle_settings_persistence_test.dart",
-      "sha256": "3efaafa8a8d14103e9a840ba9ac21c68497ee2239a9c0fc559d94d6cc9c9d9fb",
-      "bytes": 22038,
+      "sha256": "025f8eb90d22fc1ed0b5aeb02be0743aed9186b93a5125b3225a6d64170415ef",
+      "bytes": 22169,
       "category": "application"
     },
     {
@@ -32034,8 +32064,8 @@
     },
     {
       "path": "test/translation_cache_screen_test.dart",
-      "sha256": "383fc9f347e44ed5f01e49665e0764972aac75cbde967d3c8c359facad5ad95a",
-      "bytes": 15577,
+      "sha256": "9abbfb55fcd4bdfcf2d7f261040159c6d7487d7c0a174a0ca3776fb8e3dca4d9",
+      "bytes": 15659,
       "category": "application"
     },
     {

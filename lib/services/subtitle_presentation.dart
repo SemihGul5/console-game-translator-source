@@ -27,9 +27,9 @@ Map<String, Object> subtitlePresentation(SubtitleSettings settings) => {
     )
       {
         ..._appearance(settings.settingsForSubtitle(index)),
-        // Area 1 is drawn over the English subtitle lines instead of in its
-        // fixed box. Older receivers ignore the flag and keep the fixed box.
-        if (index == 0 && settings.coversEnglishSubtitle) 'coverEnglish': true,
+        // This area is drawn over the English it read instead of in its fixed
+        // box. Older receivers ignore the flag and keep the fixed box.
+        if (settings.coversEnglishFor(index)) 'coverEnglish': true,
       },
   ],
 };

@@ -20,8 +20,13 @@ internal data class CoverBox(val left: Float, val top: Float, val right: Float, 
 /** One recognized OCR line, already mapped into the frame. */
 internal data class CoverLine(val text: String, val box: CoverBox)
 
-/** One subtitle as it stands on screen: a speaker's line, or the lines that continue it. */
-internal data class CoverUnit(val text: String, val box: CoverBox, val lineHeight: Float)
+/**
+ * One subtitle as it stands on screen: a speaker's line, or the lines that
+ * continue it. [prompt] marks one label of a controller prompt row
+ * ([splitCoverPrompts]): it is translated on its own and its cover keeps to the
+ * label's size, so the game's buttons beside it stay visible.
+ */
+internal data class CoverUnit(val text: String, val box: CoverBox, val lineHeight: Float, val prompt: Boolean = false)
 
 /**
  * Splits the subtitle area's lines into separate subtitles, so speakers talking
@@ -77,6 +82,8 @@ internal data class CoverItem(
     val box: CoverBox,
     val lineHeight: Float,
     val icons: List<String> = emptyList(),
+    /** A prompt label: drawn at the English label's size, never wider than needed. */
+    val fit: Boolean = false,
 )
 
 /**
@@ -106,6 +113,7 @@ internal class SubtitleCoverTracker(
         var lineHeight: Float,
         var lastSeen: Long,
         var icons: List<String> = emptyList(),
+        var fit: Boolean = false,
         var pendingKey: String? = null,
         var pendingCount: Int = 0,
     )
@@ -117,6 +125,7 @@ internal class SubtitleCoverTracker(
         val lineHeight: Float,
         val immediate: Boolean,
         val icons: List<String> = emptyList(),
+        val fit: Boolean = false,
     )
 
     private class Pending(var count: Int, var lastFrame: Long)
@@ -141,6 +150,9 @@ internal class SubtitleCoverTracker(
         liveSource = if (liveText == null) null else source?.takeIf { it.isNotBlank() }
         liveIcons = if (liveText == null) emptyList() else icons
     }
+
+    /** True while the area's live translation is set ([setLiveText]). */
+    @Synchronized fun hasLiveText(): Boolean = liveText != null
 
     /** Forget everything (area turned off, stream stopped). Returns the empty list if covers were shown. */
     @Synchronized fun reset(): List<CoverItem>? {
@@ -179,22 +191,27 @@ internal class SubtitleCoverTracker(
             pending.lastFrame = frame
             if (candidate.immediate || pending.count >= confirmFrames) {
                 pendingNew.remove(candidate.key)
-                shown.add(Shown(nextId++, candidate.key, candidate.text, candidate.box, candidate.lineHeight, now, candidate.icons))
+                shown.add(Shown(nextId++, candidate.key, candidate.text, candidate.box, candidate.lineHeight, now,
+                    candidate.icons, candidate.fit))
             }
         }
         pendingNew.entries.removeAll { it.value.lastFrame < frame }
         shown.removeAll { now - it.lastSeen > missMillis }
-        return publish(shown.sortedBy { it.box.top }.map { CoverItem(it.id, it.text, it.box, it.lineHeight, it.icons) })
+        return publish(shown.sortedWith(compareBy<Shown> { it.box.top }.thenBy { it.box.left })
+            .map { CoverItem(it.id, it.text, it.box, it.lineHeight, it.icons, it.fit) })
     }
 
     private fun candidatesFrom(observations: List<CoverObservation>): List<Candidate> {
         val matched = observations.filter { it.match != null }
         if (matched.isNotEmpty()) return matched.map { (unit, match) ->
-            Candidate(match!!.key, match.text, unit.box, unit.lineHeight, match.immediate, match.icons)
+            Candidate(match!!.key, match.text, unit.box, unit.lineHeight, match.immediate, match.icons, unit.prompt)
         }
         val live = liveText ?: return emptyList()
         val source = liveSource
-        val units = if (source == null) observations else observations.filter { readsLike(it.unit.text, source) }
+        // Prompt labels wait for their own translations; the whole area's live
+        // text is never stretched over them.
+        val lines = observations.filterNot { it.unit.prompt }
+        val units = if (source == null) lines else lines.filter { readsLike(it.unit.text, source) }
         if (units.isEmpty()) return emptyList()
         val box = units.map { it.unit.box }.reduce(CoverBox::union)
         val lineHeight = units.map { it.unit.lineHeight }.sorted()[units.size / 2]
@@ -228,6 +245,7 @@ internal class SubtitleCoverTracker(
         item.key = candidate.key
         item.text = candidate.text
         item.icons = candidate.icons
+        item.fit = candidate.fit
         item.box = candidate.box
         item.lineHeight = candidate.lineHeight
         item.lastSeen = now

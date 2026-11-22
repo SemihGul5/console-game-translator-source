@@ -133,6 +133,14 @@ internal class SubtitleOcrController(
     private val coverTrackers = ConcurrentHashMap<Int, SubtitleCoverTracker>()
     // Button icons found beside recent OCR reads, per area, keyed by the read's text.
     private val iconReads = ConcurrentHashMap<Int, LinkedHashMap<String, List<ButtonIcon>>>()
+    // Prompt labels read in the previous frame per area, and labels being translated.
+    private val coverLabelsSeen = ConcurrentHashMap<Int, Set<String>>()
+    private val coverLabelsInFlight: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    // Per area: words of signs just rejected, block positions of the last frame,
+    // and the HUD text on screen (partial reads keep it; see PartialReadHold).
+    private val sceneWordMemories = ConcurrentHashMap<Int, SceneWordMemory>()
+    private val sceneMotion = ConcurrentHashMap<Int, SceneMotionTracker>()
+    private val partialHolds = ConcurrentHashMap<Int, PartialReadHold>()
     @Volatile private var enabled = false
     @Volatile private var sampleIntervalMillis = 100L
     @Volatile private var regionSettings = listOf(OcrRegionSettings())
@@ -289,6 +297,9 @@ internal class SubtitleOcrController(
         if (regionsChanged) {
             subtitleBand.clear()
             iconReads.clear()
+            sceneWordMemories.clear()
+            sceneMotion.clear()
+            partialHolds.clear()
         }
         while (regionStates.size < regions.size) regionStates.add(RegionState())
         while (regionStates.size > regions.size) regionStates.removeAt(regionStates.lastIndex)
@@ -315,7 +326,7 @@ internal class SubtitleOcrController(
         }
         sampleIntervalMillis = regionSettings.minOf { it.sampleIntervalMillis }
         // Covers belong to the area's current place and mode; stale ones are taken down.
-        if (regionsChanged || !isEnabled || !coverEnabled(0)) resetCovers()
+        if (regionsChanged || !isEnabled) resetCovers() else resetCovers { index -> !coverEnabled(index) }
         val safeEngine = selectedTranslationEngine.takeIf { it in setOf("mlkit", "opus", "deepl", "gemini") } ?: "opus"
         val safeMarianTarget = if (safeEngine == "hplt") "tr" else
             targetLanguage.takeIf { it in OfflineMarianCatalog.targetCodes } ?: "tr"
@@ -975,17 +986,41 @@ internal class SubtitleOcrController(
                 if (placement != null && sceneTextReason(sceneLines) == null && isCertainSubtitle(sceneLines, placement))
                     subtitleBand.remember(placement)
             }
-            val textBlocks = sceneBlocks.filter { (block, sceneLines, placement) ->
-                val reason = sceneTextReason(sceneLines, placement, subtitleBand, subtitleRegion)
+            val shapeReasons = sceneBlocks.map { (_, sceneLines, placement) ->
+                sceneTextReason(sceneLines, placement, subtitleBand, subtitleRegion)
+            }
+            // World text seen moments ago: a straight piece of a tilted sign
+            // ("SUIT") and blocks that move with the camera are not subtitles.
+            val now = SystemClock.elapsedRealtime()
+            val sceneWords = if (debugOnly) null else sceneWordMemories.getOrPut(regionIndex) { SceneWordMemory() }
+            val motion = if (debugOnly) null else sceneMotion.getOrPut(regionIndex) { SceneMotionTracker() }
+            // Only tilt is certain enough to learn from: a HUD prompt beside its
+            // button glyph ("DIVE G1") can look like a plate code.
+            sceneBlocks.forEachIndexed { blockIndex, (block, _, _) ->
+                if (shapeReasons[blockIndex] == "tilted") sceneWords?.remember(block.text, now)
+            }
+            val textBlocks = sceneBlocks.filterIndexed { blockIndex, (block, sceneLines, placement) ->
+                val moved = motion != null && sceneBox(sceneLines, bitmap.width, bitmap.height)
+                    ?.let { box -> motion.moved(ocrStartedAt, now, block.text, box) } == true
+                val reason = shapeReasons[blockIndex] ?: when {
+                    debugOnly || isSceneExempt(sceneLines, placement) -> null
+                    moved -> "moving"
+                    sceneWords?.isSceneEcho(block.text, now) == true -> "scene_text_seen"
+                    else -> null
+                }
                 if (reason != null && !debugOnly && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
                     "SCENE_TEXT_REJECTED area=${regionIndex + 1} reason=$reason text=${logText(block.text)}")
                 reason == null
             }.map { it.first }
-            // Over-the-English mode: the kept lines, split into one subtitle per speaker.
+            // Over-the-English mode: the kept lines, split into one subtitle per
+            // speaker; a row of button prompts into one label per button.
             val coverUnits = if (!debugOnly && region != null && coverEnabled(regionIndex)) {
-                groupCoverUnits(textBlocks.flatMap { it.lines }.mapNotNull { line ->
-                    coverLine(line, bitmap.width, bitmap.height, region)
-                }).filter { unit -> unit.text.count(Char::isLetter) >= 2 && !isNonLinguisticOcr(unit.text) }
+                // A HUD area (not a subtitle strip) covers each short row on its own.
+                val split = splitCoverPrompts(textBlocks.flatMap { it.lines }.mapNotNull { line ->
+                    coverWordLine(line, bitmap.width, bitmap.height, region)
+                }, everyRowIsLabel = !subtitleRegion)
+                (split.prompts + groupCoverUnits(split.rest))
+                    .filter { unit -> unit.text.count(Char::isLetter) >= 2 && !isNonLinguisticOcr(unit.text) }
             } else null
             // Controller button icons between the kept words ("Hold [L3] to …").
             val icons = if (!debugOnly && region != null) findButtonIcons(textBlocks, bitmap, region) else emptyList()
@@ -1207,6 +1242,15 @@ internal class SubtitleOcrController(
         while (regionStates.size <= index) regionStates.add(RegionState())
         val state = regionStates[index]
         val now = SystemClock.elapsedRealtime()
+        // A HUD area read only in part ("SURFACE" of "DIVE  SURFACE") keeps the
+        // whole prompt's translation instead of flipping to the part's.
+        val hudArea = regions.getOrNull(index)?.let { !isSubtitleShapedRegion(it) } == true
+        if (hudArea && text.any(Char::isLetter) && state.visibleSince != null &&
+            partialHolds[index]?.holds(text, now) == true) {
+            state.visibleSince = now
+            state.emptySince = null
+            return
+        }
         // A known JSON line is authoritative even if the dialogue filter would
         // reject its position/line count or report zero accepted confidence.
         if (memoryMatch != null) {
@@ -1264,6 +1308,7 @@ internal class SubtitleOcrController(
                     state.memoryMatchedKey = null
                     state.visibleSince = null
                     coverTrackers[index]?.setLiveText(null)
+                    partialHolds[index]?.shown(null)
                     emit(mapOf("type" to "subtitleCleared", "regionIndex" to index))
                 }
             } else if (state.sourceKey != null) {
@@ -2200,9 +2245,13 @@ internal class SubtitleOcrController(
         }
     }
 
-    private fun coverEnabled(index: Int) = index == 0 && regionSettings.getOrNull(0)?.coverEnglish == true
+    /** Every OCR area can draw its translations over the English it read (its own switch). */
+    private fun coverEnabled(index: Int) = regionSettings.getOrNull(index)?.coverEnglish == true
 
     private fun coverTracker(index: Int) = coverTrackers.getOrPut(index) { SubtitleCoverTracker() }
+
+    /** An OCR area that is not a subtitle strip (HUD prompts, a phone, a mission box). */
+    private fun hudCoverArea(index: Int) = regions.getOrNull(index)?.let { !isSubtitleShapedRegion(it) } == true
 
     /** A crop-pixel rectangle mapped into the whole frame; [region] is [left, top, width, height]. */
     /**
@@ -2225,6 +2274,16 @@ internal class SubtitleOcrController(
         )
     }
 
+    /** [coverLine] with the boxes of its kept words, for splitting button-prompt rows. */
+    private fun coverWordLine(line: com.google.mlkit.vision.text.Text.Line, width: Int, height: Int, region: FloatArray): CoverWordLine? {
+        val cover = coverLine(line, width, height, region) ?: return null
+        val elements = line.elements
+        val kept = elements.drop(sceneWordsBeforeSpeaker(elements.map { it.text }))
+        val words = if (kept.any { it.boundingBox == null }) emptyList()
+            else kept.map { CoverWord(it.text, frameBox(it.boundingBox!!, width, height, region)) }
+        return CoverWordLine(cover, words)
+    }
+
     private fun frameBox(box: Rect, width: Int, height: Int, region: FloatArray): CoverBox {
         val w = width.coerceAtLeast(1).toFloat()
         val h = height.coerceAtLeast(1).toFloat()
@@ -2238,12 +2297,39 @@ internal class SubtitleOcrController(
 
     /** Each subtitle is looked up on its own, so two speakers get their own lines. */
     private fun updateCovers(index: Int, units: List<CoverUnit>, memory: GameTranslationMemory?, icons: List<ButtonIcon>) {
+        // A prompt label (and every line of a HUD area) is translated on its own
+        // once it has been read in two frames in a row, so one-frame OCR
+        // misspellings cost no request.
+        val hud = hudCoverArea(index)
+        val labelKeys = units.mapTo(HashSet()) { unit ->
+            when {
+                unit.prompt -> coverLabelKey(unit.text)
+                hud -> canonicalTranslationKey(unit.text)
+                else -> canonicalTranslationKey(spokenLine(unit.text).body)
+            }
+        }
+        val labelsBefore = coverLabelsSeen.put(index, labelKeys).orEmpty()
         val observations = units.map { unit ->
+            val alone = unit.prompt || hud
+            // A pack line that only repeats the English ("SELECT" -> "SELECT")
+            // is no translation for a label; ask the live engine instead.
             val match = memory?.let { it.findExact(unit.text) ?: it.find(unit.text) }
+                ?.takeUnless { alone && isUntranslatedEcho(unit.text, it.target) }
+            if (match == null && alone) {
+                // Short labels get the HUD context; a sentence in a HUD area (a tip,
+                // a message) is translated like a subtitle and shares its cache.
+                val key = if (unit.prompt) coverLabelKey(unit.text) else canonicalTranslationKey(unit.text)
+                return@map CoverObservation(unit, coverLabelTranslation(key, unit.text, request = key in labelsBefore,
+                    hudContext = unit.prompt)
+                    ?.let { translated -> CoverMatch("label:$key", translated, immediate = true) })
+            }
+            if (match == null) return@map CoverObservation(unit, subtitleCoverWithoutWholeMatch(index, unit, memory, labelsBefore))
             CoverObservation(unit, match?.let {
                 val text = subtitleTextEvent(index, it.target, "none", it)["text"] as String
-                val unitIcons = icons.filter { icon -> icon.box.centerX in unit.box.left..unit.box.right &&
-                    icon.box.centerY in (unit.box.top - unit.lineHeight)..(unit.box.bottom + unit.lineHeight) }
+                // The game's own buttons stay visible beside a prompt label.
+                val unitIcons = if (unit.prompt) emptyList() else icons.filter { icon ->
+                    icon.box.centerX in unit.box.left..unit.box.right &&
+                        icon.box.centerY in (unit.box.top - unit.lineHeight)..(unit.box.bottom + unit.lineHeight) }
                 CoverMatch(
                     key = "${it.gameId}:${it.entryId}:${it.segmentIndex ?: -1}",
                     text = if (unitIcons.isEmpty()) text else insertButtonIcons(text, unitIcons.size, targetIsTurkish()),
@@ -2256,6 +2342,109 @@ internal class SubtitleOcrController(
     }
 
     private fun targetIsTurkish() = targetLanguageCode.startsWith(TranslateLanguage.TURKISH)
+
+    /**
+     * A subtitle box no single pack line matches. Several pack lines shown
+     * together are joined sentence by sentence. Otherwise, when the area's own
+     * translation came from the pack (it matched just one of the lines, so no
+     * live text covers the box), the box is translated live on its own; its
+     * speaker label stays as the game shows it.
+     */
+    private fun subtitleCoverWithoutWholeMatch(
+        index: Int,
+        unit: CoverUnit,
+        memory: GameTranslationMemory?,
+        labelsBefore: Set<String>,
+    ): CoverMatch? {
+        if (memory != null) composeFromSentences(unit.text) { piece ->
+            (memory.findExact(piece) ?: memory.find(piece)?.takeIf {
+                it.matchType in CERTAIN_COVER_MATCHES || it.score >= CERTAIN_COVER_SCORE
+            })?.let { match -> match.target to "${match.gameId}:${match.entryId}:${match.segmentIndex ?: -1}" }
+        }?.let { composed -> return CoverMatch("composed:${composed.key}", composed.text, immediate = true) }
+        // Only while the area shows a pack line: a box with no pack line at all is
+        // already being translated by the area's own live path (no second request).
+        if (coverTracker(index).hasLiveText() || regionStates.getOrNull(index)?.memoryMatchedKey == null) return null
+        val line = spokenLine(unit.text)
+        val key = canonicalTranslationKey(line.body)
+        return coverLabelTranslation(key, line.body, request = key in labelsBefore, hudContext = false)
+            ?.let { translated -> CoverMatch("live-box:$key", line.withSpeaker(translated), immediate = true) }
+    }
+
+    /**
+     * Labels are cached apart from subtitle lines: they are translated with a
+     * HUD context, so "SELECT" alone becomes "SEÇ" rather than staying English.
+     */
+    private fun coverLabelKey(text: String) = COVER_LABEL_KEY_PREFIX + canonicalTranslationKey(text)
+
+    /**
+     * A prompt label's live translation from the caches, or null. When [request]
+     * is set and nothing is cached yet, asks the selected engine once; the result
+     * lands in the cache and is drawn on a following frame.
+     */
+    private fun coverLabelTranslation(key: String, text: String, request: Boolean, hudContext: Boolean = true): String? {
+        val cached = translationCache[key] ?: if (isCloudEngine())
+            cloudCache().getIfLoaded(sourceLanguageCode, targetLanguageCode, key)?.also { translationCache[key] = it } else null
+        if (cached != null) return cached.takeUnless { isUntranslatedEcho(text, it) }
+        if (request) requestCoverLabel(key, text, hudContext)
+        return null
+    }
+
+    private fun requestCoverLabel(key: String, text: String, hudContext: Boolean) {
+        if (closed || !enabled || !liveTranslationSupported() || !coverLabelsInFlight.add(key)) return
+        val revision = deepLRevision.get()
+        val engine = translationEngine
+        val source = sourceLanguageCode
+        val target = targetLanguageCode
+        fun done(translated: String?) {
+            recognitionExecutor.execute {
+                coverLabelsInFlight.remove(key)
+                if (translated.isNullOrBlank() || containsUnknownToken(translated) ||
+                    revision != deepLRevision.get() || engine != translationEngine) return@execute
+                translationCache[key] = translated
+                if (diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
+                    "COVER_LABEL_TRANSLATED engine=$engine source=${logText(text)} output=${logText(translated)}")
+            }
+        }
+        try {
+            when {
+                isCloudEngine() -> {
+                    val apiKey = when {
+                        cloudRetry.waiting || deepLApiKey.isBlank() -> null
+                        engine == "gemini" -> geminiKeyPool.acquire()
+                        else -> deepLApiKey
+                    }
+                    if (apiKey == null) { coverLabelsInFlight.remove(key); return }
+                    deepLExecutor.execute {
+                        done(runCatching {
+                            if (engine == "gemini") geminiTranslationEngine.translate(source, target, key, text, apiKey).text
+                            else deepLTranslationEngine.translate(source, target, key, text, apiKey, COVER_LABEL_AREA,
+                                context = if (hudContext) COVER_LABEL_CONTEXT else null).text
+                        }.getOrNull())
+                    }
+                }
+                engine == "mlkit" -> {
+                    if (!translationModelReady) { coverLabelsInFlight.remove(key); return }
+                    translator.translate(text)
+                        .addOnSuccessListener(recognitionExecutor) { done(it) }
+                        .addOnFailureListener(recognitionExecutor) { done(null) }
+                }
+                engine == "opus" -> {
+                    // Only a model that is already loaded; the subtitle path loads it.
+                    val model = marianTranslator ?: run { coverLabelsInFlight.remove(key); return }
+                    localTranslationQueue.submit(COVER_LABEL_QUEUE + (key.hashCode() and 0xFF), "label:$key") {
+                        done(runCatching { model.translate(text) }.getOrNull())
+                    }
+                }
+                engine == "hplt" -> {
+                    val model = hpltTranslator ?: run { coverLabelsInFlight.remove(key); return }
+                    marianExecutor.execute { done(runCatching { model.translate(text) }.getOrNull()) }
+                }
+                else -> coverLabelsInFlight.remove(key)
+            }
+        } catch (_: java.util.concurrent.RejectedExecutionException) {
+            coverLabelsInFlight.remove(key)
+        }
+    }
 
     /** Icons cut out of the crop where a wide word gap holds a drawn shape. */
     private fun findButtonIcons(
@@ -2321,8 +2510,11 @@ internal class SubtitleOcrController(
     private fun iconKeyWords(text: String): Set<String> =
         ICON_KEY_WORD.findAll(text.lowercase(Locale.ROOT)).map { it.value }.toSet()
 
-    private fun resetCovers() {
-        coverTrackers.keys.toList().forEach { index -> coverTrackers.remove(index)?.reset()?.let { emitCovers(index, it) } }
+    private fun resetCovers(only: (Int) -> Boolean = { true }) {
+        coverTrackers.keys.filter(only).forEach { index ->
+            coverLabelsSeen.remove(index)
+            coverTrackers.remove(index)?.reset()?.let { emitCovers(index, it) }
+        }
     }
 
     private fun emitCovers(index: Int, items: List<CoverItem>) {
@@ -2333,14 +2525,19 @@ internal class SubtitleOcrController(
             "regionIndex" to index,
             "items" to items.map { item ->
                 mapOf(
-                    "id" to item.id,
+                    // Ids are counted per area; receivers keep one list for all areas.
+                    "id" to index * COVER_ID_STRIDE + item.id,
                     "text" to item.text,
                     "left" to item.box.left.toDouble(),
                     "top" to item.box.top.toDouble(),
                     "width" to item.box.width.toDouble(),
                     "height" to item.box.height.toDouble(),
                     "lineHeight" to item.lineHeight.toDouble(),
-                ) + (if (item.icons.isEmpty()) emptyMap() else mapOf("icons" to item.icons))
+                    "area" to index,
+                ) + (if (item.icons.isEmpty()) emptyMap() else mapOf("icons" to item.icons)) +
+                    // A HUD area's covers (a phone message, a prompt) keep the size of
+                    // the English they replace; subtitles use the subtitle font.
+                    (if (item.fit || hudCoverArea(index)) mapOf("fit" to true) else emptyMap())
             },
         ))
     }
@@ -2402,10 +2599,12 @@ internal class SubtitleOcrController(
         val richText = if (icons.isEmpty()) null else insertButtonIcons(displayText, icons.size, targetIsTurkish())
         val event = if (richText == null) baseEvent
             else baseEvent + mapOf("richText" to richText, "icons" to icons.map { it.png })
-        // A live (non-pack) translation covers the whole English when no line is in the pack.
+        // A live (non-pack) translation covers the whole English when no line is
+        // in the pack. A HUD area never gets one stretched box: each of its
+        // lines is translated on its own (updateCovers).
         if (coverEnabled(index)) {
             coverTracker(index).setLiveText(
-                if (match == null) richText ?: displayText else null,
+                if (match == null && !hudCoverArea(index)) richText ?: displayText else null,
                 sourceText,
                 if (match == null) icons.map { it.png } else emptyList(),
             )
@@ -2429,6 +2628,7 @@ internal class SubtitleOcrController(
                     "output=${logText(displayText)}" + (if (icons.isEmpty()) "" else " icons=${icons.size}"),
             )
         }
+        partialHolds.getOrPut(index) { PartialReadHold() }.shown(sourceText)
         emit(event)
     }
 
@@ -2462,6 +2662,8 @@ internal class SubtitleOcrController(
             .trim()
             // "YHO Lucia: …": a bottle's brand glued in front of the speaker.
             .let(::stripSceneWordsBeforeSpeaker)
+            // "Kenton 00:05": a call timer would send a new text every second.
+            .let(::stripLabelClock)
         if (sourceLanguageCode != TranslateLanguage.ENGLISH || cleaned.isEmpty()) {
             return cleaned
         }
@@ -2512,6 +2714,7 @@ internal class SubtitleOcrController(
         state.memoryMatchedKey = null
         state.clearSent = true
         coverTrackers[index]?.setLiveText(null)
+        partialHolds[index]?.shown(null)
         emit(mapOf("type" to "subtitleCleared", "regionIndex" to index))
     }
 
@@ -2525,5 +2728,12 @@ internal class SubtitleOcrController(
         private const val MAX_COPY_WIDTH = 1600
         private const val MIN_CONFIDENT_OCR_THRESHOLD = 0.35f
         private const val MODEL_RETRY_DELAY_MS = 10000L
+        // Diagnostics area number and local-queue slots of prompt-label translations.
+        private const val COVER_LABEL_AREA = 99
+        private const val COVER_LABEL_QUEUE = 1000
+        private const val COVER_ID_STRIDE = 1_000_000
+        private const val COVER_LABEL_KEY_PREFIX = "hud-label:"
+        private const val COVER_LABEL_CONTEXT = "A short label from a video game's on-screen HUD, such as a " +
+            "controller button prompt or a menu option (for example SELECT, BACK, TALK). Translate it as a short UI command."
     }
 }

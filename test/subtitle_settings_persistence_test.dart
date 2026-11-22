@@ -37,14 +37,19 @@ Future<void> _openSettings(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-/// These tests cover the fixed subtitle area, so the over-the-English mode
-/// (on by default for OCR 1) is switched off for them.
-Map<Object?, Object?> _fixedArea(SubtitleSettings settings) => settings
-    .withOcrSettings(
-      0,
-      settings.effectiveOcrSettings.first.copyWith(coverEnglishSubtitle: false),
-    )
-    .toMap();
+/// These tests cover the fixed subtitle areas, so the over-the-English mode
+/// (on by default for every OCR area) is switched off for them.
+Map<Object?, Object?> _fixedArea(SubtitleSettings settings) {
+  var fixed = settings;
+  final all = settings.effectiveOcrSettings;
+  for (var index = 0; index < all.length; index++) {
+    fixed = fixed.withOcrSettings(
+      index,
+      all[index].copyWith(coverEnglishSubtitle: false),
+    );
+  }
+  return fixed.toMap();
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

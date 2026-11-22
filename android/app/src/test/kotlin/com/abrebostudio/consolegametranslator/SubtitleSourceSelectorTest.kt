@@ -193,4 +193,28 @@ class SubtitleSourceSelectorTest {
             GameTranslationMemory.parse("mafia-old-country", "en", "tr", fixture)
         }
     }
+
+    @Test fun aTipsLastLineDoesNotReplaceTheWholeTip() {
+        // Logged: "criminal profile." (a menu title in the pack) replaced the whole tip,
+        // and the real translation came only much later.
+        val json = """{"game":"test-game","source":"en","target":"tr","entries":[
+          {"id":"1","english":"Criminal Profile","turkish":"Suçlu Profili"}]}"""
+        val memory = GameTranslationMemory.parse("test-game", "en", "tr", json)
+        val tip = "Tip: Indiscriminate violence will contribute toward a violent criminal profile."
+        val selected = selectSubtitleSource(tip, .87f, memory,
+            listOf("Tip: Indiscriminate violence will contribute toward a violent", "criminal profile.")) {
+            SubtitleOcrRead(tip, .87f)
+        }
+        assertNull(selected.memoryMatch)
+        assertEquals(tip, selected.text)
+        // The title alone still comes from the pack.
+        assertEquals("Suçlu Profili", selectSubtitleSource("CRIMINAL PROFILE", .9f, memory) { error("pack") }.memoryMatch?.target)
+    }
+
+    @Test fun smallLeftOversStillLetABlockWin() {
+        assertTrue(coversMostOf("We should leave before nightfall.", "00:14 We should leave before nightfall."))
+        assertTrue(coversMostOf("Get down!", "00:14 Get down!"))
+        assertTrue(coversMostOf("Jason: Sounds good.", "we can get. Jason: Sounds good."))
+        assertFalse(coversMostOf("criminal profile.", "Tip: Indiscriminate violence will contribute toward a violent criminal profile."))
+    }
 }
