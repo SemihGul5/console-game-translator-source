@@ -63,7 +63,10 @@ void main() {
       await tester.ensureVisible(find.text('Bağlan ve örnek yazı gönder'));
       await tester.tap(find.text('Bağlan ve örnek yazı gönder'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('LG bağlantısı kurulamadı.'), findsOneWidget);
+      expect(
+        find.textContaining('Geçerli bir yerel IP adresi gir'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('İptal'));
       await tester.pumpAndSettle();

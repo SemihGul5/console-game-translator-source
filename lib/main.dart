@@ -990,7 +990,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: panel,
-          title: Text(context.tr("Android TV’yi eşleştir")),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 24,
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(22, 20, 22, 0),
+          contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 4),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+          title: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: cyan.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: const Icon(
+                  Icons.cast_connected_rounded,
+                  color: cyan,
+                  size: 19,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  context.tr("Android TV’yi eşleştir"),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1002,22 +1038,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ? null
                       : (kind) => _switchTvSetup(dialogContext, kind),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  context.tr(
-                    'Android TV / Google TV • Philips, Sony ve uyumlu cihazlar',
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 const TvAppInstallNotice(),
                 const SizedBox(height: 16),
-                Text(
+                for (final (index, step) in [
                   context.tr(
-                    "TV açık ve telefonla aynı Wi-Fi ağına bağlı olsun. İlk eşleştirme için TV uygulamasını açıp ekrandaki 6 haneli kodu gir. Eşleştirmeden sonra TV uygulamasını açmadan bağlanabilirsin.",
+                    'TV ve telefon aynı Wi-Fi ağında olsun; TV uygulamasını aç.',
                   ),
-                  style: TextStyle(color: muted, height: 1.4),
-                ),
-                const SizedBox(height: 16),
+                  context.tr(
+                    'TV’yi ağda bul’a dokun ya da TV ekranındaki adresi yaz.',
+                  ),
+                  context.tr('TV ekranındaki 6 haneli kodu girip eşleştir.'),
+                ].indexed)
+                  _pairStep(index + 1, step),
+                const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: busy || discovering
                       ? null
@@ -1077,10 +1111,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ? context.tr("TV aranıyor…")
                         : context.tr("TV’yi ağda bul"),
                   ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(44),
+                    foregroundColor: cyan,
+                    side: BorderSide(color: cyan.withValues(alpha: 0.45)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 12),
                 if (discoveryMessage != null)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: Text(
                       discoveryMessage!,
                       style: const TextStyle(color: cyan, fontSize: 12),
@@ -1119,7 +1162,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   decoration: InputDecoration(
                     labelText: context.tr("TV ekranındaki adres"),
                     hintText: 'wss://192.168.1.25:43823',
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.tv_rounded, size: 20),
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1127,15 +1174,45 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   controller: codeController,
                   keyboardType: TextInputType.number,
                   maxLength: 6,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 4,
+                  ),
                   decoration: InputDecoration(
                     labelText: context.tr("TV ekranındaki 6 haneli kod"),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.pin_rounded, size: 20),
+                    isDense: true,
+                    counterText: '',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 if (errorText != null)
-                  Text(
-                    context.trMessage(errorText!),
-                    style: const TextStyle(color: Colors.orangeAccent),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Colors.orangeAccent,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            context.trMessage(errorText!),
+                            style: const TextStyle(
+                              color: Colors.orangeAccent,
+                              fontSize: 12.5,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
               ],
             ),
@@ -1255,6 +1332,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ? context.tr("Bağlanıyor…")
                     : context.tr("Eşleştir ve bağlan"),
               ),
+              style: FilledButton.styleFrom(
+                backgroundColor: cyan,
+                foregroundColor: bg,
+                minimumSize: const Size(0, 44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ],
         ),
@@ -1266,6 +1351,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     addressController.dispose();
     codeController.dispose();
   }
+
+  Widget _pairStep(int number, String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+          padding: const EdgeInsets.all(2),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: cyan.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '$number',
+            style: const TextStyle(
+              color: cyan,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFFC9D3E3),
+              fontSize: 12.5,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   void _switchTvSetup(BuildContext dialogContext, TvOutputKind kind) {
     Navigator.pop(dialogContext);
@@ -2687,6 +2809,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (!sessionStillActive) {
           await _ps5Channel.invokeMethod<bool>('stopTranslationForeground');
         }
+        // The language may have been changed on the translation screen that
+        // was pushed on top of this one; show the stored choice again.
+        await _loadTranslationPreferences();
+        await _loadTranslationEngine();
       }
     } on PlatformException catch (error) {
       if (mounted) {

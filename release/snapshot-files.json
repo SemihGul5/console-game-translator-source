@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-11-23",
-  "applicationVersion": "1.1.7+20",
+  "applicationVersion": "1.1.8+21",
   "kind": "manually refreshed source snapshot; binary/source pairing not verified",
   "files": [
     {
@@ -31344,20 +31344,20 @@
     },
     {
       "path": "lib/l10n/messages_en.dart",
-      "sha256": "980d4afbfefca0e0919b90ad29267cfd08d51a1a42bcd23c424f9b2c5f13e7b8",
-      "bytes": 111943,
+      "sha256": "21813d3172156047ac8eaf9b9017d6b03c7006ad04294e67c9e16fc59bd6fdd2",
+      "bytes": 112646,
       "category": "application"
     },
     {
       "path": "lib/l10n/messages_tv_en.dart",
-      "sha256": "cca6d4d66798dd024c10fcda30c2365f9ac7d9fb8655bab2d2673f2b9855d2f7",
-      "bytes": 8069,
+      "sha256": "5699a558ea3e3e17d22e628024425b7ef39aef014b1f7c945613fba9e40fe1b0",
+      "bytes": 10472,
       "category": "application"
     },
     {
       "path": "lib/main.dart",
-      "sha256": "3755336037a9a68b68d43adb0f8b2770ef16eb81df8df06d93c0981cdf35a82e",
-      "bytes": 168924,
+      "sha256": "07ea438920cfdeaacd4fac13983446c70c4d2648d4f74f1a009fdf49fa6eae67",
+      "bytes": 173393,
       "category": "application"
     },
     {
@@ -31386,8 +31386,8 @@
     },
     {
       "path": "lib/screens/access_screen.dart",
-      "sha256": "c4a4907bc006e3d7b7e14455be5163b04781cc36134d21c8cfc9ea833dc08b90",
-      "bytes": 14761,
+      "sha256": "c482bd9adf5bd4ef81b61821a510227ff44662db951666e9f4a112a3d1060521",
+      "bytes": 24097,
       "category": "application"
     },
     {
@@ -31398,8 +31398,8 @@
     },
     {
       "path": "lib/screens/profile_tab.dart",
-      "sha256": "9eaf1216fb706b4dde0f84144426eef4c069ec7b17693225b6d67fd4d4ccde40",
-      "bytes": 12210,
+      "sha256": "e1b3dd11d0e348f643cbb7dcdf3c755bd5062466e3a640d3ec362e8417ec9bf0",
+      "bytes": 13543,
       "category": "application"
     },
     {
@@ -31410,8 +31410,8 @@
     },
     {
       "path": "lib/screens/ps5_stream_screen.dart",
-      "sha256": "f0f26c70c581c4b194741529fe72e83bb60930f3df0fa6cc57f12289cf0bbda7",
-      "bytes": 122517,
+      "sha256": "eb6f6cbbdd47134ca5945814c19b3c75f58ca87c97460b4daa19d47d906b8979",
+      "bytes": 122950,
       "category": "application"
     },
     {
@@ -31446,8 +31446,8 @@
     },
     {
       "path": "lib/services/access_service.dart",
-      "sha256": "eab93a8d48e7bcd4806a14b8503c9bcb4f7bd4aa49f631f8f0f0ca769f58753c",
-      "bytes": 20825,
+      "sha256": "6eb4550a0d8b3d99cda7fd043b8768081c8f08df3e6ed732e899b3b9f7e008b5",
+      "bytes": 20363,
       "category": "application"
     },
     {
@@ -31505,9 +31505,15 @@
       "category": "application"
     },
     {
+      "path": "lib/services/lg_connect_manifest.dart",
+      "sha256": "844e2fdcebc6a7b397696a074cd46f7378190271b2322bd5d018b4c0562b9a30",
+      "bytes": 2537,
+      "category": "application"
+    },
+    {
       "path": "lib/services/lg_webos_client.dart",
-      "sha256": "582cf84f896b3cf644d26e4d38ab3dd4ec689528843827935e02e71af6edc44c",
-      "bytes": 10617,
+      "sha256": "af255268a04401f32c9303d5315716f064f86207a024e72672675fb3ae31cf23",
+      "bytes": 17064,
       "category": "application"
     },
     {
@@ -31578,8 +31584,8 @@
     },
     {
       "path": "lib/widgets/free_trial_offer_card.dart",
-      "sha256": "9879ba45b4e40828367e32c303fd8456ce3c86b2dd16d38b08d73cd6373418af",
-      "bytes": 2374,
+      "sha256": "fcb34972a458a522d9a242684a6670b279f41086280efc3e77d229122ee56717",
+      "bytes": 2512,
       "category": "application"
     },
     {
@@ -31608,8 +31614,8 @@
     },
     {
       "path": "lib/widgets/premium_plan_card.dart",
-      "sha256": "a46ec20b709a4061bcdfe55635435ee3332df2b77cb3ebcafcc4ca3a77966f8b",
-      "bytes": 6770,
+      "sha256": "68c4f6f4f5cd3854690cc6fb9bb615ca74d4e696d6d2b5c7f5c9fbf317c94e16",
+      "bytes": 11367,
       "category": "application"
     },
     {
@@ -31626,14 +31632,14 @@
     },
     {
       "path": "lib/widgets/setup_notice.dart",
-      "sha256": "02666b7153ef15d59d2047e2c8bc51f73513fed738e4dd0e28d5997fab5a7f31",
-      "bytes": 3392,
+      "sha256": "0eeb394c99643acfbda33f6fc9ae8503ced1ac858e1e7d7fa9d1199712781c64",
+      "bytes": 6025,
       "category": "application"
     },
     {
       "path": "lib/widgets/smart_tv_setup_dialog.dart",
-      "sha256": "bae0080282de972b30434094c87947a4861863469a312a9c53fad7af083c1135",
-      "bytes": 12633,
+      "sha256": "9db7711421e29e498a9f90caed1d8c1fee7755c3152f8fd45a4e56be93538d07",
+      "bytes": 13479,
       "category": "application"
     },
     {
@@ -31650,19 +31656,19 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "e73276665ad63de023a1c337450b9e1b798a8018cc5c56f2c3024dad995237c3",
+      "sha256": "ce3b53c882cef3c6ccc2f8731114150ae0b74b14422f188df7a4d37be27c22a6",
       "bytes": 3305,
       "category": "retained-public-source"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "f2505b747c92aaa202181b7bed350c9f2c3f7c839f7251789a8135fea4573278",
+      "sha256": "6f1fb40b52184159486f5038c15e0d11953b22a351bc492d679f17600074d20c",
       "bytes": 2048,
       "category": "retained-public-source"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "379639445739f16e18daeeed7b1195b59ab45584d0ca48e63a76dbda0924065a",
+      "sha256": "6c7bec46f5c2d0a2fdafa9cc515278e73e507a30a7f85bc9da7ebd625aea3886",
       "bytes": 1902,
       "category": "retained-public-source"
     },
@@ -31674,19 +31680,19 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "472989669bc0e271e84e92e81e8777160227d4166b8b741726d0570435bb9728",
+      "sha256": "84ff3181423d750fe6f5a46e76ba6a6c51be56dd6466932119dd8493d77c482f",
       "bytes": 4366,
       "category": "application"
     },
     {
       "path": "README.md",
-      "sha256": "494b0e84777f4574b9dc7d6368bda188bf4dfa42a5c9049c831abd53901d717b",
+      "sha256": "556d56c3141755b2e4e1b1f052edbd36ab0a9617ba95785616c30284434fcddb",
       "bytes": 4990,
       "category": "retained-public-source"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "d3619c7be5480a30d802bb8c8d1efad15a1e93c6efa3848a43156d1c44d5fdd9",
+      "sha256": "dcccbbaa01f0544c300b0bea994efd0c8a472c65fa4d17c35b022476368108ff",
       "bytes": 5999,
       "category": "retained-public-source"
     },
@@ -31860,8 +31866,8 @@
     },
     {
       "path": "test/access_service_test.dart",
-      "sha256": "ab78aa8a7f3f160c56fb83c973c803d5efc69ab3d0efba9e26c201f8afb6a374",
-      "bytes": 28500,
+      "sha256": "93d7a1f79db0b8bc0e5447fa36fc4c49a37a8ac3560a9c8acfcdabaa583f2fe5",
+      "bytes": 28027,
       "category": "application"
     },
     {
@@ -31980,14 +31986,14 @@
     },
     {
       "path": "test/navigation_test.dart",
-      "sha256": "8b73a78e7f69d28bbce485c0aaa62d7aaa435e67572681cd0408bde4d9daecdd",
-      "bytes": 71476,
+      "sha256": "e3cadb6a91acab85b6dab6344c6b36e129ea8d65f49a58b4c13e6adf80314e8a",
+      "bytes": 71475,
       "category": "application"
     },
     {
       "path": "test/premium_plan_card_test.dart",
-      "sha256": "3fe539501e69718a3fda32472e57afe28062c165acdf1c9b93ccae391b8e9b1e",
-      "bytes": 7042,
+      "sha256": "2daae918f40732dcd514d0c75848ce81269b4bc1b671d95ecb8fdd5fa4da9ca9",
+      "bytes": 7838,
       "category": "application"
     },
     {
@@ -32016,14 +32022,14 @@
     },
     {
       "path": "test/smart_tv_setup_dialog_test.dart",
-      "sha256": "8842f39ebfb3fb9746dc73255ae7516ec4b3271badd570a185f3ec88eb8f27e7",
-      "bytes": 4122,
+      "sha256": "cca465943647e9fa5e6535f56378debe025fe20657bf480c12deb3327e02765d",
+      "bytes": 4150,
       "category": "application"
     },
     {
       "path": "test/smart_tv_transport_test.dart",
-      "sha256": "c383eea7d8ab89dbbc9c5ad60212f7e19f05773d19d8188bb09f60606f30771b",
-      "bytes": 18037,
+      "sha256": "8c9a465001cac72222f5af6331d98a99c422ee4df3fc9c32cc3ac95fbbea8dae",
+      "bytes": 20715,
       "category": "application"
     },
     {

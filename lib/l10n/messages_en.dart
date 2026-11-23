@@ -186,9 +186,18 @@ const englishMessages = <String, String>{
   'Ödeme bilgisi gerekmez. Otomatik abonelik başlamaz.':
       'No payment details needed. No automatic subscription.',
   'Premium paketleri': 'Premium plans',
-  'Lansmana özel fiyatlar': 'Launch special pricing',
-  'İlk çıkışa özel, sınırlı süreli fiyatlar.':
-      'Special introductory prices for a limited time.',
+  'Planını seç': 'Choose your plan',
+  'Önce ücretsiz dene': 'Try it free first',
+  '{0} dakika ücretsiz dene': 'Try {0} minutes free',
+  'tek ödeme': 'one-time',
+  'Google Play ile güvenli ödeme': 'Secure payment with Google Play',
+  'İstediğin zaman iptal': 'Cancel anytime',
+  'Diyaloglar, görevler ve menüler oynarken çevrilir':
+      'Dialogue, quests and menus are translated as you play',
+  'Altyazılar TV’de oyunun üstünde görünür':
+      'Subtitles appear over the game on your TV',
+  'Desteklenen oyunlarda hazır, özenli çeviriler':
+      'Carefully prepared translations for supported games',
   'Görsel kurulum rehberi (PDF)': 'Visual setup guide (PDF)',
   'Oklarla adım adım anlatım • Türkçe • PS5 + Android TV / Google TV':
       'Step-by-step instructions with arrows • Turkish • PS5 + Android TV / Google TV',
@@ -1372,7 +1381,14 @@ const englishMessages = <String, String>{
       "Play using your main PSN account and switch the TV to the PS5 HDMI input. The TV app does not need to stay on screen. Translation can continue with the phone app in the background or its screen off; if interrupted, check connections and phone battery restrictions.",
   "Bitirirken telefonda Çeviriyi Durdur’a veya çeviri bildirimindeki Durdur’a bas. Remote Play ve çeviri durur; PS5 kaydı, TV eşleştirmesi ve ayarların korunur.":
       "To finish, tap Stop Translation on the phone or Stop in the translation notification. Remote Play and translation stop; your PS5 registration, TV pairing, and settings are kept.",
-  'TV uygulaması artık Google Play’de. Android TV / Google TV cihazında Play Store’da **Oyun Çevirmeni TV** diye arayıp kur. TV’nin dili İngilizceyse **Console Game Translator TV** yaz. İstersen aşağıdaki düğmeyle mağaza sayfasını da açabilirsin.':
-      'The TV app is now on Google Play. On your Android TV / Google TV, search the Play Store for **Console Game Translator TV** and install it. You can also open the store page with the button below.',
+  'TV’de Play Store’dan **Oyun Çevirmeni TV**’yi kur. TV İngilizceyse **Console Game Translator TV** ara. En güncel sürüm her zaman sitede.':
+      'Install **Console Game Translator TV** from the Play Store on your TV. The latest version is always on our website.',
+  'TV ve telefon aynı Wi-Fi ağında olsun; TV uygulamasını aç.':
+      'Keep the TV and phone on the same Wi-Fi network and open the TV app.',
+  'TV’yi ağda bul’a dokun ya da TV ekranındaki adresi yaz.':
+      'Tap Find TV on network or enter the address shown on the TV.',
+  'TV ekranındaki 6 haneli kodu girip eşleştir.':
+      'Enter the 6-digit code shown on the TV and pair.',
   'Google Play’de aç': 'Open in Google Play',
+  'Siteden indir': 'Download from website',
 };

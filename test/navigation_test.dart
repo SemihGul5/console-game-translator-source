@@ -536,12 +536,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TvAppInstallNotice), findsOneWidget);
       expect(find.text('Önce TV uygulamasını indir'), findsOneWidget);
-      expect(
-        find.textContaining('sitemize gidip TV için APK’yı indir'),
-        findsOneWidget,
-      );
-      await tester.ensureVisible(find.text('TV uygulamasını indir'));
-      await tester.tap(find.text('TV uygulamasını indir'));
+      expect(find.textContaining('Oyun Çevirmeni TV'), findsOneWidget);
+      expect(find.text('Google Play’de aç'), findsOneWidget);
+      await tester.ensureVisible(find.text('Siteden indir'));
+      await tester.tap(find.text('Siteden indir'));
       await tester.pumpAndSettle();
       expect(
         launched.last.toString(),

@@ -42,7 +42,8 @@ Future<void> showPlan(
   Package package,
   List<Package> packages, {
   Locale locale = const Locale('tr'),
-  VoidCallback? onPurchase,
+  VoidCallback? onSelect,
+  bool selected = false,
 }) => tester.pumpWidget(
   MaterialApp(
     locale: locale,
@@ -57,7 +58,8 @@ Future<void> showPlan(
         child: PremiumPlanCard(
           package: package,
           availablePackages: packages,
-          onPurchase: onPurchase,
+          selected: selected,
+          onSelect: onSelect,
         ),
       ),
     ),
@@ -75,16 +77,23 @@ void main() {
       weeklyRate: 14.1,
       formatted: '₺60,00',
     );
-    var purchases = 0;
+    var selections = 0;
     await showPlan(tester, monthly, [
       weekly,
       monthly,
-    ], onPurchase: () => purchases++);
+    ], onSelect: () => selections++);
     expect(find.text('Haftalık plana göre %29 tasarruf'), findsOneWidget);
-    expect(find.textContaining('₺60,00 / ay.'), findsOneWidget);
-    await tester.tap(find.text('Abone ol'));
-    expect(purchases, 1);
+    expect(find.text('₺60,00'), findsOneWidget);
+    expect(find.text('/ ay'), findsOneWidget);
+    await tester.tap(find.byType(PremiumPlanCard));
+    expect(selections, 1);
     expect(find.text('En avantajlı'), findsNothing);
+    final context = tester.element(find.byType(PremiumPlanCard));
+    expect(
+      PremiumPlanCard.termsFor(context, monthly),
+      '₺60,00 / ay. Aboneliğin otomatik yenilenir; Google Play’den iptal edebilirsin.',
+    );
+    expect(PremiumPlanCard.actionLabel(context, monthly), 'Abone ol');
   });
 
   testWidgets(
@@ -93,7 +102,8 @@ void main() {
       final annual = plan(PackageType.annual, 600, formatted: '₺600,00');
       await showPlan(tester, annual, [plan(PackageType.monthly, 100), annual]);
       expect(find.text('12 aylık ödemeye göre %50 tasarruf'), findsOneWidget);
-      expect(find.textContaining('₺600,00 / yıl.'), findsOneWidget);
+      expect(find.text('₺600,00'), findsOneWidget);
+      expect(find.text('/ yıl'), findsOneWidget);
       await showPlan(tester, annual, [plan(PackageType.monthly, 200), annual]);
       expect(find.text('12 aylık ödemeye göre %75 tasarruf'), findsOneWidget);
       // Use the least expensive comparable reference, even if offerings duplicate a tier.
@@ -175,15 +185,19 @@ void main() {
       ]);
       expect(find.text('En avantajlı'), findsOneWidget);
       expect(find.text('Uzun vadeli kullanım için tek ödeme.'), findsOneWidget);
+      expect(find.text('₺1.200,00'), findsOneWidget);
+      expect(find.text('tek ödeme'), findsOneWidget);
+      final context = tester.element(find.byType(PremiumPlanCard));
       expect(
-        find.text('₺1.200,00 · tek ödeme, otomatik yenilenmez.'),
-        findsOneWidget,
+        PremiumPlanCard.termsFor(context, lifetime),
+        '₺1.200,00 · tek ödeme, otomatik yenilenmez.',
       );
+      expect(PremiumPlanCard.actionLabel(context, lifetime), 'Süresiz satın al');
+      expect(PremiumPlanCard.isHighlighted(lifetime), isTrue);
       expect(find.textContaining('%'), findsNothing);
-      expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNull,
-      );
+      // Without onSelect the tile is inert.
+      await tester.tap(find.byType(PremiumPlanCard));
+      expect(tester.takeException(), isNull);
       await showPlan(tester, plan(PackageType.weekly, 20), [lifetime]);
       expect(find.textContaining('tasarruf'), findsNothing);
       expect(find.text('En avantajlı'), findsNothing);

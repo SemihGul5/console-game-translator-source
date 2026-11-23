@@ -719,57 +719,44 @@ void main() {
     },
   );
 
-  for (final launchFlag in [null, true, false]) {
-    testWidgets(
-      'launch pricing follows remote offering metadata ($launchFlag) and preserves the store price',
-      (tester) async {
-        currentOffering = {
-          'identifier': 'default',
-          'serverDescription': 'Premium',
-          'metadata': {'launch_pricing_enabled': ?launchFlag},
-          'availablePackages': [
-            {
-              'identifier': r'$rc_monthly',
-              'packageType': 'MONTHLY',
-              'presentedOfferingContext': {'offeringIdentifier': 'default'},
-              'product': {
-                'identifier': 'premium:monthly',
-                'description': '',
-                'title': 'Premium',
-                'price': 49.99,
-                'priceString': '₺49,99',
-                'currencyCode': 'TRY',
-                'subscriptionPeriod': 'P1M',
-              },
+  testWidgets(
+    'plans show the store price without launch messaging, even if the offering still has the old flag',
+    (tester) async {
+      currentOffering = {
+        'identifier': 'default',
+        'serverDescription': 'Premium',
+        'metadata': {'launch_pricing_enabled': true},
+        'availablePackages': [
+          {
+            'identifier': r'$rc_monthly',
+            'packageType': 'MONTHLY',
+            'presentedOfferingContext': {'offeringIdentifier': 'default'},
+            'product': {
+              'identifier': 'premium:monthly',
+              'description': '',
+              'title': 'Premium',
+              'price': 49.99,
+              'priceString': '₺49,99',
+              'currencyCode': 'TRY',
+              'subscriptionPeriod': 'P1M',
             },
-          ],
-        };
-        tester.view.physicalSize = const Size(320, 1200);
-        tester.view.devicePixelRatio = 1;
-        tester.platformDispatcher.textScaleFactorTestValue = 1.6;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-        await tester.pumpWidget(const TurkishTestApp(home: AccessScreen()));
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey('launch-pricing-banner')),
-          launchFlag == false ? findsNothing : findsOneWidget,
-        );
-        expect(find.textContaining('₺49,99 / ay.'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-        if (launchFlag != false) {
-          currentOffering!['metadata'] = {'launch_pricing_enabled': false};
-          await service.loadPackages();
-          await tester.pumpAndSettle();
-          expect(
-            find.byKey(const ValueKey('launch-pricing-banner')),
-            findsNothing,
-          );
-        }
-      },
-    );
-  }
+          },
+        ],
+      };
+      // The plan terms sit under the purchase button, below the fold.
+      tester.view.physicalSize = const Size(320, 2400);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpWidget(const TurkishTestApp(home: AccessScreen()));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Lansman'), findsNothing);
+      expect(find.textContaining('₺49,99 / ay.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   test(
     'named native errors keep their message and never throw a format error',

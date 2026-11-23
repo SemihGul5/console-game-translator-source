@@ -96,16 +96,105 @@ class TvAppInstallNotice extends StatelessWidget {
   const TvAppInstallNotice({super.key});
 
   @override
-  Widget build(BuildContext context) => SetupNotice(
-    icon: Icons.install_desktop_rounded,
-    title: context.tr("Önce TV uygulamasını indir"),
-    message: context.tr(
-      'TV uygulaması artık Google Play’de. Android TV / Google TV cihazında Play Store’da **Oyun Çevirmeni TV** diye arayıp kur. TV’nin dili İngilizceyse **Console Game Translator TV** yaz. İstersen aşağıdaki düğmeyle mağaza sayfasını da açabilirsin.',
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+    decoration: BoxDecoration(
+      color: setupNoticeColor.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: setupNoticeColor.withValues(alpha: 0.35)),
     ),
-    action: OutlinedButton.icon(
-      onPressed: () => AppLinks.openWeb(context, AppLinks.tvAppPlayStoreUrl),
-      icon: const Icon(Icons.shop_rounded),
-      label: Text(context.tr('Google Play’de aç')),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.install_desktop_rounded,
+              color: setupNoticeColor,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.tr("Önce TV uygulamasını indir"),
+                style: const TextStyle(
+                  color: setupNoticeColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text.rich(
+          TextSpan(
+            children: _boldSpans(
+              context.tr(
+                'TV’de Play Store’dan **Oyun Çevirmeni TV**’yi kur. TV İngilizceyse **Console Game Translator TV** ara. En güncel sürüm her zaman sitede.',
+              ),
+            ),
+          ),
+          style: const TextStyle(
+            color: Color(0xFFE9DCC6),
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 9),
+        Row(
+          children: [
+            Expanded(
+              child: _NoticeButton(
+                icon: Icons.shop_rounded,
+                label: context.tr('Google Play’de aç'),
+                onPressed: () =>
+                    AppLinks.openWeb(context, AppLinks.tvAppPlayStoreUrl),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              // Google Play rolls out TV updates slowly; the website always has the latest APK.
+              child: _NoticeButton(
+                key: const ValueKey('tv-app-latest-website'),
+                icon: Icons.download_rounded,
+                label: context.tr('Siteden indir'),
+                onPressed: () => AppLinks.openTvSetup(context, 'android'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _NoticeButton extends StatelessWidget {
+  const _NoticeButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton.icon(
+    onPressed: onPressed,
+    icon: Icon(icon, size: 16),
+    label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+    style: OutlinedButton.styleFrom(
+      foregroundColor: setupNoticeColor,
+      side: BorderSide(color: setupNoticeColor.withValues(alpha: 0.45)),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      minimumSize: const Size(0, 36),
+      visualDensity: VisualDensity.compact,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
   );
 }

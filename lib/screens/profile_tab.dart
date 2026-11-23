@@ -156,56 +156,83 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(22),
-            margin: const EdgeInsets.only(bottom: 24),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF163052), settingsPanel],
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFF2C4260)),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const CircleAvatar(
-                  radius: 26,
-                  backgroundColor: Color(0xFF234365),
-                  child: Icon(
-                    Icons.person_outline_rounded,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  user?.displayName ??
-                      (user == null
-                          ? context.tr("Oyununa kaldığın yerden devam et")
-                          : context.tr("Google hesabın")),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  user?.email ??
-                      context.tr(
-                        "Deneme ve hesap işlemleri için Google hesabınla giriş yap.",
+                Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Color(0xFF234365),
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        color: Colors.white,
+                        size: 22,
                       ),
-                  style: const TextStyle(
-                    color: Color(0xFFB4C5DD),
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.displayName ??
+                                (user == null
+                                    ? context.tr(
+                                        "Oyununa kaldığın yerden devam et",
+                                      )
+                                    : context.tr("Google hesabın")),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            user?.email ??
+                                context.tr(
+                                  "Deneme ve hesap işlemleri için Google hesabınla giriş yap.",
+                                ),
+                            style: const TextStyle(
+                              color: Color(0xFFB4C5DD),
+                              fontSize: 12,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 if (user == null) ...[
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: busy ? null : _signIn,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(40),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                     icon: const Icon(Icons.login_rounded, size: 18),
-                    label: Text(context.tr("Google ile giriş yap")),
+                    label: Text(
+                      context.tr("Google ile giriş yap"),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ],

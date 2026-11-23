@@ -525,7 +525,17 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     final settings = _subtitleSettings;
     _subtitleSettingsDirty = false;
     try {
-      await const SubtitleSettingsStore().save(settings);
+      const store = SubtitleSettingsStore();
+      // The translation languages are chosen on the home screen. This screen
+      // keeps a copy loaded when it opened, so write back the stored language
+      // pair instead of a choice that may have changed since.
+      final stored = await store.load();
+      await store.save(
+        settings.copyWith(
+          sourceLanguageCode: stored.sourceLanguageCode,
+          targetLanguageCode: stored.targetLanguageCode,
+        ),
+      );
       return true;
     } on PlatformException catch (error) {
       if (identical(_subtitleSettings, settings)) _subtitleSettingsDirty = true;

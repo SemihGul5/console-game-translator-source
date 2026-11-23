@@ -51,8 +51,11 @@ class FreeTrialOfferCard extends StatelessWidget {
           key: const ValueKey('start-free-trial'),
           onPressed: onStart,
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF263C48),
-            foregroundColor: const Color(0xFFCAEAE5),
+            backgroundColor: const Color(0xFF4DE2D0).withValues(alpha: 0.14),
+            foregroundColor: const Color(0xFF4DE2D0),
+            side: BorderSide(
+              color: const Color(0xFF4DE2D0).withValues(alpha: 0.5),
+            ),
             minimumSize: const Size.fromHeight(48),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -61,7 +64,7 @@ class FreeTrialOfferCard extends StatelessWidget {
           child: Text(
             context.tr('Google ile ücretsiz dene'),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
         ),
         const SizedBox(height: 9),

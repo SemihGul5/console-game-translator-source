@@ -25,6 +25,8 @@ class FakeLg {
   final sockets = <WebSocket>[];
   final messages = <Map>[];
   bool rejectPairing = false;
+  bool rejectUnsigned = false;
+  bool prompt = false;
   bool rejectToasts = false;
   bool acknowledgeToasts = true;
   Future<void> start() async {
@@ -35,9 +37,20 @@ class FakeLg {
         final message = jsonDecode(raw as String) as Map;
         messages.add(message);
         if (message['type'] == 'register') {
+          final manifest = (message['payload'] as Map)['manifest'] as Map;
+          final unsigned = !manifest.containsKey('signatures');
+          if (prompt && !(rejectUnsigned && unsigned)) {
+            socket.add(
+              jsonEncode({
+                'type': 'response',
+                'id': 'register',
+                'payload': {'pairingType': 'PROMPT', 'returnValue': true},
+              }),
+            );
+          }
           socket.add(
             jsonEncode(
-              rejectPairing
+              rejectPairing || (rejectUnsigned && unsigned)
                   ? {'type': 'error', 'id': 'register', 'error': '403 denied'}
                   : {
                       'type': 'registered',
@@ -200,6 +213,67 @@ void main() {
       );
     },
   );
+
+  test(
+    'LG retries with the signed manifest when the TV refuses the unsigned one',
+    () async {
+      final tv = FakeLg()
+        ..rejectUnsigned = true
+        ..prompt = true;
+      await tv.start();
+      final client = tv.client();
+      addTearDown(() async {
+        await client.disconnect();
+        await tv.close();
+      });
+      await client.connect('192.168.1.25', encrypted: false);
+      expect(client.isConnected, isTrue);
+      final registers = tv.messages
+          .where((m) => m['type'] == 'register')
+          .map((m) => (m['payload'] as Map)['manifest'] as Map)
+          .toList();
+      expect(registers, hasLength(2));
+      expect(registers.first.containsKey('signed'), isFalse);
+      expect(registers.last.containsKey('signed'), isTrue);
+      expect(registers.last['permissions'], ['WRITE_NOTIFICATION_TOAST']);
+      await client.testNotification('ok');
+      expect(tv.toasts, hasLength(1));
+    },
+  );
+
+  test('LG does not retry after the user denies the TV prompt', () async {
+    final tv = FakeLg()
+      ..prompt = true
+      ..rejectPairing = true;
+    await tv.start();
+    final client = tv.client();
+    addTearDown(() async {
+      await client.disconnect();
+      await tv.close();
+    });
+    await expectLater(
+      client.connect('192.168.1.25', encrypted: false),
+      throwsStateError,
+    );
+    expect(tv.messages.where((m) => m['type'] == 'register'), hasLength(1));
+    expect(client.lastError, contains('reddetti'));
+    expect(client.lastErrorCode, '3000 denied: 403 denied');
+  });
+
+  test('LG reports a closed port and suggests the other connection type', () async {
+    final client = LgWebOsClient.forTesting(
+      openSocket: (_, _) async =>
+          throw const SocketException('Connection refused'),
+      probePort: (_, port) async => port == 3001,
+    );
+    addTearDown(client.disconnect);
+    await expectLater(
+      client.connect('192.168.1.25', encrypted: false),
+      throwsA(isA<SocketException>()),
+    );
+    expect(client.lastError, contains('“Şifreli bağlantı” seçeneğini açıp'));
+    expect(client.lastErrorCode, '3000 kapalı, 3001 açık');
+  });
 
   test('LG cancellation closes a socket that finishes opening late', () async {
     final tv = FakeLg();

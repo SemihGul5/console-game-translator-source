@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/app_links.dart';
+import '../services/lan_tv_address.dart';
 import '../services/lg_webos_client.dart';
 import '../services/tv_output_service.dart';
 import 'setup_notice.dart';
@@ -33,6 +34,7 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
   bool _accepted = false;
   bool _startedSamsung = false;
   String? _error;
+  String? _errorCode;
 
   @override
   void initState() {
@@ -57,21 +59,41 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
     setState(() {
       _busy = true;
       _error = null;
+      _errorCode = null;
       _tested = false;
     });
+    final ip = _ip.text.trim();
+    if (!LanTvAddress.isPrivateIpv4(ip)) {
+      setState(() {
+        _busy = false;
+        _error =
+            'Geçerli bir yerel IP adresi gir (ör. 192.168.1.20). TV’de Ayarlar > Ağ bölümünde görünür.';
+      });
+      return;
+    }
+    var connected = false;
     try {
-      await _lg.connect(_ip.text.trim(), encrypted: _encrypted);
+      await _lg.connect(ip, encrypted: _encrypted);
+      connected = true;
       if (!mounted) return;
       await _lg.testNotification(
         context.tr('Oyun Çevirmeni • TV bağlantı testi'),
       );
       if (mounted) setState(() => _tested = true);
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
-        setState(
-          () => _error =
-              'LG bağlantısı kurulamadı. IP adresini, TV iznini ve bağlantı türünü kontrol et.',
-        );
+        setState(() {
+          if (connected) {
+            _error =
+                'LG bildirimi gösterilemedi. TV bağlantısını yeniden test et.';
+            _errorCode = 'toast ${error.runtimeType}';
+          } else {
+            _error =
+                _lg.lastError ??
+                'LG bağlantısı kurulamadı. IP adresini, TV iznini ve bağlantı türünü kontrol et.';
+            _errorCode = _lg.lastErrorCode;
+          }
+        });
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -82,6 +104,7 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
     setState(() {
       _busy = true;
       _error = null;
+      _errorCode = null;
     });
     try {
       await _output.startSamsung();
@@ -316,7 +339,9 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(
-                    context.tr(_error!),
+                    _errorCode == null
+                        ? context.tr(_error!)
+                        : '${context.tr(_error!)} [$_errorCode]',
                     style: const TextStyle(color: Colors.orangeAccent),
                   ),
                 ),

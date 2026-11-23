@@ -92,8 +92,6 @@ class AccessService extends ChangeNotifier {
   String termsUrl = '';
   AccessStatus status = const AccessStatus('inactive');
   List<Package> packages = const [];
-  bool _launchPricingActive = false;
-  bool get launchPricingActive => _launchPricingActive;
   User? get user => _initialized ? FirebaseAuth.instance.currentUser : null;
 
   Future<void> initialize() async {
@@ -158,7 +156,6 @@ class AccessService extends ChangeNotifier {
     _countdown = null;
     status = const AccessStatus('inactive');
     packages = const [];
-    _launchPricingActive = false;
     notifyListeners();
   }
 
@@ -410,11 +407,6 @@ class AccessService extends ChangeNotifier {
     await initialize();
     await _syncIdentity();
     final offering = (await Purchases.getOfferings()).current;
-    final launchPricing = offering?.metadata['launch_pricing_enabled'];
-    // Launch messaging starts enabled for this release. The current Offering's
-    // boolean metadata flag can turn it off without a new application build.
-    _launchPricingActive =
-        offering != null && (launchPricing == null || launchPricing == true);
     const order = [
       PackageType.weekly,
       PackageType.monthly,

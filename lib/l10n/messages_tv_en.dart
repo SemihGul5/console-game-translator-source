@@ -59,6 +59,28 @@ const tvEnglishMessages = <String, String>{
   'Bağlantıyı kullan': 'Use connection',
   'LG bağlantısı kurulamadı. IP adresini, TV iznini ve bağlantı türünü kontrol et.':
       'Could not connect to LG. Check the IP address, TV permission and connection type.',
+  'Geçerli bir yerel IP adresi gir (ör. 192.168.1.20). TV’de Ayarlar > Ağ bölümünde görünür.':
+      'Enter a valid local IP address (e.g. 192.168.1.20). You can find it on the TV under Settings > Network.',
+  'LG bildirimi gösterilemedi. TV bağlantısını yeniden test et.':
+      'The LG notification could not be shown. Test the TV connection again.',
+  'TV bağlantı isteğini reddetti. Testi yeniden çalıştır ve TV’de izin ver.':
+      'The TV declined the connection request. Run the test again and allow it on the TV.',
+  'TV’deki izin isteği zamanında onaylanmadı. Testi yeniden çalıştır ve kumandayla izin ver.':
+      'The permission request on the TV was not accepted in time. Run the test again and allow it with the remote.',
+  'TV eşleştirme isteğini kabul etmedi. TV ayarlarında mobil cihaz bağlantısı (LG Connect Apps / Mobile TV On) iznini açıp TV’yi yeniden başlat.':
+      'The TV did not accept the pairing request. Turn on mobile device connection (LG Connect Apps / Mobile TV On) in the TV settings and restart the TV.',
+  'TV şifreli bağlantıya yanıt vermiyor. “Şifreli bağlantı” seçeneğini kapatıp yeniden dene.':
+      'The TV does not answer encrypted connections. Turn off “Encrypted connection” and try again.',
+  'TV şifresiz bağlantıya yanıt vermiyor. “Şifreli bağlantı” seçeneğini açıp yeniden dene.':
+      'The TV does not answer unencrypted connections. Turn on “Encrypted connection” and try again.',
+  'TV bu IP adresinde bulunamadı. TV’nin açık olduğunu, IP adresini ve telefonla aynı Wi-Fi ağında olduğunu kontrol et.':
+      'No TV was found at this IP address. Check that the TV is on, the IP address is correct and it is on the same Wi-Fi network as the phone.',
+  'TV ile şifreli bağlantı kurulamadı. “Şifreli bağlantı” seçeneğini kapatıp yeniden dene.':
+      'Could not establish an encrypted connection with the TV. Turn off “Encrypted connection” and try again.',
+  'TV’nin güvenlik sertifikası değişmiş. TV bağlantısını kaldırıp yeniden eşleştir.':
+      'The TV security certificate has changed. Remove the TV connection and pair again.',
+  'TV bağlantıyı kabul etmedi. TV’yi yeniden başlatıp diğer bağlantı türünü dene.':
+      'The TV did not accept the connection. Restart the TV and try the other connection type.',
   'Yerel TV oturumu açılamadı. Telefonun Wi-Fi bağlantısını kontrol et.':
       'Could not open the local TV session. Check the phone Wi-Fi connection.',
   'TV bağlantısı doğrulanamadı. Testi yeniden çalıştır.':
