@@ -61,6 +61,38 @@ class GameSpeakerFallbackTest {
         assertNull(memory().findExact("STRANGER: What?"))
     }
 
+    @Test fun aNameLabelThePackDoesNotListStillFindsItsLongLine() {
+        val memory = GameTranslationMemory.parse("gta6", "en", "tr", """{
+          "schemaVersion":2,"game":"gta6","source":"en","target":"tr",
+          "speakers":{"Jason":"Jason"},"entries":[
+            {"id":"44p1","sourceText":"Got someone coming in for Kyle's batch.",
+             "targetText":"Kyle'ın malı için biri geliyor.","speaker":""},
+            {"id":"44p2","sourceText":"Copy, I'll keep eyes on 'em.","targetText":"Anlaşıldı, gözüm üstlerinde."}]}""")
+        val exact = requireNotNull(memory.findExact("Final Chapter: Got someone coming in for Kyle's batch."))
+        assertEquals("44p1", exact.entryId)
+        assertEquals("Final Chapter: Kyle'ın malı için biri geliyor.",
+            subtitleTextEvent(0, exact.target, "game_memory", exact)["text"])
+        val fuzzy = requireNotNull(memory.find("Final Chapter: Copy, I'l keep eyes on 'em."))
+        assertEquals("44p2", fuzzy.entryId)
+        assertEquals("Final Chapter", fuzzy.speaker)
+        val read = selectSubtitleSource("Final Chapter: Got someone coming in for Kyle's batch.", 0f, memory) {
+            error("A pack line behind an unknown label must not reach live translation")
+        }
+        assertEquals("44p1", read.memoryMatch?.entryId)
+    }
+
+    @Test fun aLabelWrittenIntoThePacksRowsKeepsItsWholeRowSearch() {
+        val memory = GameTranslationMemory.parse("gta6", "en", "tr", """{
+          "schemaVersion":2,"game":"gta6","source":"en","target":"tr",
+          "speakers":{"Jason":"Jason"},"entries":[
+            {"id":"71sl","sourceText":"Cal: Look, I'm sorry. Okay? I just say whatever comes into my head.",
+             "targetText":"Cal: Bak, özür dilerim. Tamam mı? Aklıma ne gelirse söylüyorum işte."}]}""")
+        val match = requireNotNull(memory.find("Cal: Look, l'm sorry. Okay? I just say whatever comes into mny head."))
+        assertEquals("71sl", match.entryId)
+        assertEquals("Cal: Bak, özür dilerim. Tamam mı? Aklıma ne gelirse söylüyorum işte.",
+            subtitleTextEvent(0, match.target, "game_memory", match)["text"])
+    }
+
     @Test fun anotherExplicitSpeakerCannotBeUsedForJason() {
         assertNull(memory("Lucia", "\"Jason\":\"Jason\",\"Lucia\":\"Lucia\"")
             .findExact("JASON: What?"))

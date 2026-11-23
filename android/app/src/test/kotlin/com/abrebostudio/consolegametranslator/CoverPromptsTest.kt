@@ -106,6 +106,138 @@ class CoverPromptsTest {
         assertTrue(press.prompts.isEmpty())
     }
 
+    @Test fun hudAreaKeepsAWrappedMessageAsOneParagraph() {
+        // A phone message in OCR 2 wrapped into short rows: one paragraph, not three labels.
+        val message = row(.80f, "Where" to 0f, "are" to .008f, "you" to .008f) +
+            row(.835f, "at?" to 0f, "I'm" to .008f, "waiting" to .008f) +
+            row(.87f, "outside" to 0f)
+        val hud = splitCoverPrompts(message, everyRowIsLabel = true)
+        assertTrue(hud.prompts.isEmpty())
+        assertEquals(listOf("Where are you at? I'm waiting outside"), groupCoverUnits(hud.rest).map { it.text })
+    }
+
+    @Test fun sentenceCaseHudRowWithAButtonIsStillALabel() {
+        val hud = splitCoverPrompts(row(.80f, "Answer" to 0f, "@" to .01f), everyRowIsLabel = true)
+        assertEquals(listOf("Answer"), hud.prompts.map { it.text })
+    }
+
+    private fun unit(text: String, top: Float, prompt: Boolean = false) =
+        CoverUnit(text, CoverBox(.05f, top, .05f + text.length * .01f, top + .03f), .03f, prompt)
+
+    @Test fun piecesOfTheAreasPackLineBecomeOneCover() {
+        // A notification split at its icon: a label row and the rest of the message.
+        val units = listOf(
+            unit("Lucia", .10f, prompt = true),
+            unit("Meet me at the docks after", .14f),
+            unit("midnight. Come alone.", .18f),
+            unit("SELECT", .40f, prompt = true),
+        )
+        val (joined, one) = joinUnitsOfPackLine(units, "Lucia: Meet me at the docks after midnight. Come alone.")
+        assertEquals("Lucia Meet me at the docks after midnight. Come alone.", one?.text)
+        assertEquals(listOf(one?.text, "SELECT"), joined.map { it.text })
+        assertFalse(one!!.prompt)
+        assertEquals(.10f, one.box.top, 1e-4f)
+        assertEquals(.21f, one.box.bottom, 1e-4f)
+    }
+
+    private fun line(text: String, top: Float, left: Float = .55f) =
+        CoverLine(text, CoverBox(left, top, left + text.length * .008f, top + .03f))
+
+    @Test fun phoneSenderNameStaysApartFromItsMessage() {
+        // The photo: "Donnie" (icon read into it) above a four-line message in OCR 2.
+        val rows = listOf(
+            line("3Donnie", .70f),
+            line("Good work covering with Brian b4.", .75f),
+            line("Were in this 2gether remember", .79f),
+            line("that! Left a taste of the profits 4u", .83f),
+            line("in yr mailbox. And fck the king...", .87f),
+        )
+        val sender = requireNotNull(senderHeader(rows))
+        assertEquals("Donnie", sender.name)
+        assertSame(rows[0], sender.line)
+        val message = groupCoverUnits(rows.drop(1))
+        assertEquals(1, message.size)
+        // The pack line holds the name: the message alone takes it, without the name.
+        val source = withoutLeadingName("donnie good work covering with brian b4. were in this 2gether remember that! " +
+            "lefta taste of the profits 4u in yr mailbox. and fck the king", "Donnie", java.util.Locale.ROOT)!!
+        val (units, joined) = joinUnitsOfPackLine(message, source)
+        assertEquals(message.single().text, joined?.text)
+        assertEquals(1, units.size)
+        assertEquals("Az önce Brian'la yaptığın iş harikaydı.",
+            withoutLeadingName("Donnie, az önce Brian'la yaptığın iş harikaydı.", "Donnie", java.util.Locale.forLanguageTag("tr")))
+        assertNull(withoutLeadingName("Az önce Donnie ile konuştum.", "Donnie", java.util.Locale.ROOT))
+    }
+
+    @Test fun aTimeAndAContactIconAroundTheNameDoNotHideTheSender() {
+        // "2:59" above "Burned Man" (as in the log), then the message.
+        val rows = listOf(
+            line("2:59", .66f),
+            line("Burned Man", .70f),
+            line("Hey, I'm back. Sahara put up a good", .75f),
+            line("fight, but once I showed them pics", .79f),
+        )
+        val sender = requireNotNull(senderHeader(rows))
+        assertEquals("Burned Man", sender.name)
+        assertSame(rows[1], sender.line)
+        // The icon read as a token, and a time on the name's own row.
+        assertEquals("Burned Man", senderHeader(listOf(line("O Burned Man", .70f),
+            line("Hey, I'm back. Sahara put up a good", .75f)))?.name)
+        assertEquals("Donnie", senderHeader(listOf(line("0:14", .70f, left = .80f), line("Donnie", .705f),
+            line("Good work covering with Brian b4.", .75f)))?.name)
+        assertEquals("Burned Man", senderHeader(listOf(line("Burned Man 2:59", .70f),
+            line("I sent you the cut we agreed on, so", .75f)))?.name)
+    }
+
+    @Test fun aNameLeftAsItsOwnUnitIsStillTheSender() {
+        // The log: "S Burned Man" / "p Burrned Man" (the contact icon read as a letter) over its message.
+        for (read in listOf("Burned Man", "S Burned Man", "p Burrned Man", "Burned Man 2:59")) {
+            val name = unit(read, .817f, prompt = true)
+            val message = unit("I sent you the cut we agreed on, so... we're good, right?", .857f)
+            val found = requireNotNull(senderUnit(listOf(message, name)))
+            assertSame(name, found.first)
+        }
+        // A list row is no message: "Burned Man" over "$15,000 Pending".
+        assertNull(senderUnit(listOf(unit("Burned Man", .90f, prompt = true), unit("$15,000 Pending", .935f))))
+        assertEquals("Donnie", senderHeader(listOf(line("p Donnie", .70f), line("Good work covering with Brian b4.", .75f)))?.name)
+    }
+
+    @Test fun titlesAndCountersAreNotSenders() {
+        assertNull(senderHeader(listOf(line("Chuck's Gun Shop", .70f), line("00:27", .75f))))
+        assertNull(senderHeader(listOf(line("FINAL CHAPTER", .70f), line("Meet me at the docks after midnight.", .75f))))
+        assertNull(senderHeader(listOf(line("Hey, I'm back.", .70f), line("Sahara put up a good fight, but once", .75f))))
+    }
+
+    @Test fun aSubtitlesSecondLineReadApartJoinsItsPackLine() {
+        // "devices, so." read as its own unit was translated live as "Cihazlar, öyle."
+        val units = listOf(
+            unit("we both know what you get into when you're left to your own", .86f),
+            unit("devices, so.", .895f),
+        )
+        val (kept, joined) = joinUnitsOfPackLine(units,
+            "we both know what you get into when you're left to your own devices, so...")
+        assertEquals("we both know what you get into when you're left to your own devices, so.", joined?.text)
+        assertEquals(listOf(joined), kept)
+    }
+
+    @Test fun twoSpeakersAreNeverJoinedIntoOneCover() {
+        val units = listOf(
+            unit("Cal: Look, I'm sorry. Okay? I just say whatever comes into my head.", .80f),
+            unit("Jason: I keep telling him.", .84f),
+        )
+        val source = "Cal: Look, I'm sorry. Okay? I just say whatever comes into my head. Jason: I keep telling him."
+        val (kept, joined) = joinUnitsOfPackLine(units, source)
+        assertNull(joined)
+        assertEquals(units, kept)
+    }
+
+    @Test fun unrelatedRowsAreNotJoinedToAPackLine() {
+        val menu = listOf(unit("CHEMICALS", .10f, true), unit("TAUNT", .14f, true), unit("FINAL CHAPTER", .18f, true))
+        // One row matching the area's line is not a reason to join anything.
+        assertNull(joinUnitsOfPackLine(menu, "Final Chapter").second)
+        assertNull(joinUnitsOfPackLine(menu, "Use the chemicals to taunt them in the final chapter of the story").second)
+        assertEquals(menu, joinUnitsOfPackLine(menu, "Taunt").first)
+    }
+
     @Test fun buttonsReadAsLettersAtALabelEdgeAreLeftUncovered() {
         // Logged: "CHEMICALS? A" (triangle), "RECENTER 3" (R3), "ADD MARKER\"O", "KYLE(O".
         val hud = splitCoverPrompts(

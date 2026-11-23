@@ -202,6 +202,50 @@ internal class GameTranslationMemory private constructor(
         for (index in 0 until store.entryCount) meanings.add(meaningTokens(store.normalized[index]))
     }
     private val gramVotes = IntArray(store.entryCount)
+
+    /** Row fingerprints and each row's first entry, for the fuzzy prefilter ([FuzzySignatures]). */
+    private class Prefilter(val signatures: FuzzySignatures, val firstEntry: IntArray)
+
+    /**
+     * Built after loading, off the reading thread for a large pack: until it is
+     * ready the fuzzy search works as before, so loading never waits for it.
+     */
+    @Volatile private var prefilter: Prefilter? = null
+
+    private fun buildPrefilter(): Prefilter {
+        val firstEntry = IntArray(store.recordCount) { -1 }
+        for (entry in 0 until store.entryCount) {
+            val record = store.entryRecord[entry]
+            if (firstEntry[record] < 0) firstEntry[record] = entry
+        }
+        val signatures = FuzzySignatures.build(store.recordCount) { record ->
+            firstEntry[record].let { if (it < 0) "" else store.normalized[it] }
+        }
+        return Prefilter(signatures, firstEntry)
+    }
+
+    init {
+        if (store.recordCount <= SYNC_PREFILTER_RECORDS) prefilter = buildPrefilter()
+        else Thread({ prefilter = buildPrefilter() }, "pack-fingerprints").apply {
+            isDaemon = true
+            priority = Thread.MIN_PRIORITY
+        }.start()
+    }
+
+    /** The entries of the rows whose fingerprints are nearest to [query] (see [FuzzySignatures.nearest]). */
+    private fun prefilteredEntries(query: String, limit: Int, minLength: Int, eligible: (Int) -> Boolean): List<Int>? {
+        val index = prefilter ?: return null
+        val entries = ArrayList<Int>()
+        for (record in index.signatures.nearest(query, limit, minLength, Int.MAX_VALUE)) {
+            var entry = index.firstEntry[record]
+            if (entry < 0) continue
+            while (entry < store.entryCount && store.entryRecord[entry] == record) {
+                if (eligible(entry)) entries.add(entry)
+                entry++
+            }
+        }
+        return entries
+    }
     private data class SearchKey(val query: String, val speaker: String?)
     private inner class SearchWork(val query: String, val speaker: String?) {
         val words by lazy { collectWordCandidateIndices(query) }
@@ -231,6 +275,7 @@ internal class GameTranslationMemory private constructor(
     internal val estimatedRetainedBytes: Long =
         store.retainedBytes() + exactIndex.retainedBytes() + compactIndex.retainedBytes() +
             8L * store.entryCount + // gramVotes (4 B) and per-query scratch
+            28L * store.recordCount + // fuzzy prefilter fingerprints (~16 B words, offsets, lengths, scores)
             spanLengthIndex.values.sumOf { 64L + 4L * it.size } + lengthIndex.values.sumOf { 64L + 4L * it.size } +
             speakerTranslations.entries.sumOf { (key, value) -> 96L + 2L * (key.length + value.length) } +
             normalizedSpeakers.sumOf { 48L + 2L * it.length } + 64L * availableMeanings.size
@@ -245,12 +290,117 @@ internal class GameTranslationMemory private constructor(
         lookupCache[ocrText]?.takeIf { it.matchType == "exact" || it.matchType == "spacing_exact" }
             ?.let { return@synchronized it }
         val query = prepareQuery(ocrText)
-        val match = findExactNormalized(normalize(query.body), query.speaker)
+        val match = if (query.label != null) {
+            findExactNormalized(normalize(ocrText), null)
+                ?: findExactNormalized(normalize(query.body), null)?.let { withLabel(it, query.label) }
+        } else findExactNormalized(normalize(query.body), query.speaker)
             ?: query.speaker?.let { findExactNormalized(normalize("$it: ${query.body}"), null) }
         withDisplaySpeaker(match, query.speaker)?.also { lookupCache[ocrText] = it }
     }
 
-    private data class QueryText(val body: String, val speaker: String?)
+    private class QuickResult(val match: GameTranslationMatch?)
+    private val quickCache = object : LinkedHashMap<String, QuickResult>(32, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, QuickResult>?) = size > 64
+    }
+
+    /**
+     * The pack line(s) of [ocrText] found with hash lookups only, no fuzzy search:
+     * the whole line (with or without its speaker label), the line as runs of whole
+     * sentences each found exactly (two subtitles read together are two pack
+     * lines), then one likely OCR misreading fixed ("rn" read for "m", a stray or
+     * a lost letter). Every way is tried before any slow search, so a clean read
+     * never waits for one.
+     */
+    fun findQuick(ocrText: String): GameTranslationMatch? = synchronized(lookupCache) {
+        quickCache[ocrText]?.let { return@synchronized it.match }
+        findQuickUncached(ocrText).also { quickCache[ocrText] = QuickResult(it) }
+    }
+
+    private fun findQuickUncached(ocrText: String): GameTranslationMatch? {
+        findExact(ocrText)?.let { return it }
+        val query = prepareQuery(ocrText)
+        fun shown(match: GameTranslationMatch) =
+            if (query.label != null) withLabel(match, query.label) else withDisplaySpeaker(match, query.speaker)!!
+        fun piece(text: String): GameTranslationMatch? {
+            val normalized = normalize(text)
+            // A misreading is undone in one sentence at a time, not in every run tried.
+            return findExactNormalized(normalized, query.speaker)
+                ?: if (quickSentences(text).size == 1) correctedQuery(normalized, query.speaker) else null
+        }
+        correctedQuery(normalize(query.body), query.speaker)?.let { return shown(it) }
+        val sentences = quickSentences(query.body)
+        if (sentences.size < 2 || sentences.size > MAX_QUICK_SENTENCES) return null
+        // Longest runs first: a pack line of several sentences stays one line.
+        val matches = ArrayList<GameTranslationMatch>()
+        val sources = ArrayList<String>()
+        var start = 0
+        while (start < sentences.size) {
+            var end = if (start == 0) sentences.size - 1 else sentences.size
+            var found: GameTranslationMatch? = null
+            while (end > start && found == null) {
+                found = piece(sentences.subList(start, end).joinToString(" "))
+                if (found == null) end--
+            }
+            matches += found ?: return null
+            sources += sentences.subList(start, end).joinToString(" ")
+            start = end
+        }
+        val first = matches.first()
+        val oneEntry = matches.all { it.entryId == first.entryId }
+        return shown(first.copy(
+            entryId = matches.map { it.entryId }.distinct().joinToString("+"),
+            source = matches.joinToString(" ") { it.source.trim() },
+            target = matches.joinToString(" ") { it.target.trim() },
+            score = matches.minOf { it.score },
+            matchType = "sentence_exact",
+            segmentIndex = if (oneEntry) first.segmentIndex else null,
+            segmentCount = if (oneEntry) first.segmentCount else null,
+        ))
+    }
+
+    /**
+     * A short line ([MIN_VARIANT_LETTERS]..[MAX_VARIANT_LETTERS] letters) as it
+     * reads after one usual OCR misreading is undone, looked up exactly. Every
+     * fix that finds a line must agree on its translation, and a fix may not
+     * change a number or a negation.
+     */
+    private fun correctedQuery(query: String, speaker: String?): GameTranslationMatch? {
+        val letters = query.count { it != ' ' }
+        if (letters < MIN_VARIANT_LETTERS || letters > MAX_VARIANT_LETTERS) return null
+        // A read that is itself a pack line ("Really?" with several translations)
+        // or made only of words the pack knows is no misreading: "Really?" must
+        // not become "Rally" by dropping a letter.
+        if (exactEntries(query).isNotEmpty()) return null
+        // Only the words the pack does not know are misreadings to undo.
+        val unknown = ArrayList<IntRange>()
+        var start = 0
+        for (word in query.split(' ')) {
+            if (word.isNotEmpty() && store.words.find(word) < 0) unknown += start until start + word.length
+            start += word.length + 1
+        }
+        if (unknown.isEmpty()) return null
+        val meaning = meaningTokens(query)
+        var found: Entry? = null
+        for (variant in ocrVariants(query, unknown, insertLetters = letters >= MIN_INSERT_LETTERS)) {
+            val entries = exactEntries(variant).filter { speakerMatches(it, speaker) }
+            if (entries.isEmpty() || meaningTokens(variant) != meaning) continue
+            val entry = equivalentOutput(entries) ?: return null
+            if (found != null && (found.target != entry.target || found.normalizedSpeaker != entry.normalizedSpeaker)) return null
+            if (found == null) found = entry
+        }
+        return found?.toMatch(OCR_VARIANT_SCORE, "ocr_variant")
+    }
+
+    /**
+     * [label] is a name-like "Name:" prefix the pack does not list as a speaker
+     * ("Final Chapter: Got someone coming in…"): the line is looked up without
+     * it, and the label is shown as the game shows it.
+     */
+    private data class QueryText(val body: String, val speaker: String?, val label: String? = null)
+
+    /** A pack row that already starts with the label shows it in its own text. */
+    private fun withLabel(match: GameTranslationMatch, label: String) =
+        if (normalize(match.source).startsWith(normalize(label) + " ")) match else match.copy(speaker = label)
 
     fun rejectionReason(ocrText: String): String {
         val text = prepareQuery(ocrText)
@@ -279,8 +429,36 @@ internal class GameTranslationMemory private constructor(
                     editDistance(candidate, label, 1) <= 1
             }.singleOrNull()
         }
-        return if (speaker == null) QueryText(ocrText, null)
-            else QueryText(ocrText.substring(prefix.range.last + 1).trimStart(' ', '/', '|', 92.toChar()), speaker)
+        val body = ocrText.substring(prefix.range.last + 1).trimStart(' ', '/', '|', 92.toChar())
+        if (speaker != null) return QueryText(body, speaker)
+        val shown = prefix.groupValues[1].trim()
+        // Rows that carry this label in their own text are still searched with it.
+        if (normalize(shown) in inlineLabels) return QueryText(ocrText, null)
+        // A short reply ("STRANGER: What?") is too common to guess its speaker's row.
+        val bodyWords = body.split(' ').count { word -> word.count(Char::isLetter) >= 1 }
+        return if (isNameLabel(shown) && bodyWords >= MIN_UNKNOWN_LABEL_WORDS &&
+            body.count(Char::isLetter) >= MIN_UNKNOWN_LABEL_LETTERS) QueryText(body, null, shown)
+            else QueryText(ocrText, null)
+    }
+
+    /**
+     * Names written into the pack's own rows ("Cal: Look, I'm sorry. …"), found
+     * once by scanning only the first bytes of each source for a colon.
+     */
+    private val inlineLabels: Set<String> by lazy {
+        val labels = HashSet<String>()
+        for (record in 0 until store.sources.size) {
+            val label = store.sources.prefixBefore(record, ':', INLINE_LABEL_BYTES) ?: continue
+            if (SPEAKER_PREFIX.matches("$label: ")) labels.add(normalize(label))
+        }
+        labels
+    }
+
+    /** One to three words, each starting with a capital letter ("Final Chapter", "Cal"). */
+    private fun isNameLabel(label: String): Boolean {
+        val words = label.split(' ').filter(String::isNotBlank)
+        return words.size in 1..3 && label.count(Char::isLetter) >= 2 &&
+            words.all { word -> word.first().isUpperCase() }
     }
 
     private fun withDisplaySpeaker(match: GameTranslationMatch?, speaker: String?): GameTranslationMatch? =
@@ -295,8 +473,12 @@ internal class GameTranslationMemory private constructor(
     }
 
     private fun findUncached(ocrText: String): GameTranslationMatch? {
+        findQuick(ocrText)?.let { return it }
         try {
             val query = prepareQuery(ocrText)
+            // An unknown label: only the whole text's exact row keeps it, then the line without it.
+            if (query.label != null) return findExactNormalized(normalize(ocrText), null)
+                ?: findBody(query.body, null)?.let { withLabel(it, query.label) }
             val match = findBody(query.body, query.speaker)
                 ?: query.speaker?.let { findBody("$it: ${query.body}", null) }
             return withDisplaySpeaker(match, query.speaker)
@@ -399,10 +581,13 @@ internal class GameTranslationMemory private constructor(
         if (query.length < MIN_PARTIAL_QUERY_LENGTH) return null
         val meaning = meaningTokens(query)
         val radius = max(3, query.length / 10)
+        // Only spans of rows whose fingerprints hold the read are spelled out and compared.
+        val rows = if (query.length < MIN_PREFILTER_QUERY) null
+            else prefilter?.signatures?.nearest(query, PREFILTER_ROWS, query.length - radius, Int.MAX_VALUE)?.toHashSet()
         val nearbySpans = (query.length - radius..query.length + radius).asSequence()
             .flatMap { length -> spanLengthIndex[length]?.asSequence() ?: emptySequence() }
         val ranked = nearbySpans.filter { span ->
-            speakerMatchesRecord(store.spanRecord[span], expectedSpeaker)
+            (rows == null || store.spanRecord[span] in rows) && speakerMatchesRecord(store.spanRecord[span], expectedSpeaker)
         }.mapNotNull { span ->
             val normalized = normalize(spanSource(span))
             if (meaningTokens(normalized) != meaning) return@mapNotNull null
@@ -440,7 +625,8 @@ internal class GameTranslationMemory private constructor(
             if (compact.isNotEmpty()) {
                 val meaning = meaningTokens(query)
                 val compatible = compact.filter { entry ->
-                    entry.meaning == meaning && store.entryWordCount[entry.index] >= wordCount &&
+                    // OCR may also split a word the pack writes joined ("left a" for "lefta").
+                    entry.meaning == meaning && store.entryWordCount[entry.index] >= wordCount - MAX_OCR_SPLIT_WORDS &&
                         (speakerMatches(entry, expectedSpeaker))
                 }
                 equivalentOutput(compatible)?.let { return it.toMatch(1.0, "spacing_exact") }
@@ -625,6 +811,17 @@ internal class GameTranslationMemory private constructor(
             return length in minimumLength..maximumLength &&
                 (length <= query.length * 1.10 || store.entrySentence[index] != WHOLE_PARENT)
         }
+        // The rows whose fingerprints share the most with the read, instead of
+        // counting every row that shares a single three-letter piece with it
+        // (common pieces such as "the" touch most of a large pack). A short read
+        // has few pieces, so a few misread letters weigh too much in its
+        // fingerprint; it keeps the piece count, which is cheap for it.
+        if (query.length >= MIN_PREFILTER_QUERY) prefilteredEntries(query, PREFILTER_ROWS, minimumLength, ::eligible)?.let { nearest ->
+            val candidates = LinkedHashSet<Int>()
+            candidates.addAll(wordCandidates)
+            candidates.addAll(nearest)
+            return withShortLines(candidates, words.size, minimumLength, maximumLength)
+        }
         val grams = trigrams(query)
         val counts = gramVotes
         val touched = IntPostings()
@@ -643,7 +840,12 @@ internal class GameTranslationMemory private constructor(
         val candidates = LinkedHashSet<Int>()
         candidates.addAll(wordCandidates)
         candidates.addAll(gramCandidates)
-        if (words.size <= 1) for (length in minimumLength..maximumLength) {
+        return withShortLines(candidates, words.size, minimumLength, maximumLength)
+    }
+
+    /** A one-word read also compares rows of a similar length. */
+    private fun withShortLines(candidates: LinkedHashSet<Int>, wordCount: Int, minimumLength: Int, maximumLength: Int): List<Int> {
+        if (wordCount <= 1) for (length in minimumLength..maximumLength) {
             for (index in lengthIndex[length] ?: IntArray(0)) {
                 if (candidates.size >= 192) break
                 candidates.add(index)
@@ -1018,6 +1220,23 @@ internal class GameTranslationMemory private constructor(
             fun optional(index: Int): String? = if (index < 0) null else get(index)
 
             private fun byteAt(position: Int) = pages[position ushr PAGE_SHIFT][position and PAGE_MASK]
+
+            /** The text before the first [mark] in the first [maxBytes] bytes of [index], or null. */
+            fun prefixBefore(index: Int, mark: Char, maxBytes: Int): String? {
+                irregular[index]?.let { text ->
+                    val at = text.indexOf(mark)
+                    return if (at in 1..maxBytes) text.substring(0, at) else null
+                }
+                val start = offsets[index]
+                val length = min(offsets[index + 1] - start, maxBytes + 1)
+                for (offset in 1 until length) {
+                    if (byteAt(start + offset) != mark.code.toByte()) continue
+                    val bytes = ByteArray(offset)
+                    copyBytes(start, bytes, offset)
+                    return String(bytes, Charsets.UTF_8)
+                }
+                return null
+            }
 
             private fun copyBytes(start: Int, target: ByteArray, length: Int) {
                 var copied = 0
@@ -2254,6 +2473,63 @@ internal class GameTranslationMemory private constructor(
         }
 
         private val DELAY_DIRECTIVE = Regex("""\[delay:\s*-?\d+(?:\.\d+)?\]""", RegexOption.IGNORE_CASE)
+        private const val MIN_UNKNOWN_LABEL_WORDS = 3
+        private const val MAX_OCR_SPLIT_WORDS = 2
+        /** Rows the fingerprint prefilter hands to the exact comparison. */
+        private const val PREFILTER_ROWS = 96
+        /** Shorter reads keep the three-letter piece count. */
+        private const val MIN_PREFILTER_QUERY = 32
+        /** Small packs build fingerprints at once; large ones on their own thread. */
+        private const val SYNC_PREFILTER_RECORDS = 20_000
+        private const val MAX_QUICK_SENTENCES = 8
+        private const val MIN_VARIANT_LETTERS = 6
+        private const val MAX_VARIANT_LETTERS = 48
+        private const val MIN_INSERT_LETTERS = 10
+        private const val OCR_VARIANT_SCORE = 0.99
+        private val QUICK_SENTENCE_BREAK = Regex("""(?<=[.!?…]["'’”)]?)\s+(?=["'“‘(]?[\p{Lu}\p{N}])""")
+
+        /** Whole sentences of [text]; a break needs a capital (or a digit) after it. */
+        private fun quickSentences(text: String): List<String> =
+            QUICK_SENTENCE_BREAK.split(text.trim()).map(String::trim).filter { it.any(Char::isLetterOrDigit) }
+
+        /**
+         * Letter groups OCR reads for one another in game fonts: what was read,
+         * and what it may have been. A plain letter never becomes any other
+         * letter ("honey" must not turn into "money").
+         */
+        private val OCR_CONFUSIONS = listOf(
+            "rn" to "m", "m" to "rn", "cl" to "d", "vv" to "w", "ri" to "n", "li" to "h", "ii" to "u",
+            "l" to "i", "i" to "l", "1" to "l", "1" to "i", "0" to "o", "5" to "s", "8" to "b", "j" to "i",
+            "c" to "e", "e" to "c", "u" to "v", "v" to "u", "f" to "t", "t" to "f", "h" to "b", "b" to "h",
+        )
+
+        /**
+         * [query] (normalized) with one OCR misreading undone: a confused letter
+         * group replaced, one stray character dropped, and with [insertLetters]
+         * one lost letter put back.
+         */
+        private fun ocrVariants(query: String, words: List<IntRange>, insertLetters: Boolean): Set<String> {
+            val variants = LinkedHashSet<String>()
+            fun add(value: String) {
+                if (value.isNotEmpty() && !value.startsWith(' ') && !value.endsWith(' ') && "  " !in value) variants.add(value)
+            }
+            for (word in words) {
+                for (index in word) {
+                    for ((read, real) in OCR_CONFUSIONS) {
+                        if (index + read.length <= word.last + 1 && query.startsWith(read, index))
+                            add(query.substring(0, index) + real + query.substring(index + read.length))
+                    }
+                    add(query.removeRange(index, index + 1))
+                }
+                if (insertLetters) for (index in word.first..word.last + 1) for (letter in 'a'..'z') {
+                    add(query.substring(0, index) + letter + query.substring(index))
+                }
+            }
+            variants.remove(query)
+            return variants
+        }
+        private const val INLINE_LABEL_BYTES = 48
+        private const val MIN_UNKNOWN_LABEL_LETTERS = 12
         private val SPEAKER_PREFIX = Regex("""^\s*([\p{L}\p{N}][\p{L}\p{N} .’'-]{0,23}):\s*""")
         private val SENTENCE_BOUNDARY = Regex("""[.!?…؟。！？]+["'’”)]*(?:\s+|$)""")
         private const val SENTENCE_ENDINGS = ".!?…؟。！？"

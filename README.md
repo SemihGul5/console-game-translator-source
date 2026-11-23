@@ -9,7 +9,7 @@
 
 This repository contains the Flutter application, Android/Kotlin integration,
 modified Chiaki/chiaki-ng core and JNI bindings used by Console Game Translator.
-It is a source snapshot prepared on **2026-11-23** from version **1.1.8+21** of the
+It is a source snapshot prepared on **2026-11-23** from version **1.1.9+22** of the
 working tree. It is not a copy of the private development repository's history.
 
 **Publication status:** source preparation, not a completed binary compliance
@@ -19,7 +19,7 @@ Do not describe this snapshot as a compliance certificate for an existing APK/AA
 
 ## Latest source synchronization
 
-Manually refreshed on **2026-11-23** for **1.1.8+21**.
+Manually refreshed on **2026-11-23** for **1.1.9+22**.
 See `release/source-sync.json` for changed, added and removed source paths.
 The development checkout and previous snapshots were not modified.
 

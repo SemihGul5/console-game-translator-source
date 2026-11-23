@@ -1,6 +1,6 @@
 {
   "preparedOn": "2026-11-23",
-  "applicationVersion": "1.1.8+21",
+  "applicationVersion": "1.1.9+22",
   "comparison": "reviewed seed snapshot",
   "added": [
     "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
@@ -15,6 +15,7 @@
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLTranslationCache.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/DeepLTranslationEngine.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/FreeTrialPolicy.kt",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/FuzzySignatures.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GameSubtitleEvent.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GameTranslationMemoryIndexStore.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GameTranslationPackFile.kt",
@@ -57,7 +58,9 @@
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLTranslationCacheTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/DeepLTranslationEngineTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/FreeTrialPolicyTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/FuzzySignaturesTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameLibraryLiveFallbackTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameQuickLookupTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameSpeakerFallbackTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameSubtitleEventTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameTranslationMemoryIndexStoreTest.kt",

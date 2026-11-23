@@ -52,7 +52,8 @@ class UnmatchedOcrPreparationTest {
 
     @Test fun aCorrectedMissCanFindJsonThroughTheUnchangedMatcher() {
         val raw = SubtitleOcrRead("lIl caII y0u.", .8f)
-        assertNull("The first lookup must actually miss", memory.find(raw.text))
+        // The fuzzy matcher may also recover this read; the corrected text must not need it.
+        assertNull("The read itself is no exact JSON line", memory.findExact(raw.text))
         var lookups = 0
         val result = prepareUnmatchedOcr(raw, true, true,
             correct = { table.correct(it, "en", true, gameLookupMiss = true) },

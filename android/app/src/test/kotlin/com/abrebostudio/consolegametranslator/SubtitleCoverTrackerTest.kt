@@ -152,6 +152,47 @@ class SubtitleCoverTrackerTest {
         assertNull(tracker.reset())
     }
 
+    @Test fun aReadOfOneLineDoesNotShrinkTheCoverOfATwoLineSubtitle() {
+        val tracker = SubtitleCoverTracker()
+        val whole = requireNotNull(tracker.observe(listOf(seen(calUnit(), calLong)), 0)).single()
+        val topLine = CoverUnit("Cal: Look, I'm sorry. Okay?", CoverBox(.30f, .80f, .70f, .84f), .04f)
+        // One or two partial frames keep the whole box.
+        assertNull(tracker.observe(listOf(seen(topLine, calLong)), 100))
+        assertNull(tracker.observe(listOf(seen(calUnit(), calLong)), 200))
+        assertNull(tracker.observe(listOf(seen(topLine, calLong)), 300))
+        assertNull(tracker.observe(listOf(seen(topLine, calLong)), 400))
+        // Only a subtitle that stays smaller gets a smaller cover.
+        val shrunk = requireNotNull(tracker.observe(listOf(seen(topLine, calLong)), 500)).single()
+        assertEquals(whole.id, shrunk.id)
+        assertEquals(.84f, shrunk.box.bottom, 1e-4f)
+        // A bigger read grows it at once.
+        assertEquals(.88f, tracker.observe(listOf(seen(calUnit(), calLong)), 600)?.single()?.box?.bottom ?: -1f, 1e-4f)
+    }
+
+    @Test fun aPieceOfACoveredSubtitleGetsNoSecondCover() {
+        val tracker = SubtitleCoverTracker()
+        val whole = CoverMatch("gta6:1yly", "Anlaştığımız payı gönderdim, yani... sorun yok, değil mi?", true)
+        tracker.observe(listOf(seen(calUnit(), whole)), 0)
+        // The same frame also looked up the subtitle's first line on its own.
+        val firstLine = CoverUnit("I sent you the cut we agreed on, so..", CoverBox(.22f, .80f, .78f, .84f), .04f)
+        val piece = CoverMatch("gta6:1yly:0", "Anlaştığımız payı gönderdim, yani...", true)
+        assertNull(tracker.observe(listOf(seen(calUnit(), whole), seen(firstLine, piece)), 100))
+    }
+
+    @Test fun twoLiveTranslationsOfAnAlternatingReadDoNotFlicker() {
+        val tracker = SubtitleCoverTracker()
+        val unit = CoverUnit("I, uh..", CoverBox(.40f, .89f, .60f, .93f), .04f)
+        tracker.setLiveText("- - Evet.")
+        assertEquals("- - Evet.", tracker.observe(listOf(seen(unit, null)), 0)?.single()?.text)
+        tracker.setLiveText("Ben, uh.")
+        assertEquals("Ben, uh.", tracker.observe(listOf(seen(unit, null)), 100)?.single()?.text)
+        // Back to the replaced one: one frame is not enough.
+        tracker.setLiveText("- - Evet.")
+        assertNull(tracker.observe(listOf(seen(unit, null)), 200))
+        tracker.setLiveText("Ben, uh.")
+        assertNull(tracker.observe(listOf(seen(unit, null)), 300))
+    }
+
     private fun line(text: String, top: Float, height: Float = .04f, left: Float = .20f, right: Float = .80f) =
         CoverLine(text, CoverBox(left, top, right, top + height))
 

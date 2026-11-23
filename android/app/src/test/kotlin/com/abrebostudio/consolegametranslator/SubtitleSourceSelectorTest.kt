@@ -217,4 +217,54 @@ class SubtitleSourceSelectorTest {
         assertTrue(coversMostOf("Jason: Sounds good.", "we can get. Jason: Sounds good."))
         assertFalse(coversMostOf("criminal profile.", "Tip: Indiscriminate violence will contribute toward a violent criminal profile."))
     }
+
+    private val twoSpeakers = """{
+      "schemaVersion":2,"game":"gta6","source":"en","target":"tr",
+      "speakers":{"Cal":"Cal","Jason":"Jason"},
+      "entries":[
+        {"id":"71sl","sourceText":"Look, I'm sorry. Okay? I just say whatever comes into my head.","targetText":"Bak, özür dilerim. Tamam mı? Aklıma ne gelirse söylüyorum işte.","speaker":"Cal"},
+        {"id":"72jn","sourceText":"I keep telling him.","targetText":"Ona hep söylüyorum.","speaker":"Jason"}
+      ]}"""
+
+    @Test fun twoSpeakersReadTogetherAreBothShown() {
+        val memory = GameTranslationMemory.parse("gta6", "en", "tr", twoSpeakers)
+        val raw = "Cal: Look, I'm sorry. Okay? I just say whatever comes into my head. Jason: I keep telling him."
+        val read = selectSubtitleSource(raw, .8f, memory) { error("Both lines are in the pack") }
+        val match = requireNotNull(read.memoryMatch)
+        assertEquals("71sl+72jn", match.entryId)
+        assertEquals(
+            "Cal: Bak, özür dilerim. Tamam mı? Aklıma ne gelirse söylüyorum işte.\nJason: Ona hep söylüyorum.",
+            subtitleTextEvent(1, match.target, "opus", match)["text"],
+        )
+    }
+
+    @Test fun aSecondSpeakerMissingFromThePackKeepsTheKnownLine() {
+        val memory = GameTranslationMemory.parse("gta6", "en", "tr", twoSpeakers)
+        val cal = "Cal: Look, I'm sorry. Okay? I just say whatever comes into my head."
+        val raw = "$cal Jason: Where are the keys?"
+        // The app passes each OCR block as a candidate, as here.
+        val blocks = listOf(cal, "Jason: Where are the keys?")
+        val match = requireNotNull(selectSubtitleSource(raw, .8f, memory, blocks) { SubtitleOcrRead(raw, .8f) }.memoryMatch)
+        assertEquals("71sl", match.entryId)
+    }
+
+    @Test fun speakerTurnsSplitOnlyAtALabelAfterASentence() {
+        assertEquals(listOf("Cal: Look. Okay?", "Jason: I keep telling him."),
+            speakerTurns("Cal: Look. Okay? Jason: I keep telling him."))
+        assertEquals(listOf("Okay? I just say it."), speakerTurns("Okay? I just say it."))
+        assertEquals(listOf("Jason: Time: 12 minutes."), speakerTurns("Jason: Time: 12 minutes."))
+    }
+
+    @Test fun anObjectiveLineBelowASubtitleIsNotJoinedToIt() {
+        val memory = GameTranslationMemory.parse("gta6", "en", "tr", """{
+          "schemaVersion":2,"game":"gta6","source":"en","target":"tr","speakers":{"Jason":"Jason"},"entries":[
+            {"id":"44rh","sourceText":"You're who Kyle sent? You don't look like a farmer to me.",
+             "targetText":"Kyle'ın gönderdiği sen misin? Bana çiftçi gibi görünmüyorsun."},
+            {"id":"1nt8","sourceText":"Inspect the chemicals","targetText":"Kimyasalları inceleyin"}]}""")
+        val subtitle = "Final Chapter: You're who Kyle sent? You don't look like a farmer to me."
+        val read = selectSubtitleSource("$subtitle Inspect the chemicals", 0f, memory,
+            listOf(subtitle, "Inspect the chemicals")) { error("The subtitle block is in the pack") }
+        assertEquals(subtitle, read.text)
+        assertEquals("44rh", read.memoryMatch?.entryId)
+    }
 }

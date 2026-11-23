@@ -95,7 +95,12 @@ internal data class CoverItem(
  * - A new subtitle appears at once when its match is certain, otherwise after
  *   [confirmFrames] consecutive frames.
  * - The box follows the English only when it really moves (more than half a
- *   line, or a clearly different size); OCR jitter does not shake it.
+ *   line, or a clearly different size); OCR jitter does not shake it. A read of
+ *   only part of the subtitle (one of its two lines) shrinks it only after
+ *   [SHRINK_FRAMES] such frames in a row.
+ * - A newer live translation replaces the shown one at once, but going back to
+ *   the one it just replaced (a read alternating between "uh.." and "I, uh..")
+ *   waits for [confirmFrames] frames like any other change.
  * - Missed reads do not remove a cover; it goes when its subtitle has not been
  *   seen for [missMillis].
  * - When no subtitle in the area is in the game pack, the area's live
@@ -116,6 +121,8 @@ internal class SubtitleCoverTracker(
         var fit: Boolean = false,
         var pendingKey: String? = null,
         var pendingCount: Int = 0,
+        var shrinkCount: Int = 0,
+        var previousKey: String? = null,
     )
 
     private class Candidate(
@@ -186,6 +193,9 @@ internal class SubtitleCoverTracker(
             replaceWhenConfirmed(item, atPlace, now)
         }
         for (candidate in unassigned) {
+            // A piece of a subtitle that is already covered (one of its lines
+            // looked up on its own) never gets a second cover on top of it.
+            if (claimed.any { mostlyInside(candidate.box, it.box) }) continue
             val pending = pendingNew.getOrPut(candidate.key) { Pending(0, frame - 1) }
             pending.count = if (pending.lastFrame == frame - 1) pending.count + 1 else 1
             pending.lastFrame = frame
@@ -229,19 +239,42 @@ internal class SubtitleCoverTracker(
             item.text = candidate.text
             item.icons = candidate.icons
         }
-        if (moved(item.box, candidate.box, max(item.lineHeight, candidate.lineHeight))) {
-            item.box = candidate.box
-            item.lineHeight = candidate.lineHeight
+        val lineHeight = max(item.lineHeight, candidate.lineHeight)
+        if (!moved(item.box, candidate.box, lineHeight)) {
+            item.shrinkCount = 0
+            return
         }
+        // A frame that read only part of the subtitle does not shrink its cover.
+        if (inside(candidate.box, item.box, lineHeight) && ++item.shrinkCount < SHRINK_FRAMES) return
+        item.shrinkCount = 0
+        item.box = candidate.box
+        item.lineHeight = candidate.lineHeight
+    }
+
+    private fun mostlyInside(inner: CoverBox, outer: CoverBox): Boolean {
+        val width = min(inner.right, outer.right) - max(inner.left, outer.left)
+        val height = min(inner.bottom, outer.bottom) - max(inner.top, outer.top)
+        if (width <= 0f || height <= 0f) return false
+        return width * height >= inner.width * inner.height * MOSTLY_INSIDE
+    }
+
+    private fun inside(inner: CoverBox, outer: CoverBox, lineHeight: Float): Boolean {
+        val slack = lineHeight * SAME_PLACE_LINES
+        return inner.left >= outer.left - slack && inner.right <= outer.right + slack &&
+            inner.top >= outer.top - slack && inner.bottom <= outer.bottom + slack
     }
 
     private fun replaceWhenConfirmed(item: Shown, candidate: Candidate, now: Long) {
-        val live = candidate.key.startsWith(LIVE_KEY_PREFIX) && item.key.startsWith(LIVE_KEY_PREFIX)
+        val live = candidate.key.startsWith(LIVE_KEY_PREFIX) && item.key.startsWith(LIVE_KEY_PREFIX) &&
+            candidate.key != item.previousKey
         if (item.pendingKey == candidate.key) item.pendingCount++ else {
             item.pendingKey = candidate.key
             item.pendingCount = 1
         }
+        // The shown subtitle stays meanwhile: a read that alternates never flickers.
+        item.lastSeen = now
         if (!live && item.pendingCount < confirmFrames) return
+        item.previousKey = item.key
         item.key = candidate.key
         item.text = candidate.text
         item.icons = candidate.icons
@@ -251,6 +284,7 @@ internal class SubtitleCoverTracker(
         item.lastSeen = now
         item.pendingKey = null
         item.pendingCount = 0
+        item.shrinkCount = 0
     }
 
     private fun samePlace(item: Shown, candidate: Candidate): Boolean {
@@ -289,6 +323,8 @@ internal class SubtitleCoverTracker(
         private const val MOVE_LINES = 0.5f
         private const val RESIZE_RATIO = 0.25f
         private const val SAME_PLACE_LINES = 0.5f
+        private const val SHRINK_FRAMES = 3
+        private const val MOSTLY_INSIDE = 0.6f
     }
 }
 
