@@ -1,6 +1,6 @@
 {
-  "preparedOn": "2026-11-23",
-  "applicationVersion": "1.1.9+22",
+  "preparedOn": "2026-11-24",
+  "applicationVersion": "1.2.0+23",
   "comparison": "reviewed seed snapshot",
   "added": [
     "android/app/src/main/assets/ocr/ocr_corrections.v1.json",
@@ -25,6 +25,7 @@
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GeminiKeyPool.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GeminiLocalFallback.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GeminiTranslationEngine.kt",
+    "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/HudEvidence.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/LatestLocalTranslationQueue.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrCorrectionTable.kt",
     "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/OcrFrameGeometry.kt",
@@ -71,6 +72,7 @@
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GeminiLocalFallbackTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GeminiLoggedOcrReplayTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GeminiTranslationEngineTest.kt",
+    "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/HudEvidenceTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/LatestLocalTranslationQueueTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/LocalLoggedOcrReplayTest.kt",
     "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/LoggedOcrRegressionTest.kt",

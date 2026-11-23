@@ -4,6 +4,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SceneTextFilterTest {
+    @Test fun aPlateReadAfterASubtitleIsLeftOut() {
+        assertEquals("Final Chapter: Uh-huh... hang on.", withoutTrailingPlate("Final Chapter: Uh-huh... hang on. HCO 11M"))
+        assertEquals("Final Chapter: Uh-huh... hang on..", withoutTrailingPlate("Final Chapter: Uh-huh... hang on.. HCR 11M"))
+        // Words after a sentence stay.
+        assertEquals("Got it. Go to the van", withoutTrailingPlate("Got it. Go to the van"))
+        assertEquals("Meet me at 5. Pier 39", withoutTrailingPlate("Meet me at 5. Pier 39"))
+        assertEquals("No plate here", withoutTrailingPlate("No plate here"))
+    }
+
     @Test fun plateOnAPassingCarIsRejected() {
         assertEquals("tilted", sceneTextReason(listOf(line("8ZJK 264", angle = 12f))))
         assertEquals("plate", sceneTextReason(listOf(line("LEONIDA", top = .40f), line("8ZJK 264", top = .52f))))

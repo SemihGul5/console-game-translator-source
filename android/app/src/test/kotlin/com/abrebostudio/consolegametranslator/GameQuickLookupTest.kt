@@ -61,6 +61,47 @@ class GameQuickLookupTest {
         assertNull(memory.findQuick("Really the crew"))
     }
 
+    @Test fun aLineWithTwoTranslationsTakesTheOneInTheConversationBeingRead() {
+        val filler = (1..200).map { "Filler line number $it is here." to "Dolgu satırı $it." }
+        val memory = memory(*(listOf("What, they're coming here?" to "Buraya mı geliyorlar?") + filler + listOf(
+            "Oh, the guy who is connected to people?" to "Bağlantılı adam mı?",
+            "What, they're coming here?" to "Ne, buraya mı geliyorlar?",
+        )).toTypedArray())
+        // Nothing read yet: two translations, none taken.
+        assertNull(memory.find("What, they're coming here?"))
+        assertNotNull(memory.findExact("Oh, the guy who is connected to people?"))
+        val match = requireNotNull(memory.find("What, they're coming here?"))
+        assertEquals("Ne, buraya mı geliyorlar?", match.target)
+        assertEquals("context_exact", match.matchType)
+        // Far from both: undecided again.
+        assertNotNull(memory.findExact("Filler line number 100 is here."))
+        assertNull(memory.find("What, they're coming here?"))
+    }
+
+    @Test fun aTinyScrapMatchesAPackLabelOnlyWithItsCapitals() {
+        val memory = memory("SG" to "ŞUTÖR GARD", "No." to "Hayır.")
+        assertNull(memory.findExact("sg"))
+        assertNull(memory.find("sg"))
+        assertEquals("ŞUTÖR GARD", memory.findExact("SG")?.target)
+        assertEquals("Hayır.", memory.findExact("No.")?.target)
+    }
+
+    @Test fun sceneScrapsBeforeASpeakerLabelAreNotPartOfTheName() {
+        val memory = memory("'Cause they're gonna help us!" to "Çünkü bize yardım edecekler!",
+            "He looks after his people," to "Adamlarına sahip çıkar,")
+        assertEquals("Lucia", memory.find("AYHO Lucia: 'Cause they're gonna help us!")?.speaker)
+        assertEquals("Lucia", memory.find("AYHO A Lucia: 'Cause they're gonna help us!")?.speaker)
+        assertEquals("Mattia", memory.find("M Mattia: He looks after his people,")?.speaker)
+        assertEquals("Final Chapter", memory.find("Final Chapter: He looks after his people,")?.speaker)
+    }
+
+    @Test fun aLoneWordIsNeverUndoneIntoAnotherWord() {
+        // The log: the sign "NOW LEAVING" read as "SLAVING" was covered with "Kaydediliyor".
+        val memory = memory("Saving" to "Kaydediliyor", "Farmfix" to "Farmfix")
+        assertNull(memory.findQuick("SLAVING"))
+        assertNull(memory.findQuick("FARMFIDX"))
+    }
+
     @Test fun aWordOcrSplitsThatThePackWritesJoinedStillMatchesExactly() {
         val source = "Good work covering with Brian b4. Were in this 2gether remember that! Lefta taste of the profits 4u in yr mailbox."
         val memory = memory(source to "Az önce Brian'la yaptığın iş harikaydı.")

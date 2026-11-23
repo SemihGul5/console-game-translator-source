@@ -196,8 +196,13 @@ class CoverPromptsTest {
             val found = requireNotNull(senderUnit(listOf(message, name)))
             assertSame(name, found.first)
         }
-        // A list row is no message: "Burned Man" over "$15,000 Pending".
-        assertNull(senderUnit(listOf(unit("Burned Man", .90f, prompt = true), unit("$15,000 Pending", .935f))))
+        // A payment row keeps its name too: "Burned Man" over "$15,000 Pending" was
+        // covered as "Sarılmış Adam 15.000 Dolarlık Bekleyen" (24 Nov log).
+        val payee = unit("Burned Man", .90f, prompt = true)
+        assertSame(payee, senderUnit(listOf(payee, unit("$15,000 Pending", .935f)))?.first)
+        assertEquals("Burned Man", senderHeader(listOf(line("Burned Man", .90f), line("$15,000 Pending", .935f)))?.name)
+        // A short line without an amount is still no message.
+        assertNull(senderHeader(listOf(line("Burned Man", .90f), line("Call back", .935f))))
         assertEquals("Donnie", senderHeader(listOf(line("p Donnie", .70f), line("Good work covering with Brian b4.", .75f)))?.name)
     }
 

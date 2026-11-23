@@ -282,7 +282,20 @@ internal class GameTranslationMemory private constructor(
 
     fun find(ocrText: String): GameTranslationMatch? = synchronized(lookupCache) {
         if (lookupCache.containsKey(ocrText)) return@synchronized lookupCache[ocrText]
-        findUncached(ocrText).also { lookupCache[ocrText] = it }
+        // A row picked by the conversation around it is not cached, and neither is
+        // a line left open for want of one: the same words may be another scene's.
+        val unresolved = unresolvedLines
+        foundRecord = -1
+        val match = findUncached(ocrText)?.takeUnless { isCaseMismatchedScrap(prepareQuery(ocrText).body, it) }
+        remembered(match).also { if (cacheable(it, unresolved)) lookupCache[ocrText] = it }
+    }
+
+    /** Notes where in the script an exactly found line of some length sits. */
+    private fun remembered(match: GameTranslationMatch?): GameTranslationMatch? {
+        val record = foundRecord
+        if (match != null && match.matchType == "exact" && record >= 0 && store.ids[record] == match.entryId &&
+            normalize(match.source).length >= MIN_CONTEXT_QUERY) lastRecord = record
+        return match
     }
 
     /** Cheap exact probes let clean OCR blocks win before any fuzzy search. */
@@ -290,12 +303,29 @@ internal class GameTranslationMemory private constructor(
         lookupCache[ocrText]?.takeIf { it.matchType == "exact" || it.matchType == "spacing_exact" }
             ?.let { return@synchronized it }
         val query = prepareQuery(ocrText)
+        foundRecord = -1
         val match = if (query.label != null) {
             findExactNormalized(normalize(ocrText), null)
                 ?: findExactNormalized(normalize(query.body), null)?.let { withLabel(it, query.label) }
         } else findExactNormalized(normalize(query.body), query.speaker)
             ?: query.speaker?.let { findExactNormalized(normalize("$it: ${query.body}"), null) }
-        withDisplaySpeaker(match, query.speaker)?.also { lookupCache[ocrText] = it }
+        remembered(withDisplaySpeaker(match?.takeUnless { isCaseMismatchedScrap(query.body, it) }, query.speaker))
+            ?.also { if (it.matchType != CONTEXT_EXACT) lookupCache[ocrText] = it }
+    }
+
+    /**
+     * A read of at most [MAX_SCRAP_LETTERS] letters is a pack row only with the
+     * row's own capitals: "sg" glimpsed in a scene is not the label "SG".
+     */
+    private fun isCaseMismatchedScrap(read: String, match: GameTranslationMatch): Boolean {
+        val letters = read.filter(Char::isLetter)
+        return letters.length <= MAX_SCRAP_LETTERS && letters != match.source.filter(Char::isLetter)
+    }
+
+    /** Whether [word] occurs in any pack line (as the matcher normalizes it). */
+    fun knowsWord(word: String): Boolean {
+        val normalized = normalize(word)
+        return normalized.isNotEmpty() && ' ' !in normalized && store.words.find(normalized) >= 0
     }
 
     private class QuickResult(val match: GameTranslationMatch?)
@@ -313,7 +343,8 @@ internal class GameTranslationMemory private constructor(
      */
     fun findQuick(ocrText: String): GameTranslationMatch? = synchronized(lookupCache) {
         quickCache[ocrText]?.let { return@synchronized it.match }
-        findQuickUncached(ocrText).also { quickCache[ocrText] = QuickResult(it) }
+        val unresolved = unresolvedLines
+        findQuickUncached(ocrText).also { if (cacheable(it, unresolved)) quickCache[ocrText] = QuickResult(it) }
     }
 
     private fun findQuickUncached(ocrText: String): GameTranslationMatch? {
@@ -371,6 +402,8 @@ internal class GameTranslationMemory private constructor(
         // or made only of words the pack knows is no misreading: "Really?" must
         // not become "Rally" by dropping a letter.
         if (exactEntries(query).isNotEmpty()) return null
+        // One word alone is too little context to change ("SLAVING" -> "Saving").
+        if (query.split(' ').count { it.isNotEmpty() } < 2) return null
         // Only the words the pack does not know are misreadings to undo.
         val unknown = ArrayList<IntRange>()
         var start = 0
@@ -422,16 +455,19 @@ internal class GameTranslationMemory private constructor(
 
     private fun prepareQuery(ocrText: String): QueryText {
         val prefix = SPEAKER_PREFIX.find(ocrText) ?: return QueryText(ocrText, null)
-        val label = normalize(prefix.groupValues[1])
-        val speaker = if (speakerTranslations.containsKey(label)) label else {
+        val read = prefix.groupValues[1].trim()
+        // Scene text read just before the label ("AYHO Lucia:", "M Mattia:") is no part of the name.
+        val cleaned = withoutLabelScraps(read)
+        fun knownSpeaker(label: String) = if (speakerTranslations.containsKey(label)) label else {
             speakerTranslations.keys.filter { candidate ->
                 label.length >= 3 && kotlin.math.abs(candidate.length - label.length) <= 1 &&
                     editDistance(candidate, label, 1) <= 1
             }.singleOrNull()
         }
+        val speaker = knownSpeaker(normalize(read)) ?: cleaned.takeIf { it != read }?.let { knownSpeaker(normalize(it)) }
         val body = ocrText.substring(prefix.range.last + 1).trimStart(' ', '/', '|', 92.toChar())
         if (speaker != null) return QueryText(body, speaker)
-        val shown = prefix.groupValues[1].trim()
+        val shown = if (normalize(read) in inlineLabels) read else cleaned
         // Rows that carry this label in their own text are still searched with it.
         if (normalize(shown) in inlineLabels) return QueryText(ocrText, null)
         // A short reply ("STRANGER: What?") is too common to guess its speaker's row.
@@ -452,6 +488,23 @@ internal class GameTranslationMemory private constructor(
             if (SPEAKER_PREFIX.matches("$label: ")) labels.add(normalize(label))
         }
         labels
+    }
+
+    /**
+     * [label] without leading scraps: one-letter tokens and capitals-only tokens
+     * before a name written in lower case ("AYHO A Lucia" -> "Lucia").
+     */
+    private fun withoutLabelScraps(label: String): String {
+        val words = label.split(' ').filter(String::isNotBlank).toMutableList()
+        while (words.size > 1) {
+            val first = words.first()
+            val scrap = first.count(Char::isLetterOrDigit) <= 1 ||
+                (first.filter(Char::isLetter).let { it.isNotEmpty() && it.all(Char::isUpperCase) } &&
+                    words.drop(1).any { word -> word.any(Char::isLowerCase) })
+            if (!scrap) break
+            words.removeAt(0)
+        }
+        return words.joinToString(" ")
     }
 
     /** One to three words, each starting with a capital letter ("Final Chapter", "Cal"). */
@@ -613,8 +666,11 @@ internal class GameTranslationMemory private constructor(
         }
         if (exact.isNotEmpty()) {
             // Localisation IDs and aligned sentences can share the same output.
-            // A consensus is safe; conflicting translations are still rejected.
-            val entry = equivalentOutput(exact) ?: return null
+            // A consensus is safe; conflicting translations are resolved only by
+            // the conversation being read: the row next to the last line found.
+            val entry = equivalentOutput(exact)
+                ?: return inConversation(exact, query)?.toMatch(1.0, CONTEXT_EXACT).also { if (it == null) unresolvedLines++ }
+            foundRecord = store.entryRecord[entry.index]
             return entry.toMatch(1.0, "exact")
         }
         // Resolve OCR word joins in O(1), but only for the complete character
@@ -633,6 +689,35 @@ internal class GameTranslationMemory private constructor(
             }
         }
         return null
+    }
+
+    /** The record of the last line of some length found exactly: where the game's script is being read. */
+    @Volatile private var lastRecord = -1
+
+    /** The record of the last unique exact row found inside one lookup. */
+    private var foundRecord = -1
+
+    /** Counts lines with several translations that no nearby line settled. */
+    private var unresolvedLines = 0
+
+    private fun cacheable(match: GameTranslationMatch?, unresolvedBefore: Int) =
+        if (match == null) unresolvedLines == unresolvedBefore else match.matchType != CONTEXT_EXACT
+
+    /**
+     * The one of several rows with the same English ("What- they're comin'
+     * here?" in two scenes, translated two ways) that sits in the script next
+     * to the last line found. Null when none is close or the line is too short
+     * to tell ("people?").
+     */
+    private fun inConversation(candidates: List<Entry>, query: String): Entry? {
+        val last = lastRecord
+        if (last < 0 || query.count { it == ' ' } + 1 < MIN_CONTEXT_WORDS) return null
+        val nearest = candidates.minByOrNull { kotlin.math.abs(store.entryRecord[it.index] - last) } ?: return null
+        val distance = kotlin.math.abs(store.entryRecord[nearest.index] - last)
+        if (distance > MAX_CONTEXT_RECORDS) return null
+        // Two rows equally close tell nothing.
+        if (candidates.count { kotlin.math.abs(store.entryRecord[it.index] - last) == distance && it.target != nearest.target } > 0) return null
+        return nearest
     }
 
     private fun equivalentOutput(candidates: List<Entry>): Entry? {
@@ -2530,6 +2615,11 @@ internal class GameTranslationMemory private constructor(
         }
         private const val INLINE_LABEL_BYTES = 48
         private const val MIN_UNKNOWN_LABEL_LETTERS = 12
+        private const val CONTEXT_EXACT = "context_exact"
+        private const val MIN_CONTEXT_QUERY = 12
+        private const val MIN_CONTEXT_WORDS = 3
+        private const val MAX_CONTEXT_RECORDS = 64
+        private const val MAX_SCRAP_LETTERS = 3
         private val SPEAKER_PREFIX = Regex("""^\s*([\p{L}\p{N}][\p{L}\p{N} .’'-]{0,23}):\s*""")
         private val SENTENCE_BOUNDARY = Regex("""[.!?…؟。！？]+["'’”)]*(?:\s+|$)""")
         private const val SENTENCE_ENDINGS = ".!?…؟。！？"

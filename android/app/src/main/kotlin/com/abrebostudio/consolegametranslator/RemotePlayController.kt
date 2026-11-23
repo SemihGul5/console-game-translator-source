@@ -150,7 +150,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
         }
     }
     private val subtitleOcr by subtitleOcrDelegate
-    private var normalizedOcrRegions = listOf(floatArrayOf(0.10f, 0.78f, 0.80f, 0.22f))
+    private var normalizedOcrRegions = listOf(floatArrayOf(0.20f, 0.78f, 0.60f, 0.22f))
     private var multicastLock: WifiManager.MulticastLock? = null
     private var registrationHost: String = ""
     @Volatile private var videoPlatformView: ChiakiVideoPlatformView? = null
@@ -1018,9 +1018,9 @@ internal class RemotePlayController private constructor(context: Context) : Cont
             "left" to firstRegion["left"], "top" to firstRegion["top"],
             "width" to firstRegion["width"], "height" to firstRegion["height"],
         ) else settings["ocrRegion"]
-        saveRectValue(firstMap, "ocr", listOf(0.10f, 0.78f, 0.80f, 0.22f), editor)
+        saveRectValue(firstMap, "ocr", listOf(0.20f, 0.78f, 0.60f, 0.22f), editor)
         editor.putString("ocr_regions_json", if (regionsJson.length() == 0) "[]" else regionsJson.toString())
-        saveRect("subtitleBounds", "subtitle", listOf(0.10f, 0.78f, 0.80f, 0.22f), editor)
+        saveRect("subtitleBounds", "subtitle", listOf(0.20f, 0.78f, 0.60f, 0.22f), editor)
         val subtitleRegions = JSONArray()
         (settings["subtitleRegions"] as? List<*>)?.take(12)?.forEach { raw ->
             val rect = raw as? Map<*, *> ?: return@forEach
@@ -1454,7 +1454,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
         val dialogueFilters = List(regions.size.coerceIn(1, 12)) { index ->
             rawDialogueFilters?.getOrNull(index) as? Boolean ?: fallbackDialogueFilter
         }
-        normalizedOcrRegions = regions.ifEmpty { listOf(floatArrayOf(0.10f, 0.78f, 0.80f, 0.22f)) }
+        normalizedOcrRegions = regions.ifEmpty { listOf(floatArrayOf(0.20f, 0.78f, 0.60f, 0.22f)) }
         subtitleOcr.configure(
             normalizedOcrRegions,
             sessionConnected && translationAccess.canProcessFrames(),

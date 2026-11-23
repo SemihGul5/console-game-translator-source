@@ -1109,15 +1109,9 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
 
   void _addOcrRegion() {
     if (_subtitleSettings.effectiveOcrRegions.length >= 12) return;
-    final regions =
-        List<NormalizedRect>.of(_subtitleSettings.effectiveOcrRegions)..add(
-          const NormalizedRect(
-            left: 0.28,
-            top: 0.72,
-            width: 0.44,
-            height: 0.12,
-          ),
-        );
+    final existing = _subtitleSettings.effectiveOcrRegions;
+    final regions = List<NormalizedRect>.of(existing)
+      ..add(defaultAddedOcrRegion(existing.length));
     // A new OCR area gets its subtitle area in the same place, which follows
     // it until the user moves the subtitle somewhere else.
     final index = regions.length - 1;

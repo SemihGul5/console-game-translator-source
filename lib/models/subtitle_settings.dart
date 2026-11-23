@@ -73,22 +73,29 @@ class NormalizedRect {
   };
 }
 
+/// Where OCR area 1 starts: centred at the bottom (the subtitle strip).
+const defaultOcrRegion = NormalizedRect(
+  left: 0.20,
+  top: 0.78,
+  width: 0.60,
+  height: 0.22,
+);
+
+/// Where a newly added OCR area starts: the second in the bottom-right corner
+/// (a phone), the third in the top-left corner (notices, tips), later ones in
+/// the middle above the subtitles.
+NormalizedRect defaultAddedOcrRegion(int index) => switch (index) {
+  1 => const NormalizedRect(left: 0.743, top: 0.72, width: 0.257, height: 0.28),
+  2 => const NormalizedRect(left: 0.0, top: 0.0, width: 0.328, height: 0.20),
+  _ => const NormalizedRect(left: 0.28, top: 0.72, width: 0.44, height: 0.12),
+};
+
 @immutable
 class SubtitleSettings {
   const SubtitleSettings({
-    this.ocrRegion = const NormalizedRect(
-      left: 0.10,
-      top: 0.78,
-      width: 0.80,
-      height: 0.22,
-    ),
+    this.ocrRegion = defaultOcrRegion,
     this.ocrRegions = const [],
-    this.subtitleBounds = const NormalizedRect(
-      left: 0.10,
-      top: 0.78,
-      width: 0.80,
-      height: 0.22,
-    ),
+    this.subtitleBounds = defaultOcrRegion,
     this.subtitleRegions = const [],
     this.subtitleStyles = const [],
     this.ocrRegionSettings = const [],

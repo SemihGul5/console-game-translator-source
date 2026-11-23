@@ -177,6 +177,17 @@ internal fun isPlateLike(lines: List<SceneTextLine>): Boolean {
     return texts.any(::isPlateCode)
 }
 
+/**
+ * [text] without a licence plate read after its last sentence ("… hang on.
+ * HCO 11M" -> "… hang on."): a car behind the subtitle strip.
+ */
+internal fun withoutTrailingPlate(text: String): String {
+    val match = TRAILING_PLATE.find(text) ?: return text
+    return if (isPlateCode(match.groupValues[2])) match.groupValues[1].trimEnd() else text
+}
+
+private val TRAILING_PLATE = Regex("""^(.*[.!?…])\s+(\S+(?:\s+\S+)?)\s*$""")
+
 /** "8ZJK 264", "6ABC123", "LEO-4821": 5–10 letters/digits with a digit, mixed or a digit run. */
 internal fun isPlateCode(value: String): Boolean {
     val tokens = value.trim().split(SCENE_WHITESPACE).filter { it.isNotEmpty() }

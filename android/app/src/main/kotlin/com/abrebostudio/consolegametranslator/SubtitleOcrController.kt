@@ -126,7 +126,7 @@ internal class SubtitleOcrController(
     private val compareResults = LinkedHashMap<String, MutableMap<String, String>>(64, 0.75f, true)
     private val compareInFlight = mutableSetOf<Pair<String, String>>()
 
-    @Volatile private var regions = listOf(floatArrayOf(0.10f, 0.78f, 0.80f, 0.22f))
+    @Volatile private var regions = listOf(floatArrayOf(0.20f, 0.78f, 0.60f, 0.22f))
     /** Frame heights of certain subtitles this session; short lines there are not signs. */
     private val subtitleBand = SubtitleBand()
     /** "Over the English" covers per OCR area (only the first area offers the mode). */
@@ -290,7 +290,7 @@ internal class SubtitleOcrController(
         deepLConfigTarget = targetLanguage
         val previousRegions = regions
         regions = normalizedRegions.filter { it.size >= 4 }.take(12).map { it.copyOfRange(0, 4) }
-            .ifEmpty { listOf(floatArrayOf(0.10f, 0.78f, 0.80f, 0.22f)) }
+            .ifEmpty { listOf(floatArrayOf(0.20f, 0.78f, 0.60f, 0.22f)) }
         // Remembered subtitle heights belong to the old OCR areas.
         val regionsChanged = previousRegions.size != regions.size ||
             previousRegions.zip(regions).any { (old, new) -> !old.contentEquals(new) }
@@ -299,6 +299,8 @@ internal class SubtitleOcrController(
             iconReads.clear()
             sceneWordMemories.clear()
             sceneMotion.clear()
+            hudSettle.clear()
+            hudPanelLogged.clear()
             partialHolds.clear()
         }
         while (regionStates.size < regions.size) regionStates.add(RegionState())
@@ -1000,7 +1002,7 @@ internal class SubtitleOcrController(
             sceneBlocks.forEachIndexed { blockIndex, (block, _, _) ->
                 if (shapeReasons[blockIndex] == "tilted") sceneWords?.remember(block.text, now)
             }
-            val textBlocks = sceneBlocks.filterIndexed { blockIndex, (block, sceneLines, placement) ->
+            val sceneKept = sceneBlocks.filterIndexed { blockIndex, (block, sceneLines, placement) ->
                 val moved = motion != null && sceneBox(sceneLines, bitmap.width, bitmap.height)
                     ?.let { box -> motion.moved(ocrStartedAt, now, block.text, box) } == true
                 val reason = shapeReasons[blockIndex] ?: when {
@@ -1013,19 +1015,26 @@ internal class SubtitleOcrController(
                     "SCENE_TEXT_REJECTED area=${regionIndex + 1} reason=$reason text=${logText(block.text)}")
                 reason == null
             }.map { it.first }
+            // A HUD area translates text the pack does not know only with some
+            // evidence that it is the game's interface, not a sign behind it.
+            // OCR 1 is the dialogue area whatever its shape: never delayed here.
+            val textBlocks = if (debugOnly || subtitleRegion || regionIndex == 0 || region == null) sceneKept
+                else hudEvidence(regionIndex, sceneKept, bitmap, region, now)
             // Over-the-English mode: the kept lines, split into one subtitle per
             // speaker; a row of button prompts into one label per button.
             var coverSender: String? = null
             val coverUnits = if (!debugOnly && region != null && coverEnabled(regionIndex)) {
-                val wordLines = textBlocks.flatMap { it.lines }.mapNotNull { line ->
-                    coverWordLine(line, bitmap.width, bitmap.height, region)
-                }
+                fun wordLinesOf(blocks: List<com.google.mlkit.vision.text.Text.TextBlock>) =
+                    blocks.flatMap(::withoutPlateLines).mapNotNull { line -> coverWordLine(line, bitmap.width, bitmap.height, region) }
+                val wordLines = wordLinesOf(textBlocks)
                 // A sender's name over a phone message stays as the game shows it,
-                // even when its contact icon made it look like a button label.
-                val sender = if (subtitleRegion) null else senderHeader(wordLines.map { it.line })
+                // even when its contact icon made it look like a button label. The
+                // message counts even while it is not translated yet (still settling).
+                val sender = if (subtitleRegion) null
+                    else senderHeader((if (textBlocks === sceneKept) wordLines else wordLinesOf(sceneKept)).map { it.line })
                 coverSender = sender?.name
                 // A HUD area (not a subtitle strip) covers each short row on its own.
-                val split = splitCoverPrompts(if (sender == null) wordLines else wordLines.filterNot { it.line === sender.line },
+                val split = splitCoverPrompts(if (sender == null) wordLines else wordLines.filterNot { it.line == sender.line },
                     everyRowIsLabel = !subtitleRegion)
                 val units = (split.prompts + groupCoverUnits(split.rest))
                     .filter { unit -> unit.text.count(Char::isLetter) >= 2 && !isNonLinguisticOcr(unit.text) }
@@ -1036,10 +1045,10 @@ internal class SubtitleOcrController(
             } else null
             // Controller button icons between the kept words ("Hold [L3] to …").
             val icons = if (!debugOnly && region != null) findButtonIcons(textBlocks, bitmap, region) else emptyList()
-            val lines = textBlocks.flatMap { it.lines }.sortedWith(
+            val lines = textBlocks.flatMap(::withoutPlateLines).sortedWith(
                 compareBy<com.google.mlkit.vision.text.Text.Line> { it.boundingBox?.top ?: 0 }
                     .thenBy { it.boundingBox?.left ?: 0 })
-            val rawText = lines.joinToString(" ") { it.text }
+            val rawText = withoutTrailingPlate(lines.joinToString(" ") { it.text })
             val rawConfidenceValues = lines.flatMap { line ->
                 line.elements.map { it.confidence }.filter { it > 0f }
             }.ifEmpty { lines.map { it.confidence }.filter { it > 0f } }
@@ -2289,6 +2298,10 @@ internal class SubtitleOcrController(
     }
 
     /** [coverLine] with the boxes of its kept words, for splitting button-prompt rows. */
+    /** A block's lines without a licence plate read inside a block of other text. */
+    private fun withoutPlateLines(block: com.google.mlkit.vision.text.Text.TextBlock) =
+        if (block.lines.size < 2) block.lines else block.lines.filterNot { isPlateCode(it.text) }
+
     private fun coverWordLine(line: com.google.mlkit.vision.text.Text.Line, width: Int, height: Int, region: FloatArray): CoverWordLine? {
         val cover = coverLine(line, width, height, region) ?: return null
         val elements = line.elements
@@ -2375,7 +2388,8 @@ internal class SubtitleOcrController(
                 val key = if (unit.prompt) coverLabelKey(unit.text) else canonicalTranslationKey(unit.text)
                 return@map CoverObservation(unit, coverLabelTranslation(key, unit.text,
                     request = key in labelsBefore || key == earlyKey, hudContext = unit.prompt)
-                    ?.let { translated -> CoverMatch("label:$key", translated, immediate = true) })
+                    ?.let { translated -> CoverMatch("label:$key", translated,
+                        immediate = !(units.size == 1 && isNameLike(unit.text))) })
             }
             if (match == null) return@map CoverObservation(unit, subtitleCoverWithoutWholeMatch(index, unit, memory, labelsBefore))
             CoverObservation(unit, match?.let {
@@ -2387,7 +2401,10 @@ internal class SubtitleOcrController(
                 CoverMatch(
                     key = "${it.gameId}:${it.entryId}:${it.segmentIndex ?: -1}",
                     text = if (unitIcons.isEmpty()) text else insertButtonIcons(text, unitIcons.size, targetIsTurkish()),
-                    immediate = it.matchType in CERTAIN_COVER_MATCHES || it.score >= CERTAIN_COVER_SCORE,
+                    // A name alone at the top of a phone or notice area may be the sender
+                    // of a message read a frame later: it waits for a second frame.
+                    immediate = (it.matchType in CERTAIN_COVER_MATCHES || it.score >= CERTAIN_COVER_SCORE) &&
+                        !(hud && units.size == 1 && isNameLike(unit.text)),
                     icons = unitIcons.map { icon -> icon.png },
                 )
             })
@@ -2548,6 +2565,84 @@ internal class SubtitleOcrController(
     }
 
     /** Icons cut out of the crop where a wide word gap holds a drawn shape. */
+    /** Per HUD area: where its text was seen ([HudSettleTracker]). */
+    private val hudSettle = ConcurrentHashMap<Int, HudSettleTracker>()
+    /** Per HUD area: the block texts whose panel measurement was logged last. */
+    private val hudPanelLogged = ConcurrentHashMap<Int, MutableSet<String>>()
+
+    /**
+     * The blocks of a HUD area that may be translated: every block a pack line
+     * matches, and others that read as words, are not a stack of sign lines and
+     * have stayed in place. The flat-panel check is only measured and logged
+     * (HUD_PANEL), not applied yet.
+     */
+    private fun hudEvidence(
+        regionIndex: Int,
+        blocks: List<com.google.mlkit.vision.text.Text.TextBlock>,
+        bitmap: Bitmap,
+        region: FloatArray,
+        now: Long,
+    ): List<com.google.mlkit.vision.text.Text.TextBlock> {
+        val memory = matchingGameMemory()
+        val settle = hudSettle.getOrPut(regionIndex) { HudSettleTracker() }
+        val reads = blocks.map { block ->
+            val text = block.lines.joinToString(" ") { it.text }
+            Triple(block, text, block.lines.map { it.toSceneTextLine(bitmap.width, bitmap.height) })
+        }
+        // Every block is seen by the tracker, kept or not, so a sign stays unsettled while it moves.
+        val settled = reads.map { (_, text, lines) -> settle.settled(text, lines, now) }
+        settle.endFrame(now)
+        // A pack line that only repeats its English ("FARMFIX" -> "Farmfix") is a
+        // brand or a name the game also paints on signs: no evidence of interface.
+        // A one- or two-word read undone into a pack line ("SLAVING" -> "Saving",
+        // "FARMFIDX" -> "Farmfix") is too thin to count either.
+        val known = reads.map { (_, text, _) ->
+            memory?.findQuick(text)?.takeUnless { match ->
+                isUntranslatedEcho(match.source, match.target) ||
+                    (match.matchType == "ocr_variant" && text.split(' ').count { it.any(Char::isLetter) } < 3)
+            } != null
+        }
+        // A stack of short capital lines is a sign or billboard unless a button sits beside it.
+        val signLines = reads.indices.filter { !known[it] }.flatMap { index -> reads[index].first.lines.filter { isSignLine(it.text) } }
+        val signs = signLines.size >= 2 && findButtonIcons(blocks, bitmap, region).isEmpty()
+        val logged = hudPanelLogged.getOrPut(regionIndex) { LinkedHashSet() }
+        // Only a large pack's word list stands for the game's English; a small
+        // pack lacks too many ordinary words to call one broken.
+        val vocabulary = memory?.takeIf { it.entryCount >= HUD_VOCABULARY_ENTRIES }?.let { it::knowsWord }
+        return reads.indices.filter { index ->
+            val (block, text, _) = reads[index]
+            val reason = if (known[index]) {
+                // A pack line of one or two words can still be a sign glimpsed in
+                // passing ("The Keys" read as "The Reys"): it has to stay put first.
+                if (settled[index] || text.split(' ', '\n').count { word -> word.any(Char::isLetter) } >= KNOWN_SETTLE_WORDS) return@filter true
+                "unsettled"
+            } else when {
+                isGarbledRead(text, vocabulary) -> "garbled"
+                signs && block.lines.all { isSignLine(it.text) } -> "sign"
+                // A sentence (a message, a tip) is no sign: it needs no settling time.
+                !settled[index] && !isSentenceLike(text) -> "unsettled"
+                else -> null
+            }
+            if (reason != null && diagnosticsEnabled()) Log.i(OCR_LOG_TAG,
+                "SCENE_TEXT_REJECTED area=${regionIndex + 1} reason=$reason text=${logText(block.text)}")
+            // Measurement mode: what a flat-panel rule would say, once per text,
+            // also for text the other rules dropped (signs measured for comparison).
+            if (diagnosticsEnabled() && logged.add(canonicalTranslationKey(text))) {
+                if (logged.size > 64) logged.remove(logged.first())
+                val boxes = block.lines.mapNotNull { line -> line.boundingBox?.let { intArrayOf(it.left, it.top, it.right, it.bottom) } }
+                val stats = if (bitmap.isRecycled) null else measurePanel(bitmap.width, bitmap.height, boxes) { x, y ->
+                    val pixel = bitmap.getPixel(x, y)
+                    (((pixel shr 16) and 0xff) * 299 + ((pixel shr 8) and 0xff) * 587 + (pixel and 0xff) * 114) / 1000
+                }
+                Log.i(OCR_LOG_TAG, "HUD_PANEL area=${regionIndex + 1} verdict=" +
+                    "${if (stats == null) "unknown" else if (stats.flatPanel) "keep" else "would_reject"} " +
+                    "rejected=${reason ?: "-"} ground=${stats?.ground ?: -1} spread=${stats?.spread ?: -1} " +
+                    "ink=${stats?.ink ?: 0} text=${logText(text)}")
+            }
+            reason == null
+        }.map { reads[it].first }
+    }
+
     private fun findButtonIcons(
         blocks: List<com.google.mlkit.vision.text.Text.TextBlock>,
         bitmap: Bitmap,
@@ -2827,6 +2922,8 @@ internal class SubtitleOcrController(
         private val CERTAIN_COVER_MATCHES = setOf("exact", "spacing_exact", "full_row_fuzzy", "one_word_context")
         private const val CERTAIN_COVER_SCORE = 0.985
         private const val EARLY_COVER_WORDS = 3
+        private const val KNOWN_SETTLE_WORDS = 3
+        private const val HUD_VOCABULARY_ENTRIES = 20_000
         private const val JOIN_AREA_SCORE = 0.9
         private const val RECENT_COVER_TRANSLATIONS = 24
         private const val SIMILAR_COVER_WORDS = 0.85

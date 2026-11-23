@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "date": "2026-11-23",
-  "applicationVersion": "1.1.9+22",
+  "date": "2026-11-24",
+  "applicationVersion": "1.2.0+23",
   "kind": "manually refreshed source snapshot; binary/source pairing not verified",
   "files": [
     {
@@ -234,8 +234,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/CoverPrompts.kt",
-      "sha256": "0f291d158259531f9f3e156a00162b553cdaa667868d862602a011c1cd337c14",
-      "bytes": 14962,
+      "sha256": "9c429cead4e263fa267cbaf7755951c8c7eea656a7e70f1791699bfb8530be36",
+      "bytes": 15396,
       "category": "application"
     },
     {
@@ -306,8 +306,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/GameTranslationMemory.kt",
-      "sha256": "12a3a02cdae652101e4b8c16b02159b9364af6f5f8d360548b2798b4aa3bfff6",
-      "bytes": 132574,
+      "sha256": "aa903f82fd5944b97e881decb89fcfc1945d7818fc4f8e591c3f3d9f3b8c44b9",
+      "bytes": 137500,
       "category": "application"
     },
     {
@@ -374,6 +374,12 @@
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/HpltModelCatalog.kt",
       "sha256": "0d26d44dbcb1bfc5a0155ca23f5ca9a06d055b918816bd27c6bd159b7a990aa0",
       "bytes": 774,
+      "category": "application"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/HudEvidence.kt",
+      "sha256": "0160d6f0bb53d20fc555829fec88947bd04fc1c57a98137958bb3c3276247a7d",
+      "bytes": 10402,
       "category": "application"
     },
     {
@@ -474,7 +480,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/RemotePlayController.kt",
-      "sha256": "6d9233a96e738a604011dad853794cc404f93af112cd837e7c9ff40119a79732",
+      "sha256": "19a80150560b804c3c930181feef7545f403a22b0cb77c3cb6c7c9d52f5bec04",
       "bytes": 113258,
       "category": "application"
     },
@@ -492,8 +498,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SceneTextFilter.kt",
-      "sha256": "b6d1335700e0a6e1552da91a261016a48906c34987bb44c3f46ec036c717d95c",
-      "bytes": 19549,
+      "sha256": "484864fc487ded9f96875add3f4a4281414b804ad7be692d18a4876007b766fa",
+      "bytes": 19989,
       "category": "application"
     },
     {
@@ -516,8 +522,8 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/SubtitleOcrController.kt",
-      "sha256": "159a2e90733f5c3047abed384cebd39437d9d301ec4884d136613f138757a102",
-      "bytes": 154908,
+      "sha256": "0bc4b999e81f234d6501e68b854cca82ac8e0dc830cfd2b50991fcb790da673e",
+      "bytes": 161349,
       "category": "application"
     },
     {
@@ -768,8 +774,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/CoverPromptsTest.kt",
-      "sha256": "385a045baa4e1047e4ce0e8acbfb32985fb2ed6786296c82e657325289429ffd",
-      "bytes": 14167,
+      "sha256": "4c6a56b7f4ad296dbcec0a1e7f5c9ee2eb17449cafa83be2190f26521cb6736d",
+      "bytes": 14576,
       "category": "application"
     },
     {
@@ -834,8 +840,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/GameQuickLookupTest.kt",
-      "sha256": "e0925a9c75472eb1c1df2fe0ad851a642db7ef2560dff7926b1dfc3652ee0719",
-      "bytes": 4058,
+      "sha256": "f20b6b69d6b86e4a61f4006fa0dee3ec947c020a116719cd7c9621b367b89ed1",
+      "bytes": 6458,
       "category": "application"
     },
     {
@@ -911,6 +917,12 @@
       "category": "application"
     },
     {
+      "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/HudEvidenceTest.kt",
+      "sha256": "34d3009e69591e6cab0249e373c18b622786fd7bd5f4658eff0447513e1b179f",
+      "bytes": 5240,
+      "category": "application"
+    },
+    {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/LatestLocalTranslationQueueTest.kt",
       "sha256": "e059d5d14c9a36d037701162dffca3eb08e0c0bfc70f119956a01aa1f79c81d2",
       "bytes": 2716,
@@ -978,8 +990,8 @@
     },
     {
       "path": "android/app/src/test/kotlin/com/abrebostudio/consolegametranslator/SceneTextFilterTest.kt",
-      "sha256": "59eac812600b3672a2613a6e7f89a757247c2c32a0dd21d64e691cc7459f91d0",
-      "bytes": 11888,
+      "sha256": "8f737891d3979b627c840c68ad312ead741f9e4a417272fd1203c714c0491c4f",
+      "bytes": 12502,
       "category": "application"
     },
     {
@@ -31398,8 +31410,8 @@
     },
     {
       "path": "lib/models/subtitle_settings.dart",
-      "sha256": "7677099e1ffef71c1ed6a50d7526e61cccc71da65c21843a6226716f451efb4e",
-      "bytes": 24370,
+      "sha256": "cd7dad5c03552c2a994017446e59ed3959ae522e5953ab084dad5093e84f424d",
+      "bytes": 24880,
       "category": "application"
     },
     {
@@ -31428,8 +31440,8 @@
     },
     {
       "path": "lib/screens/ps5_stream_screen.dart",
-      "sha256": "eb6f6cbbdd47134ca5945814c19b3c75f58ca87c97460b4daa19d47d906b8979",
-      "bytes": 122950,
+      "sha256": "e5eaac849aee58d41458f4e644b84dc3a972bd08678939d7a7234f20b8dc6bcc",
+      "bytes": 122866,
       "category": "application"
     },
     {
@@ -31674,19 +31686,19 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "d3fdb0ff3dd7c5727c8a6155998a541000f23a06bbbafb60278bc3f6e136db85",
+      "sha256": "78f819cdffb26dcf909781be9a1281eb40ce194e89db5a77b751001a5ce85126",
       "bytes": 3305,
       "category": "retained-public-source"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "e8d6a04d75a436fac15d9812e82ac47e023025202a8defc359025d13d47b86be",
+      "sha256": "a96d76e4ddd24bdb3a6cf7ad2cdb5cec44f5ec09658844c18ad25ef63d28e22a",
       "bytes": 2048,
       "category": "retained-public-source"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "f172ae5673a08e7b2173f0fa954602c0ea2579705208c10962b557cea1408892",
+      "sha256": "11e298c732a9d093acfa485ac49a5efdcc8b2b40cd0ad9ae8f799218a7b515a8",
       "bytes": 1902,
       "category": "retained-public-source"
     },
@@ -31698,19 +31710,19 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "0d4df1bc1372dea04782141980f1670e75a82586b89560c6b2fadecebde961db",
+      "sha256": "d2c9fe2e1cea90ad78d66c7bd44cf68468a9736cc45ebed0ba552d606b0f8803",
       "bytes": 4366,
       "category": "application"
     },
     {
       "path": "README.md",
-      "sha256": "d8cbc123e9f0a245528debcd6ec3c75291833582434ff018e1a8f24e7f3ddd13",
+      "sha256": "c5fca11a4f8a3d2175d4ff4df39028f045d7f0b16478ad126c86f2ff0b0389df",
       "bytes": 4990,
       "category": "retained-public-source"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "6f5992d58a1ae3df78fbac1b5a449f16ad7eaca4cb6318d5ea3f4d874790be85",
+      "sha256": "a77926ba089035f18da176913d9aba6afcfb41837783824edaabd975c597fdb2",
       "bytes": 5999,
       "category": "retained-public-source"
     },

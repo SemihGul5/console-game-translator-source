@@ -173,6 +173,9 @@ internal fun senderUnit(units: List<CoverUnit>): Pair<CoverUnit, String>? {
     return if (isMessageUnder(first.box, first.lineHeight, below.box, below.text, name)) first to name else null
 }
 
+/** [text] reads like a person's or contact's name ("Burned Man", "Donnie"), the way [senderHeader] takes one. */
+internal fun isNameLike(text: String): Boolean = senderName(text) != null
+
 /** [text] as a sender's name without icon scraps and a time beside it, or null when it is no name. */
 private fun senderName(text: String): String? {
     val tokens = text.trim().split(' ').filter(String::isNotBlank).toMutableList()
@@ -183,15 +186,19 @@ private fun senderName(text: String): String? {
     val name = tokens.joinToString(" ").replace(LEADING_NON_LETTERS, "")
     val words = name.split(' ').filter(String::isNotBlank)
     if (words.isEmpty() || words.size > 3 || name.any { it in HEADER_PUNCTUATION }) return null
-    if (!name.first().isUpperCase() || name.count(Char::isLetter) < 2) return null
+    // Every word of a name starts with a capital ("Burned Man"); "Inspect the chemicals" is no name.
+    if (words.any { word -> !word.first().isUpperCase() } || name.count(Char::isLetter) < 2) return null
     if (name.filter(Char::isLetter).all(Char::isUpperCase)) return null
     return name
 }
 
-/** A message right under a name: close below it, beside it horizontally, and clearly longer. */
+/**
+ * A message right under a name: close below it, beside it horizontally, and
+ * longer, or an amount ("$15,000 Pending" under "Burned Man").
+ */
 private fun isMessageUnder(name: CoverBox, lineHeight: Float, message: CoverBox, text: String, shown: String): Boolean =
     message.top - name.bottom <= lineHeight * SENDER_GAP_LINES && message.overlapsHorizontally(name) &&
-        text.trim().length >= shown.length * 2
+        (text.trim().length >= shown.length * 2 || (text.trim().length >= shown.length && text.any(Char::isDigit)))
 
 private const val SENDER_GAP_LINES = 2.5f
 
