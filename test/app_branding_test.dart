@@ -40,6 +40,7 @@ void main() {
       Locale('en', 'US'),
       Locale('de', 'DE'),
       Locale('az', 'AZ'),
+      Locale('ar', 'SA'),
       Locale('tr', 'TR'),
     ]) {
       tester.platformDispatcher.localesTestValue = [locale];

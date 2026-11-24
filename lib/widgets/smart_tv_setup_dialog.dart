@@ -186,6 +186,7 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  textDirection: TextDirection.ltr,
                   controller: _ip,
                   enabled: !_busy,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -282,7 +283,10 @@ class _SmartTvSetupDialogState extends State<SmartTvSetupDialog> {
                   for (final endpoint in session.endpoints)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: SelectableText(endpoint),
+                      child: SelectableText(
+                        endpoint,
+                        textDirection: TextDirection.ltr,
+                      ),
                     ),
                   Text(
                     context.tr(

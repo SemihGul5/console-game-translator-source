@@ -8,7 +8,7 @@ import '../models/subtitle_settings.dart';
 class SubtitleSettingsStore {
   const SubtitleSettingsStore();
 
-  static const defaultTranslationEngine = 'opus';
+  static const defaultTranslationEngine = 'mlkit';
 
   static const _channel = MethodChannel(
     'com.abrebostudio.consolegametranslator/ps5_registration',

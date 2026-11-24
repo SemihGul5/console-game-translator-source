@@ -53,10 +53,35 @@ class GameTranslateApp extends StatefulWidget {
 
 class _GameTranslateAppState extends State<GameTranslateApp>
     with WidgetsBindingObserver {
+  String _languagePreference = 'system';
+  bool _languageReady = false;
+  bool _changingLanguage = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _loadLanguage();
+  }
+
+  Future<void> _loadLanguage() async {
+    final preference = await const AppLanguagePreferences().load();
+    if (!mounted) return;
+    setState(() {
+      _languagePreference = preference;
+      _languageReady = true;
+    });
+  }
+
+  Future<void> _changeLanguage(String preference) async {
+    if (_changingLanguage || preference == _languagePreference) return;
+    setState(() => _changingLanguage = true);
+    try {
+      await const AppLanguagePreferences().save(preference);
+      if (mounted) setState(() => _languagePreference = preference);
+    } finally {
+      if (mounted) setState(() => _changingLanguage = false);
+    }
   }
 
   @override
@@ -70,18 +95,24 @@ class _GameTranslateAppState extends State<GameTranslateApp>
 
   @override
   Widget build(BuildContext context) {
+    final systemLocale =
+        WidgetsBinding.instance.platformDispatcher.locales.firstOrNull ??
+        const Locale('en');
     return AppLanguageScope(
-      systemLocale:
-          WidgetsBinding.instance.platformDispatcher.locales.firstOrNull ??
-          const Locale('en'),
+      systemLocale: systemLocale,
+      preference: _languagePreference,
+      ready: _languageReady,
+      changing: _changingLanguage,
+      onChanged: _changeLanguage,
       child: MaterialApp(
+        locale: AppLanguage.localeFor(_languagePreference, systemLocale),
         debugShowCheckedModeBanner: false,
         onGenerateTitle: AppBranding.nameOf,
         localizationsDelegates: const [
           AppLocalizations.delegate,
           ...GlobalMaterialLocalizations.delegates,
         ],
-        supportedLocales: const [Locale('en'), Locale('tr')],
+        supportedLocales: AppLanguage.supportedLocales,
         localeResolutionCallback: AppBranding.resolveLocale,
         theme: ThemeData(
           useMaterial3: true,
@@ -202,7 +233,7 @@ class _BrandSplash extends StatelessWidget {
                 children: [
                   Text(
                     AppBranding.nameOf(context),
-                    textAlign: landscape ? TextAlign.left : TextAlign.center,
+                    textAlign: landscape ? TextAlign.start : TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 27,
@@ -213,7 +244,7 @@ class _BrandSplash extends StatelessWidget {
                   const SizedBox(height: 9),
                   Text(
                     context.tr("Oyununu kendi dilinde yaşa"),
-                    textAlign: landscape ? TextAlign.left : TextAlign.center,
+                    textAlign: landscape ? TextAlign.start : TextAlign.center,
                     style: const TextStyle(
                       color: Color(0xFFB9CAE4),
                       fontSize: 14,
@@ -337,6 +368,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _loadingTranslationModels = true;
   String? _translationModelsError;
   String _translationEngine = SubtitleSettingsStore.defaultTranslationEngine;
+  bool _translationPreferencesReady = false;
+  bool _changingAppLanguage = false;
+  String? _lastInterfaceLanguage;
+  Future<void> _modelBLanguageUpdate = Future<void>.value();
   int _translationEngineDropdownRevision = 0;
   bool _deepLConfigured = false;
   bool _geminiConfigured = false;
@@ -382,9 +417,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _refreshTranslationState();
     _gameMemoryLoadFuture = _loadGamesAndSelectedGame();
     _loadSavedPs5();
-    _loadTranslationPreferences();
+    _initializeTranslationPreferences();
     _loadTranslationModels();
-    _loadTranslationEngine();
     _loadTvPairingAddress();
     _loadSetupGuideChecklist();
     _tvPairing = TvOutputService.instance.isConnected;
@@ -404,6 +438,125 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             });
           }
         });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final scope = AppLanguageScope.maybeOf(context);
+    if (scope == null || !scope.ready) return;
+    final language = scope.interfaceLocale.languageCode;
+    if (_lastInterfaceLanguage == language) return;
+    _lastInterfaceLanguage = language;
+    if (_translationPreferencesReady && !_changingAppLanguage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          unawaited(_syncModelBLanguage(language).catchError((_) {}));
+        }
+      });
+    }
+  }
+
+  Future<void> _initializeTranslationPreferences() async {
+    await _loadTranslationEngine();
+    await _loadTranslationPreferences();
+    if (!mounted) return;
+    setState(() => _translationPreferencesReady = true);
+    final scope = AppLanguageScope.maybeOf(context);
+    if (scope?.ready == true) {
+      await _syncModelBLanguage(
+        scope!.interfaceLocale.languageCode,
+      ).catchError((_) {});
+    }
+  }
+
+  SubtitleSettings _modelBSettings(SubtitleSettings settings, String target) {
+    var source = settings.sourceLanguageCode.split('-').first;
+    if (source == target) source = target == 'en' ? 'tr' : 'en';
+    return settings.copyWith(
+      sourceLanguageCode: source,
+      targetLanguageCode: target,
+    );
+  }
+
+  Future<void> _syncModelBLanguage(String language) {
+    final operation = _modelBLanguageUpdate.then((_) async {
+      if (!mounted || _translationEngine != 'mlkit') return;
+      if (await _isTranslationActive()) return;
+      final store = const SubtitleSettingsStore();
+      final settings = await store.load();
+      if (!mounted || _translationEngine != 'mlkit') return;
+      final updated = _modelBSettings(settings, language);
+      if (settings.sourceLanguageCode != updated.sourceLanguageCode ||
+          settings.targetLanguageCode != updated.targetLanguageCode) {
+        await store.save(updated);
+      }
+      if (!mounted) return;
+      setState(() {
+        _translationSettings = updated;
+        sourceLanguageCode = updated.sourceLanguageCode;
+        targetLanguageCode = updated.targetLanguageCode;
+        if (_translationModelsError == 'Dil seçilemedi') {
+          _translationModelsError = null;
+        }
+      });
+    });
+    _modelBLanguageUpdate = operation.catchError((Object error) {
+      if (mounted) {
+        setState(() => _translationModelsError = 'Dil seçilemedi');
+      }
+    });
+    return operation;
+  }
+
+  Future<void> _changeAppLanguage(String preference) async {
+    final scope = AppLanguageScope.maybeOf(context);
+    if (scope?.onChanged == null ||
+        scope?.ready != true ||
+        !_translationPreferencesReady ||
+        _changingAppLanguage) {
+      return;
+    }
+    if (_openingPs5 || _selectingGame || await _isTranslationActive()) {
+      if (mounted) {
+        showMessage(
+          'Dil değiştirilemez',
+          'Dili veya oyunu değiştirmek için çeviriyi durdur.',
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _changingAppLanguage = true);
+    var preferenceSaved = false;
+    try {
+      await scope!.onChanged!(preference);
+      preferenceSaved = true;
+      if (!mounted) return;
+      final language = AppLanguage.localeFor(
+        preference,
+        scope.systemLocale,
+      ).languageCode;
+      _lastInterfaceLanguage = language;
+      await _syncModelBLanguage(language);
+    } catch (_) {
+      if (preferenceSaved && mounted) {
+        try {
+          await scope!.onChanged!(scope.preference);
+          _lastInterfaceLanguage = scope.interfaceLocale.languageCode;
+        } catch (_) {
+          // The storage error is reported below even if rollback also fails.
+        }
+      }
+      if (mounted) {
+        showMessage(
+          'Ayar kaydedilemedi',
+          'Dil tercihi kaydedilemedi. Tekrar dene.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _changingAppLanguage = false);
+    }
   }
 
   @override
@@ -454,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await _loadDeepLLanguages();
       }
     } catch (_) {
-      // Keep Model A selected when the native preference cannot be read.
+      // Keep Model B selected when the native preference cannot be read.
     }
   }
 
@@ -552,9 +705,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     try {
       final store = const SubtitleSettingsStore();
-      if ((const {'deepl', 'gemini'}.contains(_translationEngine) &&
-              engine == 'mlkit') ||
-          engine == 'gemini') {
+      if (engine == 'mlkit') {
+        final settings = await store.load();
+        if (!mounted) return;
+        final language = AppLocalizations.of(context).locale.languageCode;
+        await store.save(_modelBSettings(settings, language));
+      } else if (engine == 'gemini') {
         final settings = await store.load();
         String supportedCode(String code, String fallback) {
           final base = code.split('-').first;
@@ -593,6 +749,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
       await store.selectTranslationEngine(engine);
       if (mounted) setState(() => _translationEngine = engine);
+      if (engine == 'mlkit') await _loadTranslationPreferences();
       if (engine == 'deepl' && _deepLConfigured) await _loadDeepLLanguages();
     } on PlatformException catch (error) {
       if (mounted) {
@@ -671,6 +828,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               true;
     } on PlatformException {
       // Use the last known screen state if native service state is unavailable.
+    } on MissingPluginException {
+      // Preview hosts have no native translation service.
     }
     if (active && mounted && !_translationRunning) {
       setState(() => _translationRunning = true);
@@ -1158,6 +1317,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ],
                 TextField(
                   controller: addressController,
+                  textDirection: TextDirection.ltr,
                   keyboardType: TextInputType.url,
                   decoration: InputDecoration(
                     labelText: context.tr("TV ekranındaki adres"),
@@ -1172,6 +1332,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 const SizedBox(height: 12),
                 TextField(
                   controller: codeController,
+                  textDirection: TextDirection.ltr,
                   keyboardType: TextInputType.number,
                   maxLength: 6,
                   style: const TextStyle(
@@ -1247,18 +1408,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   context: dialogContext,
                                   barrierDismissible: false,
                                   builder: (verificationContext) => AlertDialog(
-                                    title: const Text('TV kimliğini doğrula'),
+                                    title: Text(
+                                      verificationContext.tr(
+                                        'TV kimliğini doğrula',
+                                      ),
+                                    ),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
-                                          'Bu değer TV ekranındaki “Güvenli bağlantı kimliği” ile aynı mı? Yalnızca tamamı eşleşiyorsa onayla.',
+                                        Text(
+                                          verificationContext.tr(
+                                            'Bu değer TV ekranındaki “Güvenli bağlantı kimliği” ile aynı mı? Yalnızca tamamı eşleşiyorsa onayla.',
+                                          ),
                                         ),
                                         const SizedBox(height: 16),
                                         SelectableText(
                                           verificationCode,
+                                          textDirection: TextDirection.ltr,
                                           style: const TextStyle(
                                             fontSize: 22,
                                             fontWeight: FontWeight.bold,
@@ -1273,14 +1441,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                           verificationContext,
                                           false,
                                         ),
-                                        child: const Text('Eşleşmiyor / İptal'),
+                                        child: Text(
+                                          verificationContext.tr(
+                                            'Eşleşmiyor / İptal',
+                                          ),
+                                        ),
                                       ),
                                       FilledButton(
                                         onPressed: () => Navigator.pop(
                                           verificationContext,
                                           true,
                                         ),
-                                        child: const Text('Tamamı eşleşiyor'),
+                                        child: Text(
+                                          verificationContext.tr(
+                                            'Tamamı eşleşiyor',
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1438,6 +1614,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await TvOutputService.instance.retrySavedPairing();
   }
 
+  /// The selected game's pack is used only for its own language pair (the
+  /// native side compares them exactly). Otherwise every line goes to the
+  /// translation model, so the mismatch is shown instead of passing silently.
+  String? get _gameLanguageWarning {
+    final game = _games.where((game) => game.id == _selectedGameId).firstOrNull;
+    if (game == null ||
+        (game.sourceLanguage == sourceLanguageCode &&
+            game.targetLanguage == targetLanguageCode)) {
+      return null;
+    }
+    return context.tr(
+      'Seçili oyunun çeviri paketi {0}, çeviri dili ise {1}. Oyunun kendi çevirileri kullanılmayacak; oyunu {1} paketiyle yeniden seç ya da çeviri dilini değiştir.',
+      [game.languageLabel, targetLanguage],
+    );
+  }
+
   String get sourceLanguage => _languageName(sourceLanguageCode);
   String get targetLanguage => _languageName(targetLanguageCode);
 
@@ -1452,7 +1644,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
     for (final model in _offlineModels) {
       if (model['target'] == code) {
-        return model['label'] as String? ?? code;
+        return context.tr(model['label'] as String? ?? code);
       }
     }
     for (final language in _translationModels) {
@@ -2421,7 +2613,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 installed ? Icons.check_circle : Icons.language,
                                 color: installed ? cyan : muted,
                               ),
-                              title: Text(model['label'] as String? ?? code),
+                              title: Text(
+                                context.tr(model['label'] as String? ?? code),
+                              ),
                               subtitle: Text(
                                 installed
                                     ? context.tr(
@@ -2832,6 +3026,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _openPs5({bool openSubtitleSettings = false}) async {
     if (_openingPs5 || _loadingPs5) return;
+    // Starting a session with the wrong pack is the costly moment to miss it.
+    final languageWarning = _gameLanguageWarning;
+    if (languageWarning != null && !openSubtitleSettings) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: panel,
+          title: Text(context.tr('Oyun paketinin dili farklı')),
+          content: Text(
+            languageWarning,
+            style: const TextStyle(color: muted, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.tr('Vazgeç')),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(context.tr('Yine de başlat')),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    }
     setState(() => _openingPs5 = true);
     try {
       final hasSavedPs5 = _savedPs5 != null;
@@ -3156,6 +3376,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   TickerMode(
                     enabled: _selectedTab == _AppTab.profile,
                     child: ProfileTab(
+                      onChangeLanguage:
+                          _changingAppLanguage || !_translationPreferencesReady
+                          ? null
+                          : _changeAppLanguage,
                       onOpenSubscription: _openAccess,
                       setupCompleted:
                           _setupGuideCompletedCount >=
@@ -3787,10 +4011,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final canRefreshGames =
         !_loadingGames && !_refreshingGames && refreshWait == Duration.zero;
     final languageScope = AppLanguageScope.maybeOf(context);
-    // Retain the real system language even when the interface uses English as
-    // its fallback. English devices allow manual library language selection.
+    // An explicit interface language also selects the library language.
     final libraryLocale =
-        languageScope?.systemLocale ?? Localizations.localeOf(context);
+        languageScope?.libraryLocale ?? Localizations.localeOf(context);
     final allowLanguageSelection = libraryLocale.languageCode == 'en';
     final languages = <String, GameCatalogEntry>{
       for (final game in _games) game.targetLanguage: game,
@@ -3886,7 +4109,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           children: [
                             heading,
                             Align(
-                              alignment: Alignment.centerRight,
+                              alignment: AlignmentDirectional.centerEnd,
                               child: requestGame,
                             ),
                           ],
@@ -3941,6 +4164,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 : null,
                             icon: const Icon(Icons.refresh_rounded, size: 18),
                             label: Text(context.tr('Tekrar dene')),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (!_loadingGames && _gameLanguageWarning != null)
+                    Container(
+                      key: const ValueKey('game-language-warning'),
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0x33FFB74D),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFFB74D)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Color(0xFFFFB74D),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _gameLanguageWarning!,
+                              style: const TextStyle(
+                                color: Color(0xFFFFD699),
+                                fontSize: 12,
+                                height: 1.4,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -4172,7 +4427,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _fixedLanguageChip(String label) => Container(
     height: 48,
-    alignment: Alignment.centerLeft,
+    alignment: AlignmentDirectional.centerStart,
     padding: const EdgeInsets.symmetric(horizontal: 12),
     decoration: BoxDecoration(
       color: bg,
@@ -4291,9 +4546,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ),
             ],
-            onChanged: (engine) {
-              if (engine != null) _selectTranslationEngine(engine);
-            },
+            onChanged: !_translationPreferencesReady || _changingAppLanguage
+                ? null
+                : (engine) {
+                    if (engine != null) _selectTranslationEngine(engine);
+                  },
           ),
           const SizedBox(height: 8),
           if (deepLEngine) ...[
@@ -4331,7 +4588,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           const SizedBox(height: 8),
           if (!cloudEngine)
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerEnd,
               child: FilledButton.tonalIcon(
                 onPressed: _showTranslationLanguageManager,
                 icon: const Icon(Icons.download_rounded, size: 18),
@@ -4389,7 +4646,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               .map(
                 (model) => _LocalLanguageOption(
                   code: model['target'] as String,
-                  name: model['label'] as String? ?? model['target'] as String,
+                  name: context.tr(
+                    model['label'] as String? ?? model['target'] as String,
+                  ),
                   downloaded: model['installed'] == true,
                 ),
               )
@@ -4473,9 +4732,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             return DropdownMenuItem<String>(
               value: code,
               child: Text(
-                downloaded
-                    ? name
-                    : context.tr("{0} • indirilmedi", [name]),
+                downloaded ? name : context.tr("{0} • indirilmedi", [name]),
                 overflow: TextOverflow.ellipsis,
                 style: downloaded
                     ? null
@@ -4671,7 +4928,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         style: FilledButton.styleFrom(
           foregroundColor: const Color(0xFFEAF4FF),
           backgroundColor: const Color(0xFF12345A),
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           minimumSize: const Size.fromHeight(58),
           shape: RoundedRectangleBorder(

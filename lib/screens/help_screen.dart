@@ -124,7 +124,7 @@ class HelpScreen extends StatelessWidget {
                   ),
                   children: [
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: Text(
                         context.tr(question.answer),
                         style: const TextStyle(

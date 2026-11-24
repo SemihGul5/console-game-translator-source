@@ -446,7 +446,7 @@ class _SetupGuideScreenState extends State<SetupGuideScreen> {
             ),
           for (var i = 0; i < step.details.length; i++)
             Padding(
-              padding: const EdgeInsets.only(left: 47, top: 7),
+              padding: const EdgeInsetsDirectional.only(start: 47, top: 7),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -478,7 +478,7 @@ class _SetupGuideScreenState extends State<SetupGuideScreen> {
           if (step.action != null) ...[
             const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.only(left: 44),
+              padding: const EdgeInsetsDirectional.only(start: 44),
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : () => _runAction(step.action!, index),
                 icon: _busy

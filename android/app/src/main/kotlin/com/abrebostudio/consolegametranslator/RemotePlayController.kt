@@ -194,7 +194,7 @@ internal class RemotePlayController private constructor(context: Context) : Cont
         }
         translationAccess.onStatusChanged = { emit(mapOf("type" to "accessChanged")) }
         consoleStore = RegisteredConsoleStore(applicationContext)
-        translationEngine() // Migrate a previously selected Model C or D to Model A.
+        translationEngine() // Migrate retired models to the default Model B.
         worker.execute(::removeRetiredExperimentalModels)
         flutterEngine.platformViewsController.registry.registerViewFactory(
             VIDEO_VIEW,
@@ -336,6 +336,18 @@ internal class RemotePlayController private constructor(context: Context) : Cont
                     "getTranslationLanguageModels" -> getTranslationLanguageModels(result)
                     "downloadTranslationLanguage" -> downloadTranslationLanguage(call, result)
                     "prepareTranslationModels" -> prepareTranslationModels(result)
+                    "getAppLanguage" -> result.success(AppUiLanguage.preference(applicationContext))
+                    "setAppLanguage" -> {
+                        val preference = call.arguments as? String
+                        if (preference !in AppUiLanguage.preferences) {
+                            result.error("INVALID_APP_LANGUAGE", "Dil tercihi kaydedilemedi. Tekrar dene.", null)
+                        } else if (translationAccess.isTranslationRequested) {
+                            result.error("TRANSLATION_RUNNING", "Dili veya oyunu değiştirmek için çeviriyi durdur.", null)
+                        } else if (!personalizationPrefs.edit()
+                                .putString(AppUiLanguage.preferenceKey, preference).commit()) {
+                            result.error("APP_LANGUAGE_SAVE_FAILED", "Dil tercihi kaydedilemedi. Tekrar dene.", null)
+                        } else result.success(true)
+                    }
                     "getTranslationEngine" -> result.success(translationEngine())
                     "getGeminiSettings" -> withGeminiResult(result) {
                         geminiCredentials.metadata()
@@ -1478,10 +1490,10 @@ internal class RemotePlayController private constructor(context: Context) : Cont
     }
 
     private fun translationEngine(): String {
-        val saved = subtitleSettingsPrefs.getString("translation_engine", "opus") ?: "opus"
+        val saved = subtitleSettingsPrefs.getString("translation_engine", "mlkit") ?: "mlkit"
         if (saved in setOf("mlkit", "opus", "deepl", "gemini")) return saved
-        subtitleSettingsPrefs.edit().putString("translation_engine", "opus").apply()
-        return "opus"
+        subtitleSettingsPrefs.edit().putString("translation_engine", "mlkit").apply()
+        return "mlkit"
     }
 
     private fun removeRetiredExperimentalModels() {

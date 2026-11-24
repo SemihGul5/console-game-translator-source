@@ -518,7 +518,7 @@ class _TranslationCacheScreenState extends State<TranslationCacheScreen>
           ),
           const SizedBox(height: 10),
           Align(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child: OutlinedButton.icon(
               key: const ValueKey('cache-contribute'),
               onPressed: _busy ? null : _contribute,

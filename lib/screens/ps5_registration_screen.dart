@@ -281,7 +281,7 @@ class _Ps5RegistrationScreenState extends State<Ps5RegistrationScreen> {
         title: Text(context.tr("PS5 Bağlantısı")),
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 20),
+            padding: EdgeInsetsDirectional.only(end: 20),
             child: Center(
               child: Text(
                 '2/2',
@@ -437,6 +437,7 @@ class _Ps5RegistrationScreenState extends State<Ps5RegistrationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextFormField(
+                        textDirection: TextDirection.ltr,
                         controller: _hostController,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
@@ -504,6 +505,7 @@ class _Ps5RegistrationScreenState extends State<Ps5RegistrationScreen> {
                         const SizedBox(height: 16),
                       ],
                       TextFormField(
+                        textDirection: TextDirection.ltr,
                         controller: _pinController,
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,

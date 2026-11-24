@@ -183,10 +183,14 @@ internal fun isPlateLike(lines: List<SceneTextLine>): Boolean {
  */
 internal fun withoutTrailingPlate(text: String): String {
     val match = TRAILING_PLATE.find(text) ?: return text
-    return if (isPlateCode(match.groupValues[2])) match.groupValues[1].trimEnd() else text
+    // OCR may read a mark into the plate ("HCO? 11IM"): one per token at most.
+    val tokens = match.groupValues[2].split(' ').filter(String::isNotEmpty)
+    if (tokens.any { token -> token.count { !it.isLetterOrDigit() } > 1 }) return text
+    val plate = tokens.joinToString(" ") { token -> token.filter(Char::isLetterOrDigit) }
+    return if (isPlateCode(plate)) match.groupValues[1].trimEnd() else text
 }
 
-private val TRAILING_PLATE = Regex("""^(.*[.!?…])\s+(\S+(?:\s+\S+)?)\s*$""")
+private val TRAILING_PLATE = Regex("""^(.*?[.!?…])\s+(\S+(?:\s+\S+)?)\s*$""")
 
 /** "8ZJK 264", "6ABC123", "LEO-4821": 5–10 letters/digits with a digit, mixed or a digit run. */
 internal fun isPlateCode(value: String): Boolean {

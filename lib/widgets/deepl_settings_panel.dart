@@ -175,6 +175,7 @@ class _DeepLSettingsPanelState extends State<DeepLSettingsPanel> {
       ),
       const SizedBox(height: 12),
       TextField(
+        textDirection: TextDirection.ltr,
         key: const ValueKey('deepl-api-key'),
         controller: _keyController,
         enabled: !_busy,

@@ -32,13 +32,13 @@ void main() {
     expect(find.text('PlayStation 5'), findsOneWidget);
     expect(find.text('PS5’i kur'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('opus-0')),
+      find.byKey(const ValueKey('mlkit-0')),
       250,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('opus-0')), findsOneWidget);
-    expect(find.byKey(const ValueKey('mlkit-0')), findsNothing);
+    expect(find.byKey(const ValueKey('mlkit-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('opus-0')), findsNothing);
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       channel,
       null,

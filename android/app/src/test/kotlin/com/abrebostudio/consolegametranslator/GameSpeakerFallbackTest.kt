@@ -56,9 +56,15 @@ class GameSpeakerFallbackTest {
         }
     }
 
-    @Test fun unrecognisedNameIsNotBlindlyRemovedFromTheOcr() {
-        assertNull(memory(names = "").findExact("JASON: What?"))
-        assertNull(memory().findExact("STRANGER: What?"))
+    @Test fun aNameThePackDoesNotListStaysAsReadAroundEvenAShortLine() {
+        // A pack without any speaker list still shows its short lines.
+        for ((memory, ocr) in listOf(memory(names = "") to "JASON: What?", memory() to "STRANGER: What?")) {
+            val match = requireNotNull(memory.findExact(ocr))
+            assertEquals("Ne?", match.target)
+            assertEquals("${ocr.substringBefore(':')}: Ne?", subtitleTextEvent(0, match.target, "none", match)["text"])
+        }
+        // A plain sentence with a colon is no name label.
+        assertNull(memory().findExact("Remember this: What?"))
     }
 
     @Test fun aNameLabelThePackDoesNotListStillFindsItsLongLine() {
@@ -67,7 +73,11 @@ class GameSpeakerFallbackTest {
           "speakers":{"Jason":"Jason"},"entries":[
             {"id":"44p1","sourceText":"Got someone coming in for Kyle's batch.",
              "targetText":"Kyle'ın malı için biri geliyor.","speaker":""},
-            {"id":"44p2","sourceText":"Copy, I'll keep eyes on 'em.","targetText":"Anlaşıldı, gözüm üstlerinde."}]}""")
+            {"id":"44p2","sourceText":"Copy, I'll keep eyes on 'em.","targetText":"Anlaşıldı, gözüm üstlerinde."},
+            {"id":"44p3","sourceText":"Uh-huh... hang on.","targetText":"Hı-hı... bekle biraz..."}]}""")
+        // A short line (11 letters) is found without the label too, which stays as the game shows it.
+        assertEquals("Final Chapter: Hı-hı... bekle biraz...", memory.findExact("Final Chapter: Uh-huh... hang on.")?.let {
+            subtitleTextEvent(0, it.target, "none", it)["text"] })
         val exact = requireNotNull(memory.findExact("Final Chapter: Got someone coming in for Kyle's batch."))
         assertEquals("44p1", exact.entryId)
         assertEquals("Final Chapter: Kyle'ın malı için biri geliyor.",

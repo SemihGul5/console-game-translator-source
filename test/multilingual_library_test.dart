@@ -71,9 +71,12 @@ Future<void> _openLibrary(
   await tester.pump(const Duration(milliseconds: 1100));
   await tester.pumpAndSettle();
   final turkish = find.widgetWithText(NavigationDestination, 'Altyazı');
+  final arabic = find.widgetWithText(NavigationDestination, 'الترجمة');
   await tester.tap(
     turkish.evaluate().isNotEmpty
         ? turkish
+        : arabic.evaluate().isNotEmpty
+        ? arabic
         : find.widgetWithText(NavigationDestination, 'Subtitles'),
   );
   await tester.pumpAndSettle();
@@ -233,8 +236,8 @@ void main() {
       target: 'ar',
       picker: false,
     ),
-    (preference: 'tr', device: const Locale('ar'), target: 'ar', picker: false),
-    (preference: 'en', device: const Locale('ar'), target: 'ar', picker: false),
+    (preference: 'tr', device: const Locale('ar'), target: 'tr', picker: false),
+    (preference: 'en', device: const Locale('ar'), target: 'th', picker: true),
     (
       preference: 'system',
       device: const Locale('en', 'US'),
@@ -243,7 +246,7 @@ void main() {
     ),
   ]) {
     testWidgets(
-      'library follows device ${scenario.device} with legacy preference ${scenario.preference}',
+      'library follows device ${scenario.device} and saved preference ${scenario.preference}',
       (tester) async {
         final commits = <MethodCall>[];
         messenger.setMockMethodCallHandler(native, (call) async {
@@ -325,10 +328,7 @@ void main() {
         find.byKey(const ValueKey('game-library-language-tr')),
         findsNothing,
       );
-      expect(
-        find.text('No game packs are available in this language yet.'),
-        findsOneWidget,
-      );
+      expect(find.text('لا توجد حزم ألعاب بهذه اللغة بعد.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

@@ -267,4 +267,16 @@ class SubtitleSourceSelectorTest {
         assertEquals(subtitle, read.text)
         assertEquals("44rh", read.memoryMatch?.entryId)
     }
+
+    @Test fun aRereadSpoiledByOcrIsTheLineJustFound() {
+        val found = "No, no, I- I want you here."
+        assertTrue(isNoisyRereadOf(found, "No, no, -| want you here."))
+        assertTrue(isNoisyRereadOf(found, "No, no, -I want you here."))
+        // A new line, a changed word or a lost negation is not.
+        assertFalse(isNoisyRereadOf("I want you here.", "I want you there."))
+        assertFalse(isNoisyRereadOf("No, I want you here.", "I want you here, yeah."))
+        assertFalse(isNoisyRereadOf(found, "Look, I already lost you once, and..."))
+        // Too little left to tell.
+        assertFalse(isNoisyRereadOf("I, uh...", ", uh."))
+    }
 }

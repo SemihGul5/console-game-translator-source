@@ -2,6 +2,12 @@ import 'messages_tv_en.dart';
 
 // English interface messages, keyed by their Turkish source text.
 const englishMessages = <String, String>{
+  'Kişiselleştir': 'Personalize',
+  'Uygulama dili Model B’nin hedef dilini otomatik ayarlar.':
+      'The app language automatically sets Model B’s target language.',
+  'Temizle': 'Clear',
+  'Yenile': 'Refresh',
+  '1,5× · dengeli': '1.5× · balanced',
   'Bu oyunun çeviri paketi telefonun belleğine sığmadı. Diğer uygulamaları kapatıp tekrar dene.':
       "This game's translation pack did not fit in the phone's memory. Close other apps and try again.",
   'Ücretsiz denemen hazır. Remote Play bağlantısıyla başlar.':
@@ -1391,4 +1397,8 @@ const englishMessages = <String, String>{
       'Enter the 6-digit code shown on the TV and pair.',
   'Google Play’de aç': 'Open in Google Play',
   'Siteden indir': 'Download from website',
+  'Seçili oyunun çeviri paketi {0}, çeviri dili ise {1}. Oyunun kendi çevirileri kullanılmayacak; oyunu {1} paketiyle yeniden seç ya da çeviri dilini değiştir.':
+      'The selected game\'s translation pack is {0}, but the translation language is {1}. The game\'s own translations will not be used; select the game again with its {1} pack or change the translation language.',
+  'Oyun paketinin dili farklı':
+      'The game pack\'s language is different',
 };

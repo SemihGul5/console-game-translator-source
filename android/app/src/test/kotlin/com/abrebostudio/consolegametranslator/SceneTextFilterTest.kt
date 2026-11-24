@@ -7,6 +7,7 @@ class SceneTextFilterTest {
     @Test fun aPlateReadAfterASubtitleIsLeftOut() {
         assertEquals("Final Chapter: Uh-huh... hang on.", withoutTrailingPlate("Final Chapter: Uh-huh... hang on. HCO 11M"))
         assertEquals("Final Chapter: Uh-huh... hang on..", withoutTrailingPlate("Final Chapter: Uh-huh... hang on.. HCR 11M"))
+        assertEquals("Final Chapter: Uh-huh... hang on.", withoutTrailingPlate("Final Chapter: Uh-huh... hang on. HCO? 11IM"))
         // Words after a sentence stay.
         assertEquals("Got it. Go to the van", withoutTrailingPlate("Got it. Go to the van"))
         assertEquals("Meet me at 5. Pier 39", withoutTrailingPlate("Meet me at 5. Pier 39"))

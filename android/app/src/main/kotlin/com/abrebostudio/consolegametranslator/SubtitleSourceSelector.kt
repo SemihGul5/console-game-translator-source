@@ -106,3 +106,23 @@ internal fun combineSpeakerTurns(turns: List<String>, matches: List<GameTranslat
 
 private val SPEAKER_TURN = Regex("""(?<=[.!?…]["'’”)]?)\s+(?=\p{Lu}[\p{L}\p{N}'’.-]{0,20}(?: \p{Lu}[\p{L}\p{N}'’.-]{0,20})?:\s)""")
 private val TURN_LABEL = Regex("""^\s*(\p{Lu}[\p{L}\p{N}'’. -]{0,24}):\s""")
+
+/**
+ * [reread] is [previous] spoiled by OCR, not a new line: its words (two letters
+ * or more) are nearly all in [previous] and cover most of it, with the same
+ * negations ("No, no, -| want you here." for "No, no, I- I want you here.").
+ */
+internal fun isNoisyRereadOf(previous: String, reread: String): Boolean {
+    val old = selectorWords(previous)
+    val new = selectorWords(reread)
+    if (new.size < MIN_REREAD_WORDS || old.isEmpty()) return false
+    if (new.filter { it in NEGATIONS }.toSet() != old.filter { it in NEGATIONS }.toSet()) return false
+    val oldSet = old.toSet()
+    val newSet = new.toSet()
+    return new.count { it in oldSet } >= new.size * REREAD_INSIDE && old.count { it in newSet } >= old.size * REREAD_COVERS
+}
+
+private const val MIN_REREAD_WORDS = 3
+private const val REREAD_INSIDE = 0.8
+private const val REREAD_COVERS = 0.7
+private val NEGATIONS = setOf("not", "no", "never", "cannot", "can't", "cant", "don't", "dont", "won't", "wont", "isn't", "isnt", "aren't", "arent", "didn't", "didnt")

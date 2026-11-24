@@ -249,7 +249,7 @@ class _PsnLoginScreenState extends State<PsnLoginScreen> {
         title: Text(context.tr("PSN Hesap Bağlantısı")),
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 20),
+            padding: EdgeInsetsDirectional.only(end: 20),
             child: Center(
               child: Text(
                 '1/2',
@@ -378,6 +378,7 @@ class _PsnLoginScreenState extends State<PsnLoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextField(
+                      textDirection: TextDirection.ltr,
                       controller: _urlController,
                       minLines: 1,
                       maxLines: 2,

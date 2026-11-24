@@ -105,6 +105,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     _coversByArea = <int, List<SubtitleCover>>{};
     _subtitleCovers = const <SubtitleCover>[];
   }
+
   String _ocrDebugText = '';
   String _ocrStatus = 'OCR bekliyor';
   String _ocrTiming = '';
@@ -821,7 +822,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             Padding(
               padding: EdgeInsets.only(bottom: 8),
               child: Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: Text(
                   context.tr("Bu ölçü için konum sabit."),
                   style: TextStyle(color: Color(0xFF8D9AAF), fontSize: 11),
@@ -1055,9 +1056,8 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
       _subtitleSettings.effectiveOcrRegions,
     )..removeAt(index);
     final settings = ocrSettings..removeAt(index);
-    final modes = List<int>.of(
-      _subtitleSettings.effectiveOcrPreprocessingModes,
-    )..removeAt(index);
+    final modes = List<int>.of(_subtitleSettings.effectiveOcrPreprocessingModes)
+      ..removeAt(index);
     final dialogueFilters = List<bool>.of(
       _subtitleSettings.effectiveOcrDialogueFilters,
     )..removeAt(index);
@@ -1069,7 +1069,9 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     // subtitle areas keep their numbers while later OCR areas move up, so
     // those no longer follow.
     final removeSubtitle =
-        followed && index < subtitleRegions.length && subtitleRegions.length > 1;
+        followed &&
+        index < subtitleRegions.length &&
+        subtitleRegions.length > 1;
     if (removeSubtitle) {
       subtitleRegions.removeAt(index);
       styles.removeAt(index);
@@ -1436,7 +1438,10 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                 child: GameSubtitleText(
                   text: cover.text,
                   settings: settings.copyWith(centered: false),
-                  fontSize: math.max(6.0, math.min(maxFont, lineHeightPx * 0.95)),
+                  fontSize: math.max(
+                    6.0,
+                    math.min(maxFont, lineHeightPx * 0.95),
+                  ),
                 ),
               ),
             ),
@@ -1860,9 +1865,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             SwitchListTile.adaptive(
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
               activeThumbColor: const Color(0xFF36D6BE),
-              activeTrackColor: const Color(
-                0xFF36D6BE,
-              ).withValues(alpha: 0.45),
+              activeTrackColor: const Color(0xFF36D6BE).withValues(alpha: 0.45),
               title: Text(
                 context.tr("Altyazı {0}, OCR {1} alanıyla birlikte taşınsın", [
                   _selectedSubtitleIndex + 1,
@@ -1893,7 +1896,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
         ),
         const SizedBox(height: 10),
         Align(
-          alignment: Alignment.centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           child: TextButton.icon(
             onPressed: _resetEditedRect,
             icon: const Icon(Icons.restart_alt),
@@ -1917,7 +1920,10 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                     _ocrDebugText,
                     context.trMessage(_ocrTiming),
                   ]),
-                  style: const TextStyle(color: Color(0xFFB8C1D3), fontSize: 12),
+                  style: const TextStyle(
+                    color: Color(0xFFB8C1D3),
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 6),
               ],
@@ -2154,7 +2160,10 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                       value: 1,
                       child: Text(context.tr("1× · hızlı")),
                     ),
-                    DropdownMenuItem(value: 1.5, child: Text('1,5× · dengeli')),
+                    DropdownMenuItem(
+                      value: 1.5,
+                      child: Text(context.tr('1,5× · dengeli')),
+                    ),
                     DropdownMenuItem(
                       value: 2,
                       child: Text(context.tr("2× · küçük yazı")),
@@ -2357,11 +2366,16 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                 const SizedBox(height: 6),
                 Text(
                   _selectedSubtitleSettings.backgroundFitToText
-                      ? context.tr("Arka plan yazıyla birlikte büyüyüp küçülür.")
+                      ? context.tr(
+                          "Arka plan yazıyla birlikte büyüyüp küçülür.",
+                        )
                       : context.tr(
                           "Arka plan turkuaz alanın tamamını doldurur. Kutuyu sürükleyebilir, kenarlarından boyutlandırabilir veya alan ayarlarını kullanabilirsin.",
                         ),
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF929DB4)),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF929DB4),
+                  ),
                 ),
                 if (!_selectedSubtitleSettings.backgroundFitToText)
                   TextButton.icon(
@@ -2414,7 +2428,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
               ),
               const SizedBox(height: 8),
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
                   onPressed: _chooseBackgroundColor,
                   icon: Icon(
@@ -2446,7 +2460,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                 ],
               ),
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
                   onPressed: _chooseTextColor,
                   icon: Icon(
@@ -3035,7 +3049,7 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                 actions: [
                   if (_subtitleSettingsVisible)
                     Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsetsDirectional.only(end: 8),
                       child: TextButton.icon(
                         onPressed: _settingsLoaded
                             ? () => _saveSubtitleSettings(closePanel: false)

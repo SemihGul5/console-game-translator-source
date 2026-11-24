@@ -180,6 +180,7 @@ internal class SubtitleOcrController(
 
     fun setGameTranslationMemory(memory: GameTranslationMemory?) {
         gameTranslationMemory = memory
+        lastPackReads.clear()
         recoveryRevision.incrementAndGet()
         visualOcrCaches.clear()
         if (closed) return
@@ -300,6 +301,7 @@ internal class SubtitleOcrController(
             sceneWordMemories.clear()
             sceneMotion.clear()
             hudSettle.clear()
+            lastPackReads.clear()
             hudPanelLogged.clear()
             partialHolds.clear()
         }
@@ -1060,7 +1062,14 @@ internal class SubtitleOcrController(
                 .map { block -> block.lines.joinToString(" ") { it.text } }
             val candidates = (blocks + blocks.zipWithNext { left, right -> "$left $right" })
                 .filter { it.length >= 2 && it.any(Char::isLetterOrDigit) }.sortedByDescending(String::length).take(8)
-            val selected = selectSubtitleSource(
+            // A phone message whose pack line starts with its sender ("Donnie, good
+            // work…") is that one line in every frame, also while the name line is
+            // still settling and missing from the read: otherwise the read was
+            // pieced together from other lines and the cover flipped between two
+            // translations (24 Nov log).
+            val senderMatch = coverSender?.takeIf { sender -> memory != null && !rawText.trimStart().startsWith(sender) }
+                ?.let { sender -> memory?.findQuick("$sender $rawText") }?.takeIf { '+' !in it.entryId }
+            val chosen = if (senderMatch != null) SubtitleOcrRead(rawText, rawConfidence, senderMatch) else selectSubtitleSource(
                 rawText, rawConfidence, memory, candidates,
             ) {
                 val acceptedLines = if (!debugOnly && dialogueFilter) {
@@ -1093,6 +1102,24 @@ internal class SubtitleOcrController(
                 val confidence = if (confidenceValues.isEmpty()) 0f
                     else confidenceValues.average().toFloat().coerceIn(0f, 1f)
                 SubtitleOcrRead(text, confidence)
+            }
+            // A phone message the pack does not know is translated without its
+            // sender's name, which stays in English on screen: one translation,
+            // shared with the message's cover, and no "Yanmış adam" in it.
+            // A read that differs from the line just found in the pack only by OCR
+            // noise ("No, no, -| want you here." for "No, no, I- I want you here.")
+            // keeps that line instead of a machine translation flashing over it.
+            val held = if (chosen.memoryMatch != null || memory == null) null
+                else lastPackReads[regionIndex]?.takeIf { previous ->
+                    now - previous.at <= PACK_READ_HOLD_MILLIS && isNoisyRereadOf(previous.text, rawText)
+                }
+            if (chosen.memoryMatch != null) lastPackReads[regionIndex] = PackRead(rawText, chosen.memoryMatch, now)
+            else if (held != null) lastPackReads[regionIndex] = held.copy(at = now)
+            val sender = coverSender
+            val selected = when {
+                held != null -> chosen.copy(memoryMatch = held.match)
+                sender == null || chosen.memoryMatch != null -> chosen
+                else -> chosen.copy(text = withoutSenderName(chosen.text, sender))
             }
             return Evaluated(result, rawText, rawConfidence, selected, memory,
                 SystemClock.elapsedRealtime() - lookupStartedAt, coverUnits, icons, coverSender)
@@ -1795,8 +1822,10 @@ internal class SubtitleOcrController(
         val selectedSource = sourceLanguageCode
         val selectedTarget = targetLanguageCode
         val startedAt = SystemClock.elapsedRealtime()
-        selectedTranslator.translate(sourceText)
-            .addOnSuccessListener(recognitionExecutor) { translated ->
+        val labelled = splitSpeakerLabel(sourceText)
+        selectedTranslator.translate(labelled.body)
+            .addOnSuccessListener(recognitionExecutor) { rawTranslated ->
+                val translated = labelled.relabel(rawTranslated)
                 if (selectedTranslator !== translator) {
                     if (translationEngine == "compare") releaseComparison(sourceText, "MLKit")
                     return@addOnSuccessListener
@@ -1876,7 +1905,8 @@ internal class SubtitleOcrController(
                         ),
                     ).also { marianTranslator = it }
                 }
-                val translated = model.translate(sourceText)
+                val labelled = splitSpeakerLabel(sourceText)
+                val translated = labelled.relabel(model.translate(labelled.body))
                 val inferenceMs = SystemClock.elapsedRealtime() - inferenceStartedAt
                 if (closed) return@marianWork
                 recognitionExecutor.execute {
@@ -2021,7 +2051,8 @@ internal class SubtitleOcrController(
                 val model = hpltTranslator ?: synchronized(this) {
                     hpltTranslator ?: HpltCTranslate2.load(hpltModelDirectory()).also { hpltTranslator = it }
                 }
-                val translated = model.translate(sourceText)
+                val labelled = splitSpeakerLabel(sourceText)
+                val translated = labelled.relabel(model.translate(labelled.body))
                 val inferenceMs = SystemClock.elapsedRealtime() - inferenceStartedAt
                 recognitionExecutor.execute {
                     if (latestMarianKeyByRegion[index] != key || state.sourceKey != key || translationEngine != "hplt") {
@@ -2238,7 +2269,9 @@ internal class SubtitleOcrController(
         if (!diagnosticsEnabled()) return
         val reason = when {
             gameTranslationMemory == null -> "no_game_selected"
-            memory == null -> "language_mismatch"
+            // Both pairs, so a log shows why the pack was not used.
+            memory == null -> "language_mismatch(pack=${gameTranslationMemory?.sourceLanguage}-${gameTranslationMemory?.targetLanguage}" +
+                " app=$sourceLanguageCode-$targetLanguageCode)"
             match != null -> "hit"
             else -> memory.rejectionReason(text)
         }
@@ -2567,6 +2600,10 @@ internal class SubtitleOcrController(
     /** Icons cut out of the crop where a wide word gap holds a drawn shape. */
     /** Per HUD area: where its text was seen ([HudSettleTracker]). */
     private val hudSettle = ConcurrentHashMap<Int, HudSettleTracker>()
+
+    /** The last read per area that the pack had, for rereads that only OCR spoiled. */
+    private data class PackRead(val text: String, val match: GameTranslationMatch, val at: Long)
+    private val lastPackReads = ConcurrentHashMap<Int, PackRead>()
     /** Per HUD area: the block texts whose panel measurement was logged last. */
     private val hudPanelLogged = ConcurrentHashMap<Int, MutableSet<String>>()
 
@@ -2775,6 +2812,8 @@ internal class SubtitleOcrController(
         val rejection = when {
             match != null -> null
             containsUnknownToken(translatedText) -> "unknown-token"
+            // ", uh." -> ", ...": nothing left to read.
+            translatedText.count(Char::isLetter) < 2 -> "no-letters"
             isUntranslatedEcho(sourceText, translatedText) -> "untranslated"
             else -> null
         }
@@ -2923,6 +2962,7 @@ internal class SubtitleOcrController(
         private const val CERTAIN_COVER_SCORE = 0.985
         private const val EARLY_COVER_WORDS = 3
         private const val KNOWN_SETTLE_WORDS = 3
+        private const val PACK_READ_HOLD_MILLIS = 2_000L
         private const val HUD_VOCABULARY_ENTRIES = 20_000
         private const val JOIN_AREA_SCORE = 0.9
         private const val RECENT_COVER_TRANSLATIONS = 24

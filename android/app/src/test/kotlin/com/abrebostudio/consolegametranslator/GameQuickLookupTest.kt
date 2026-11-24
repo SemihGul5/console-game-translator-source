@@ -73,9 +73,42 @@ class GameQuickLookupTest {
         val match = requireNotNull(memory.find("What, they're coming here?"))
         assertEquals("Ne, buraya mı geliyorlar?", match.target)
         assertEquals("context_exact", match.matchType)
-        // Far from both: undecided again.
+        // A line read meanwhile far from both (another OCR area: a tip top left)
+        // does not undo it: the conversation is still placed by the line before.
         assertNotNull(memory.findExact("Filler line number 100 is here."))
-        assertNull(memory.find("What, they're coming here?"))
+        assertEquals("Ne, buraya mı geliyorlar?", memory.find("What, they're coming here?")?.target)
+    }
+
+    @Test fun withoutAnyLineReadNearbyTwoTranslationsStayUndecided() {
+        val filler = (1..200).map { "Filler line number $it is here." to "Dolgu satırı $it." }
+        val memory = memory(*(listOf("Collect your cash today" to "Paranı bugün al") + filler +
+            listOf("Collect your cash today" to "Bugün paranı topla")).toTypedArray())
+        assertNotNull(memory.findExact("Filler line number 100 is here."))
+        assertNull(memory.find("Collect your cash today"))
+    }
+
+    @Test fun rowsThatDifferOnlyInPunctuationAreOneLine() {
+        val memory = memory("Watch out!" to "Dikkat et!", "Watch out." to "Dikkat et.", "Watch out..." to "Dikkat et…")
+        assertEquals("Dikkat et.", memory.findExact("Watch out.")?.target)
+        assertEquals("Dikkat et!", memory.findExact("Watch out!")?.target)
+        assertEquals("Dikkat et…", memory.find("Watch out…")?.target)
+        assertEquals("exact", memory.find("Watch out")?.matchType)
+    }
+
+    @Test fun withoutAConversationTheTranslationMostRowsGiveIsShown() {
+        // The pack: seven "Oh shit" rows, four "Hassiktir", two "Kahretsin" (24 Nov).
+        val memory = memory("Oh, shit!" to "Hassiktir!", "Oh shit," to "Hassiktir,", "Oh shit..." to "Kahretsin...",
+            "Oh shit…" to "Hassiktir...", "Oh shit." to "Hassiktir.", "Oh! Shit." to "Kahretsin.",
+            "Got it." to "Anladım.", "Got it!" to "Tamam!")
+        val match = requireNotNull(memory.find("Oh shit..."))
+        assertEquals("common_exact", match.matchType)
+        assertEquals("Hassiktir...", match.target)
+        assertEquals("Hassiktir!", memory.find("Oh, shit!")?.target)
+        assertEquals("Hassiktir!", memory.findQuick("Oh, shit!")?.target)
+        // One row each: no translation leads, none taken.
+        assertNull(memory.find("Got it."))
+        // The end of a longer line read alone is no line of its own.
+        assertNull(memory.find("oh shit."))
     }
 
     @Test fun aTinyScrapMatchesAPackLabelOnlyWithItsCapitals() {

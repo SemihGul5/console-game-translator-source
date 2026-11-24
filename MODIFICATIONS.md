@@ -49,7 +49,7 @@ describe previously built APKs/AABs.
 Turkish branding refreshed to AnlaOyna; store/site title: AnlaOyna: Konsol Oyun Çevirisi. Package identifiers and application behavior are unchanged.
 
 
-Manual source refresh: 2026-11-24, version 1.2.0+23.
+Manual source refresh: 2026-11-24, version 1.2.1+24.
 See release/source-sync.json for the changes relative to the reviewed seed.
 
 Current Turkish display name: Oyun Çevirmeni.

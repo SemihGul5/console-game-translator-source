@@ -106,6 +106,7 @@ class _NormalizedRectEditorState extends State<NormalizedRectEditor> {
         color: widget.color,
         label: widget.label,
         fillArea: widget.fillArea,
+        textDirection: Directionality.of(context),
       ),
       child: const SizedBox.expand(),
     ),
@@ -171,12 +172,15 @@ class _NormalizedRectPainter extends CustomPainter {
     required this.color,
     required this.label,
     required this.fillArea,
+    required this.textDirection,
   });
 
   final Rect rect;
   final Color color;
   final String label;
   final bool fillArea;
+
+  final TextDirection textDirection;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -216,7 +220,7 @@ class _NormalizedRectPainter extends CustomPainter {
           shadows: [Shadow(color: Colors.black, blurRadius: 3)],
         ),
       ),
-      textDirection: TextDirection.ltr,
+      textDirection: textDirection,
     )..layout(maxWidth: size.width);
     text.paint(
       canvas,
@@ -229,5 +233,6 @@ class _NormalizedRectPainter extends CustomPainter {
       oldDelegate.rect != rect ||
       oldDelegate.color != color ||
       oldDelegate.fillArea != fillArea ||
+      oldDelegate.textDirection != textDirection ||
       oldDelegate.label != label;
 }

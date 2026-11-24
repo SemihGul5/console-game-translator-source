@@ -1,4 +1,5 @@
 import '../l10n/app_localizations.dart';
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 
 import '../services/access_service.dart';
@@ -14,12 +15,14 @@ class ProfileTab extends StatefulWidget {
     required this.setupCompleted,
     required this.onOpenSetup,
     required this.onOpenFaq,
+    this.onChangeLanguage,
   });
 
   final VoidCallback onOpenSubscription;
   final bool setupCompleted;
   final VoidCallback onOpenSetup;
   final VoidCallback onOpenFaq;
+  final Future<void> Function(String)? onChangeLanguage;
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -138,10 +141,48 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
     _ => context.tr("Paketleri ve erişim durumunu görüntüle"),
   };
 
+  Future<void> _selectLanguage() async {
+    final scope = AppLanguageScope.maybeOf(context);
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(context.tr('Uygulama dili')),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+            child: Text(
+              context.tr(
+                'Uygulama dili Model B’nin hedef dilini otomatik ayarlar.',
+              ),
+            ),
+          ),
+          for (final preference in AppLanguage.preferences)
+            ListTile(
+              key: ValueKey('app-language-choice-$preference'),
+              title: Text(
+                preference == 'system'
+                    ? context.tr('Sistem dili')
+                    : AppLanguage.nativeName(preference),
+              ),
+              selected: (scope?.preference ?? 'system') == preference,
+              trailing: (scope?.preference ?? 'system') == preference
+                  ? const Icon(Icons.check_rounded)
+                  : null,
+              onTap: () => Navigator.pop(context, preference),
+            ),
+        ],
+      ),
+    );
+    if (selected != null && mounted && widget.onChangeLanguage != null) {
+      await widget.onChangeLanguage!(selected);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = _service.user;
     final busy = _busy || _service.actions.busy;
+    final language = AppLanguageScope.maybeOf(context);
     return RefreshIndicator(
       onRefresh: () => _run(_service.refreshManually),
       child: ListView(
@@ -284,23 +325,6 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
             ],
           ),
           SettingsSection(
-            title: context.tr('Gelişmiş'),
-            children: [
-              SettingsEntry(
-                icon: Icons.storage_rounded,
-                title: context.tr('Çeviri önbelleği'),
-                subtitle: context.tr(
-                  'Saklama sınırları, yedekleme ve temizleme',
-                ),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const TranslationCacheScreen(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SettingsSection(
             title: context.tr("Yardım"),
             children: [
               SettingsEntry(
@@ -330,14 +354,49 @@ class _ProfileTabState extends State<ProfileTab> with WidgetsBindingObserver {
               ),
             ],
           ),
+          if (language != null)
+            SettingsSection(
+              title: context.tr('Kişiselleştir'),
+              children: [
+                SettingsEntry(
+                  icon: Icons.language_rounded,
+                  title: context.tr('Uygulama dili'),
+                  subtitle: language.preference == 'system'
+                      ? context.tr('Sistem dili')
+                      : AppLanguage.nativeName(language.preference),
+                  onTap:
+                      language.changing ||
+                          !language.ready ||
+                          widget.onChangeLanguage == null
+                      ? null
+                      : _selectLanguage,
+                ),
+              ],
+            ),
+          SettingsSection(
+            title: context.tr('Gelişmiş'),
+            children: [
+              SettingsEntry(
+                icon: Icons.storage_rounded,
+                title: context.tr('Çeviri önbelleği'),
+                subtitle: context.tr(
+                  'Saklama sınırları, yedekleme ve temizleme',
+                ),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const TranslationCacheScreen(),
+                  ),
+                ),
+              ),
+            ],
+          ),
           SettingsSection(
             title: context.tr("Uygulama hakkında"),
             children: [
               SettingsEntry(
                 icon: Icons.privacy_tip_outlined,
                 title: context.tr("Gizlilik politikası"),
-                onTap: () =>
-                    AppLinks.openWeb(context, _information.privacyUrl),
+                onTap: () => AppLinks.openWeb(context, _information.privacyUrl),
               ),
               SettingsEntry(
                 icon: Icons.description_outlined,

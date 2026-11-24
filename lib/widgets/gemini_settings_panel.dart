@@ -346,6 +346,7 @@ class _GeminiSettingsPanelState extends State<GeminiSettingsPanel>
       ),
       const SizedBox(height: 8),
       TextField(
+        textDirection: TextDirection.ltr,
         key: const ValueKey('gemini-api-key'),
         controller: _keyController,
         enabled: !_busy,

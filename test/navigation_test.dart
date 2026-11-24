@@ -1669,6 +1669,11 @@ void main() {
         ),
       );
       expect(find.text('Kurulum rehberi'), findsOneWidget);
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Kurulum rehberi')),
+        alignment: 0.4,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Kurulum rehberi'));
       await tester.pumpAndSettle();
       expect(find.byType(SetupGuideScreen), findsOneWidget);

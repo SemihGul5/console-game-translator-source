@@ -113,22 +113,46 @@ test('HDMI is selected before a full screen BEHIND window; unsupported inputs fa
   receiver.showHdmi({tvwindow:{setSource(){throw Error('Permission');}}},source,()=>assert.fail(),()=>{});
 });
 
-function app() {
+function app(language = 'tr') {
   const elements = {}, events = {}, timers = [], sockets=[];
   for (const id of ['controls','instructions','address','code','addressLabel','codeLabel','connect','test','confirm','disconnect','hdmi','subtitles','status','limits','support']) elements[id]=node(id === 'hdmi' ? 'select':'div');
   elements.address.value='192.168.1.20:43824'; elements.code.value='123456';
-  const document={hidden:false, getElementById:id=>elements[id],createElement:node,addEventListener:(name,fn)=>events[name]=fn};
+  const document={hidden:false, documentElement:{}, getElementById:id=>elements[id],createElement:node,addEventListener:(name,fn)=>events[name]=fn};
   class FakeSocket {
     constructor(url){this.url=url;this.readyState=1;this.sent=[];sockets.push(this);}
     send(data){this.sent.push(JSON.parse(data));} close(){this.readyState=3;this.onclose?.({code:1000});}
   }
   const tizen={systeminfo:{getPropertyValue(name,ok){ok({connected:[{type:'HDMI',number:1}]});}},tvwindow:{setSource(source,ok){ok();},show(ok){ok();}}};
-  const context={navigator:{language:'tr'},document,TvReceiver:receiver,WebSocket:FakeSocket,tizen,Date,JSON,
+  const context={navigator:{language},document,TvReceiver:receiver,WebSocket:FakeSocket,tizen,Date,JSON,
     setTimeout(fn){timers.push(fn);return timers.length;},clearTimeout(){},setInterval(){return 1;},clearInterval(){}};
   context.window={tizen,innerHeight:1080,addEventListener:(name,fn)=>events[name]=fn};
   vm.runInNewContext(fs.readFileSync(__dirname+'/app.js','utf8'),context);
   return {elements,events,sockets,document,timers};
 }
+
+test('Arabic regional locales localize pairing, errors and the HDMI sample in RTL', () => {
+  for (const locale of ['ar', 'ar-SA', 'ar-EG']) {
+    const a = app(locale), e = a.elements;
+    assert.equal(a.document.documentElement.lang, 'ar');
+    assert.equal(a.document.documentElement.dir, 'rtl');
+    assert.equal(e.connect.textContent, 'اتصال');
+    e.test.onclick();
+    assert.equal(e.status.textContent, 'اتصل بالهاتف أولًا.');
+    e.connect.onclick();
+    const socket = a.sockets[0];
+    socket.onopen();
+    socket.onmessage({data:JSON.stringify({type:'paired',sessionToken:'a'.repeat(44)})});
+    e.test.onclick();
+    assert.equal(e.subtitles.children[0].children[0].dir, 'rtl');
+    assert.match(e.subtitles.children[0].children[0].textContent, /ترجمة تجريبية/);
+    e.confirm.onclick();
+    socket.onmessage({data:JSON.stringify({type:'subtitle',text:'English game text',presentation:{textDirection:'ltr'}})});
+    assert.equal(e.subtitles.children[0].children[0].dir, 'ltr');
+    assert.equal(e.subtitles.children[0].children[0].textContent, 'English game text');
+  }
+  assert.equal(app('de-DE').document.documentElement.lang, 'en');
+  assert.match(fs.readFileSync(__dirname+'/index.html','utf8'), /id="address" dir="ltr"/);
+});
 
 test('TV does not announce ready until paired, HDMI shown and user confirms; hiding clears subtitles', () => {
   const a=app(), e=a.elements;
