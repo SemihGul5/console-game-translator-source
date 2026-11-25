@@ -7,7 +7,7 @@ import java.util.Locale
 /** Native dialogs and notifications follow the saved interface language. */
 internal object AppUiLanguage {
     const val preferenceKey = "app_language"
-    val preferences = setOf("system", "tr", "en", "ar")
+    val preferences = setOf("system", "tr", "en", "ar", "th", "hu")
 
     fun preference(context: Context): String =
         context.getSharedPreferences("personalization_settings", Context.MODE_PRIVATE)
@@ -17,7 +17,7 @@ internal object AppUiLanguage {
         val saved = preference(context)
         if (saved != "system") return saved
         return context.resources.configuration.locales[0].language.let {
-            if (it == "tr" || it == "ar") it else "en"
+            if (it in preferences && it != "system") it else "en"
         }
     }
 
@@ -25,6 +25,8 @@ internal object AppUiLanguage {
         when (code(context)) {
             "tr" -> source
             "ar" -> arabic[source] ?: source
+            "th" -> thai[source] ?: source
+            "hu" -> hungarian[source] ?: source
             else -> english[source] ?: source
         }
 
@@ -33,6 +35,48 @@ internal object AppUiLanguage {
         configuration.setLocale(Locale.forLanguageTag(code(context)))
         return context.createConfigurationContext(configuration)
     }
+
+    private val hungarian = mapOf(
+        "Güvenli bağlantı" to "Biztonságos kapcsolat",
+        "İptal" to "Mégse",
+        "Ekran kapalıyken çeviri" to "Fordítás kikapcsolt képernyővel",
+        "Şimdi değil" to "Most nem",
+        "Ayarları aç" to "Beállítások megnyitása",
+        "Durdur" to "Leállítás",
+        "Çeviri durumu" to "Fordítás állapota",
+        "Remote Play altyazı çevirisi" to "Remote Play feliratfordítás",
+        "Remote Play karesi bekleniyor" to "Várakozás a Remote Play képére",
+        "Remote Play oturumu" to "Remote Play munkamenet",
+        "Remote Play bağlı" to "A Remote Play csatlakoztatva",
+        "Çeviri hazırlanıyor" to "Fordítás előkészítése",
+        "Çeviri beklemede" to "A fordítás várakozik",
+        "Çeviri çalışıyor" to "A fordítás fut",
+        "Menüye dönmek için dokun." to "Koppints a menühöz való visszatéréshez.",
+        "İlk video karesi henüz alınmadı. Bildirim açık kalıyor." to "Az első videóképkocka még nem érkezett meg. Az értesítés aktív marad.",
+        "Yeni video karesi yok. Görüntü gelince çeviri sürdürülecek." to "Nincsenek új videóképkockák. A fordítás folytatódik, amint visszatér a kép.",
+        "PS5 bağlantısı arka planda sürüyor. Menüye dönmek için dokun." to "A PS5 a háttérben csatlakoztatva marad. Koppints a menühöz való visszatéréshez.",
+    )
+
+    private val thai = mapOf(
+        "Güvenli bağlantı" to "การเชื่อมต่อที่ปลอดภัย",
+        "İptal" to "ยกเลิก",
+        "Ekran kapalıyken çeviri" to "แปลขณะปิดหน้าจอ",
+        "Şimdi değil" to "ไว้ภายหลัง",
+        "Ayarları aç" to "เปิดการตั้งค่า",
+        "Durdur" to "หยุด",
+        "Çeviri durumu" to "สถานะการแปล",
+        "Remote Play altyazı çevirisi" to "การแปลคำบรรยาย Remote Play",
+        "Remote Play karesi bekleniyor" to "กำลังรอภาพ Remote Play",
+        "Remote Play oturumu" to "เซสชัน Remote Play",
+        "Remote Play bağlı" to "เชื่อมต่อ Remote Play แล้ว",
+        "Çeviri hazırlanıyor" to "กำลังเตรียมการแปล",
+        "Çeviri beklemede" to "การแปลกำลังรอ",
+        "Çeviri çalışıyor" to "กำลังแปล",
+        "Menüye dönmek için dokun." to "แตะเพื่อกลับไปที่เมนู",
+        "İlk video karesi henüz alınmadı. Bildirim açık kalıyor." to "ยังไม่ได้รับเฟรมวิดีโอแรก การแจ้งเตือนจะยังคงแสดงอยู่",
+        "Yeni video karesi yok. Görüntü gelince çeviri sürdürülecek." to "ไม่มีเฟรมวิดีโอใหม่ จะแปลต่อเมื่อภาพกลับมา",
+        "PS5 bağlantısı arka planda sürüyor. Menüye dönmek için dokun." to "PS5 ยังเชื่อมต่อในเบื้องหลัง แตะเพื่อกลับไปที่เมนู",
+    )
 
     private val arabic = mapOf(
         "Güvenli bağlantı" to "اتصال آمن",

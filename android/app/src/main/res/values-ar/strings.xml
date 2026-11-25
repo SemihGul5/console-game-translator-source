@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">مترجم ألعاب الكونسول</string>
+    <string name="launcher_name">مترجم ألعاب الكونسول</string>
     <string name="battery_optimization_message">يمكنك استثناء تطبيق %1$s من تحسين البطارية لتستمر الترجمة والشاشة مغلقة. هل تريد فتح إعدادات البطارية الآن؟</string>
     <string name="local_translation_status">تمت الترجمة · %1$s محلي</string>
 </resources>

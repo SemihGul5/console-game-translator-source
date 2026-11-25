@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'app_language.dart';
 import 'messages_ar.dart';
 import 'messages_en.dart';
+import 'messages_th.dart';
+import 'messages_hu.dart';
 
 /// Source messages remain Turkish; only interface text is passed through here.
 /// Game text, user-entered names, protocol values and saved settings stay intact.
@@ -12,8 +14,12 @@ class AppLocalizations {
 
   final Locale locale;
   bool get isTurkish => locale.languageCode == 'tr';
-  Map<String, String> get _messages =>
-      locale.languageCode == 'ar' ? arabicMessages : englishMessages;
+  Map<String, String> get _messages => switch (locale.languageCode) {
+    'ar' => arabicMessages,
+    'th' => thaiMessages,
+    'hu' => hungarianMessages,
+    _ => englishMessages,
+  };
   static const delegate = _AppLocalizationsDelegate();
 
   static AppLocalizations of(BuildContext context) =>

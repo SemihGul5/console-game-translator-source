@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ตัวแปลเกมคอนโซล</string>
+    <string name="launcher_name">ตัวแปลเกมคอนโซล</string>
+    <string name="battery_optimization_message">คุณสามารถยกเว้น %1$s จากการเพิ่มประสิทธิภาพแบตเตอรี่ เพื่อให้แปลต่อได้ขณะปิดหน้าจอ ต้องการเปิดการตั้งค่าแบตเตอรี่ตอนนี้หรือไม่?</string>
+    <string name="local_translation_status">แปลแล้ว · %1$s ในเครื่อง</string>
+</resources>

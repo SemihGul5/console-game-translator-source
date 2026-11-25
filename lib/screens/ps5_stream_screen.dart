@@ -850,19 +850,17 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Expanded(
-              child: Text(
-                _editingSubtitleBounds &&
-                        !_selectedSubtitleSettings.backgroundFitToText
-                    ? context.tr("Arka plan konumu ve boyutu")
-                    : context.tr("Konum ve boyut"),
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
+            Text(
+              _editingSubtitleBounds &&
+                      !_selectedSubtitleSettings.backgroundFitToText
+                  ? context.tr("Arka plan konumu ve boyutu")
+                  : context.tr("Konum ve boyut"),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
             ),
             TextButton.icon(
               onPressed: _centerAllEditedRegions,
@@ -1179,30 +1177,41 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                           color: Colors.white54,
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          context.trMessage(
+                        Flexible(
+                          child: Text(
+                            context.trMessage(
+                              _starting ||
+                                      _reconnectTimer != null ||
+                                      (_remotePlaySessionConnected &&
+                                          !_remotePlayVideoReady)
+                                  ? _status
+                                  : context.tr("Remote Play açık değil"),
+                            ),
+                            style: TextStyle(color: Colors.white70),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Flexible(
+                          child: Text(
                             _starting ||
                                     _reconnectTimer != null ||
                                     (_remotePlaySessionConnected &&
                                         !_remotePlayVideoReady)
-                                ? _status
-                                : context.tr("Remote Play açık değil"),
+                                ? context.tr(
+                                    "Remote Play bağlantısı korunuyor; görüntü yüzeyi yenileniyor.",
+                                  )
+                                : context.tr(
+                                    "Canlı oyun görüntüsü bağlantı kurulunca görünür.",
+                                  ),
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _starting ||
-                                  _reconnectTimer != null ||
-                                  (_remotePlaySessionConnected &&
-                                      !_remotePlayVideoReady)
-                              ? context.tr(
-                                  "Remote Play bağlantısı korunuyor; görüntü yüzeyi yenileniyor.",
-                                )
-                              : context.tr(
-                                  "Canlı oyun görüntüsü bağlantı kurulunca görünür.",
-                                ),
-                          style: TextStyle(color: Colors.white54, fontSize: 12),
                         ),
                       ],
                     ),
@@ -1617,6 +1626,29 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
     return '${rate.toStringAsFixed(rate == rate.roundToDouble() ? 0 : 1)}/sn';
   }
 
+  static const _ocrPreprocessingLabels = [
+    'Ham görüntü',
+    'Gri tonlama + kontrast',
+    'Adaptif eşikleme',
+    'Kenar keskinleştirme',
+    'Yerel kontrast (ışık/parlama)',
+    'Hassas eşik · açık yazı',
+    'Hassas eşik · koyu yazı',
+    'Hassas eşik · otomatik yön',
+    'Sarı yazı · mavi/soğuk zemin',
+    'Otomatik renk kanalı',
+  ];
+  static const _ocrScaleLabels = [
+    (value: 1.0, label: '1× · hızlı'),
+    (value: 1.5, label: '1,5× · dengeli'),
+    (value: 2.0, label: '2× · küçük yazı'),
+  ];
+
+  List<Widget> _selectedOcrLabels(Iterable<String> labels) => [
+    for (final label in labels)
+      Text(context.tr(label), maxLines: 1, overflow: TextOverflow.ellipsis),
+  ];
+
   Widget _buildSubtitleSettings() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
@@ -1927,13 +1959,12 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                 ),
                 const SizedBox(height: 6),
               ],
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(
-                      context.trMessage(_ocrStatus),
-                      style: const TextStyle(color: Color(0xFFD8E1F0)),
-                    ),
+                  Text(
+                    context.trMessage(_ocrStatus),
+                    style: const TextStyle(color: Color(0xFFD8E1F0)),
                   ),
                   TextButton.icon(
                     onPressed: _sessionActive ? _testOcrSelectedRegion : null,
@@ -2049,6 +2080,10 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  selectedItemBuilder: (_) =>
+                      _selectedOcrLabels(_ocrPreprocessingLabels),
                   key: ValueKey(
                     'ocr-preprocessing-$_selectedOcrIndex-${_selectedOcrSettings.ocrPreprocessingMode}',
                   ),
@@ -2071,46 +2106,20 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                     ),
                   ),
                   items: [
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(context.tr("Ham görüntü")),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(context.tr("Gri tonlama + kontrast")),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text(context.tr("Adaptif eşikleme")),
-                    ),
-                    DropdownMenuItem(
-                      value: 3,
-                      child: Text(context.tr("Kenar keskinleştirme")),
-                    ),
-                    DropdownMenuItem(
-                      value: 4,
-                      child: Text(context.tr("Yerel kontrast (ışık/parlama)")),
-                    ),
-                    DropdownMenuItem(
-                      value: 5,
-                      child: Text(context.tr("Hassas eşik · açık yazı")),
-                    ),
-                    DropdownMenuItem(
-                      value: 6,
-                      child: Text(context.tr("Hassas eşik · koyu yazı")),
-                    ),
-                    DropdownMenuItem(
-                      value: 7,
-                      child: Text(context.tr("Hassas eşik · otomatik yön")),
-                    ),
-                    DropdownMenuItem(
-                      value: 8,
-                      child: Text(context.tr("Sarı yazı · mavi/soğuk zemin")),
-                    ),
-                    DropdownMenuItem(
-                      value: 9,
-                      child: Text(context.tr("Otomatik renk kanalı")),
-                    ),
+                    for (
+                      var index = 0;
+                      index < _ocrPreprocessingLabels.length;
+                      index++
+                    )
+                      DropdownMenuItem(
+                        value: index,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            context.tr(_ocrPreprocessingLabels[index]),
+                          ),
+                        ),
+                      ),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -2138,6 +2147,11 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<double>(
+                  isExpanded: true,
+                  itemHeight: null,
+                  selectedItemBuilder: (_) => _selectedOcrLabels(
+                    _ocrScaleLabels.map((option) => option.label),
+                  ),
                   key: ValueKey(
                     'ocr-scale-$_selectedOcrIndex-${_selectedOcrSettings.ocrCaptureScale}',
                   ),
@@ -2156,18 +2170,14 @@ class _Ps5StreamScreenState extends State<Ps5StreamScreen>
                     ),
                   ),
                   items: [
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(context.tr("1× · hızlı")),
-                    ),
-                    DropdownMenuItem(
-                      value: 1.5,
-                      child: Text(context.tr('1,5× · dengeli')),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text(context.tr("2× · küçük yazı")),
-                    ),
+                    for (final option in _ocrScaleLabels)
+                      DropdownMenuItem(
+                        value: option.value,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(context.tr(option.label)),
+                        ),
+                      ),
                   ],
                   onChanged: (value) {
                     if (value != null) {

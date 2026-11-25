@@ -2,13 +2,21 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 
 abstract final class AppLanguage {
-  static const supportedLocales = [Locale('en'), Locale('tr'), Locale('ar')];
+  static const supportedLocales = [
+    Locale('en'),
+    Locale('tr'),
+    Locale('ar'),
+    Locale('th'),
+    Locale('hu'),
+  ];
 
-  static const preferences = ['system', 'tr', 'en', 'ar'];
+  static const preferences = ['system', 'tr', 'en', 'ar', 'th', 'hu'];
 
   static String nativeName(String code) => switch (code) {
     'tr' => 'Türkçe',
     'ar' => 'العربية',
+    'th' => 'ไทย',
+    'hu' => 'Magyar',
     'en' => 'English',
     _ => code,
   };
@@ -22,6 +30,8 @@ abstract final class AppLanguage {
       Locale(switch (deviceLocale?.languageCode) {
         'tr' => 'tr',
         'ar' => 'ar',
+        'th' => 'th',
+        'hu' => 'hu',
         _ => 'en',
       });
 }

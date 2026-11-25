@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "kind": "anlaoyna-public-source-mirror",
-  "snapshot": "console-game-translator-source-v1.2.1-build24-20261124T151904708Z",
-  "sourceInventorySha256": "d95b4ec4196a9bf60c3086bcc7c020775918535be8ac88f7a3ac61b655eb5bfa",
+  "snapshot": "console-game-translator-source-v1.2.2-build25-20261125T132051892Z",
+  "sourceInventorySha256": "832b8cc8d36f8a919b0024b128d43b0697653b4393a005e8790388d23c182037",
   "files": [
     {
       "path": ".gitignore",
@@ -130,7 +130,7 @@
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/AppUiLanguage.kt",
-      "sha256": "163ba2bb85bd2b69e1b9ef47c88a4792b42330e7e6273a6c5a31c0d0e0bcafdd"
+      "sha256": "ccda39489cf684c19551ae6e56cc9256c5b51d37f086d9db6d4dfd9fbb34de11"
     },
     {
       "path": "android/app/src/main/kotlin/com/abrebostudio/consolegametranslator/BackgroundVideoFrameReader.kt",
@@ -478,11 +478,19 @@
     },
     {
       "path": "android/app/src/main/res/values-ar/strings.xml",
-      "sha256": "583f8323555524a5b326b72cfedb1eec030487cdcc649e380aa18e733a9caa46"
+      "sha256": "1d75e1ed769ed3c08aaa160f6abfd8dfccbbaff11b3d9b0a53e3ce4337640332"
+    },
+    {
+      "path": "android/app/src/main/res/values-hu/strings.xml",
+      "sha256": "6efc5c2058a9929ba9cea4f900c4ab37b4572a9727ae39bf10589cb8c97adb01"
     },
     {
       "path": "android/app/src/main/res/values-night/styles.xml",
       "sha256": "ff509ecc43b3dcc7a92a648d8022aa997b7e6dc17c9d479f47f73dc75f28ff6b"
+    },
+    {
+      "path": "android/app/src/main/res/values-th/strings.xml",
+      "sha256": "3bf7f900184fca41b056e26cb86ff9a768f18002aa8ff2888c698ebbf0831022"
     },
     {
       "path": "android/app/src/main/res/values-tr/strings.xml",
@@ -20918,15 +20926,15 @@
     },
     {
       "path": "lib/app_branding.dart",
-      "sha256": "b18082067899b78814f11d543996e4d192fd5c5236ae73b6a35b8e890d4512a2"
+      "sha256": "d2f305701b7fdedc1b63a8b7bf4224ab9ff7fa988effe61177dd24168404b5bd"
     },
     {
       "path": "lib/l10n/app_language.dart",
-      "sha256": "0cd476d4ff433a094af1817f3dcc3f9bc6d0d33f2f4d4963e4887fdda422b216"
+      "sha256": "2d7278550857c82891b97ccb0b22432d09baadd0b777cf97552d0442f44000d7"
     },
     {
       "path": "lib/l10n/app_localizations.dart",
-      "sha256": "282d2cd6ee3b0ebe2edac893f42c36c611c33f720f25642b8aadbb1a8239c577"
+      "sha256": "d671985c9a9d4254bf5a4f7c638a4c90bbfca5d960b601b15f59c084b3656e9e"
     },
     {
       "path": "lib/l10n/messages_ar.dart",
@@ -20935,6 +20943,14 @@
     {
       "path": "lib/l10n/messages_en.dart",
       "sha256": "fc63e905d7ba02d70c66c9256d090f29f4588d5f72a60780b8dbee689b47d547"
+    },
+    {
+      "path": "lib/l10n/messages_hu.dart",
+      "sha256": "f6f370be6347eadc5f289863ec3badd3231463ac71028c31e0874e33619e766e"
+    },
+    {
+      "path": "lib/l10n/messages_th.dart",
+      "sha256": "9a1ad148093433826acc3955611512c6ca4c01488f04aea1e62b0979c68dd3eb"
     },
     {
       "path": "lib/l10n/messages_tv_en.dart",
@@ -20978,7 +20994,7 @@
     },
     {
       "path": "lib/screens/ps5_stream_screen.dart",
-      "sha256": "3f78f361ced7a11b28c11fee620ab18239da0f5b4dc18f0871bc948f481c4c80"
+      "sha256": "f873c1ed03df4659b1d843ae3d7409c99b3f200e919d946233bf086205e2c958"
     },
     {
       "path": "lib/screens/psn_login_screen.dart",
@@ -21142,15 +21158,15 @@
     },
     {
       "path": "MODIFICATIONS.md",
-      "sha256": "b8da49a12ae57a022498c0eaa825a4f25083776a4279d4212595e61346081829"
+      "sha256": "f2032d3601cb7c6db0b524a1fe8d0d75c66de96b3f7949f24b12554f975c7742"
     },
     {
       "path": "publication/legal.html",
-      "sha256": "6fc45a4d02183fdf31df09441dd3aa27bf408390630c1a9b9ec33567cd26b976"
+      "sha256": "c3e483036dd21bb28e620319590eb046bfeaca7f92ed1df43bebbf57a4dfd8a8"
     },
     {
       "path": "publication/NOTICE.tr-en.txt",
-      "sha256": "16e9e756535d0eb348a9fde07ac52d3665e96cd68c22435a6a0af140c504b50f"
+      "sha256": "e2b8917565e012bbd08b1bd8433fae9726396a654be972cb3af5521f414a4f62"
     },
     {
       "path": "pubspec.lock",
@@ -21158,19 +21174,19 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "0875ebcc28b3f2b3ef543720391feca99a7abc80d062db5ab689f9c9d563cbb4"
+      "sha256": "81010dd2533da5de53abef783c3d519c9af97195fcb1fffd41206d1a4dc43349"
     },
     {
       "path": "README.md",
-      "sha256": "cf1007d269a4fd09872a72c4a037be2d90db39eba5417cde6322511051335b43"
+      "sha256": "b815db6e70a9a4ee49d36963e9c5080c0a1b70e7ddce49f6b802ea225962ecff"
     },
     {
       "path": "release/checks.json",
-      "sha256": "063e425eb665b13f48f244488cad82fee5dd11376eef07c4d7d76ef2a4e63e4f"
+      "sha256": "e8eee275a69734d0c55dd1bf06147d1e520d3b5af45f07ce34fb4415e1e5b995"
     },
     {
       "path": "release/manual-sync.json",
-      "sha256": "414f74a99bb08b5811fc6266cd5856e4dea78f18214738c89a47f4fc8115f0a0"
+      "sha256": "a800e46deedd46793b6bf08daecc951381a1e8289c57ccce28e1a0e229bf2dad"
     },
     {
       "path": "release/maven-dependencies.json",
@@ -21194,7 +21210,7 @@
     },
     {
       "path": "release/publication.json",
-      "sha256": "99a9a7f14b723a54efac2bcf24fba7212c2f8eccd44b24d9afe3bbc9f917f030"
+      "sha256": "11961d31edc25957d78c485b9e21ef23cebbbfe51c0c8a3306bd32c37c6f0945"
     },
     {
       "path": "release/receiver-source-check.json",
@@ -21206,23 +21222,23 @@
     },
     {
       "path": "release/SHA256SUMS",
-      "sha256": "d95b4ec4196a9bf60c3086bcc7c020775918535be8ac88f7a3ac61b655eb5bfa"
+      "sha256": "832b8cc8d36f8a919b0024b128d43b0697653b4393a005e8790388d23c182037"
     },
     {
       "path": "release/snapshot-files.json",
-      "sha256": "42d6d05ef7201d98370c94f772ffb8bfcc5d035ed1f999ad0f31206f664f7a02"
+      "sha256": "c4be85d145782c8b4c5e8e43822c061a2c7c02f51905b53bf022bf18703b3f02"
     },
     {
       "path": "release/source-sync.json",
-      "sha256": "ae40253b4156ff6da1b3992a77bec61a54fb592c4c2b70b62e63a9a4cb164986"
+      "sha256": "ce332bdb8664f719f4409f2bd4ef7c4892f204e76d4b877aec504fc6f1552024"
     },
     {
       "path": "release/validation.json",
-      "sha256": "60784ee07bcb77902947356bb578afc2a2537e1b3ad3741d72b2bb7817484b01"
+      "sha256": "55150b54cc16e765a9f7d797d0c9c1f06c51cb1557b515dd7a3e770cfe8a107a"
     },
     {
       "path": "RELEASE-CHECKLIST.tr.md",
-      "sha256": "ef20169f8330d92d1738a6213599de581e1d0e2eb68055e0056438b3ad944c76"
+      "sha256": "2f2e1f532a06615e94ad262307ae62ab718d4000d491317716f6b14d274e7861"
     },
     {
       "path": "samsung_tv/app.js",
@@ -21322,11 +21338,11 @@
     },
     {
       "path": "test/app_branding_test.dart",
-      "sha256": "36cb6a3bfa15c49c0220841596acc336e02c00dec349d96c81c054db34a731d1"
+      "sha256": "9292781301eb2ecd7ef60593fce4173fea625f9f0189a58f5e13bc688cbfa65f"
     },
     {
       "path": "test/app_language_test.dart",
-      "sha256": "b116a9d9540135b3bca3a8d0fa85084932647cb6469d76f8b648d2da923ee5a7"
+      "sha256": "5f1c680f9a40c00771371cfe0035217f5565a82e9299c75a5cbc94a20e05d61c"
     },
     {
       "path": "test/deepl_integration_test.dart",
@@ -21386,11 +21402,15 @@
     },
     {
       "path": "test/multilingual_library_test.dart",
-      "sha256": "1b416cd37623cbaba6daa98e0d5c20b7622c3e1520b1b558d067cfda9ce09e7f"
+      "sha256": "b524fac65a440508aea295b5c26a7910ba63c2455bc0e8fc8875e7c2c178daea"
     },
     {
       "path": "test/navigation_test.dart",
       "sha256": "0c5b569c2a19b7981dfdab3e997dfdf61f1413fe2b4ec6a92c70b9f76b170fb1"
+    },
+    {
+      "path": "test/ocr_settings_localization_test.dart",
+      "sha256": "d557d40edb077fe247253987518211eedb68d2e6ce444143d5df285a2c3928a7"
     },
     {
       "path": "test/premium_plan_card_test.dart",

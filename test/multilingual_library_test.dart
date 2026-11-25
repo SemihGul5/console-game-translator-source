@@ -25,12 +25,14 @@ class _LanguageAssets extends CachingAssetBundle {
                 'targetLanguageName': {
                   'tr': 'Türkçe',
                   'th': 'Tayca',
+                  'hu': 'Macarca',
                   'id': 'Endonezce',
                   'ar': 'Arapça',
                 }[target],
                 'targetLanguageNativeName': {
                   'tr': 'Türkçe',
                   'th': 'ไทย',
+                  'hu': 'Magyar',
                   'id': 'Bahasa Indonesia',
                   'ar': 'العربية',
                 }[target],
@@ -72,11 +74,17 @@ Future<void> _openLibrary(
   await tester.pumpAndSettle();
   final turkish = find.widgetWithText(NavigationDestination, 'Altyazı');
   final arabic = find.widgetWithText(NavigationDestination, 'الترجمة');
+  final thai = find.widgetWithText(NavigationDestination, 'คำบรรยาย');
+  final hungarian = find.widgetWithText(NavigationDestination, 'Feliratok');
   await tester.tap(
     turkish.evaluate().isNotEmpty
         ? turkish
         : arabic.evaluate().isNotEmpty
         ? arabic
+        : thai.evaluate().isNotEmpty
+        ? thai
+        : hungarian.evaluate().isNotEmpty
+        ? hungarian
         : find.widgetWithText(NavigationDestination, 'Subtitles'),
   );
   await tester.pumpAndSettle();
@@ -236,6 +244,20 @@ void main() {
       target: 'ar',
       picker: false,
     ),
+    (
+      preference: 'system',
+      device: const Locale('th', 'TH'),
+      target: 'th',
+      picker: false,
+    ),
+    (preference: 'th', device: const Locale('ar'), target: 'th', picker: false),
+    (
+      preference: 'system',
+      device: const Locale('hu', 'HU'),
+      target: 'hu',
+      picker: false,
+    ),
+    (preference: 'hu', device: const Locale('ar'), target: 'hu', picker: false),
     (preference: 'tr', device: const Locale('ar'), target: 'tr', picker: false),
     (preference: 'en', device: const Locale('ar'), target: 'th', picker: true),
     (
@@ -269,7 +291,7 @@ void main() {
         final catalog = GameTranslationCatalog.testing(
           catalogUri: Uri.parse('https://example.com/catalog.json'),
           cacheDirectory: () async => null,
-          bundle: _LanguageAssets(targets: const ['tr', 'ar', 'th']),
+          bundle: _LanguageAssets(targets: const ['tr', 'ar', 'th', 'hu']),
           token: () async => throw StateError('offline'),
         );
         await tester.runAsync(catalog.loadCatalog);

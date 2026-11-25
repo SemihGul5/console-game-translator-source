@@ -5,6 +5,9 @@ import 'l10n/app_language.dart';
 class AppBranding {
   static const englishName = 'Console Game Translator';
   static const turkishName = 'Oyun Çevirmeni';
+  static const arabicName = 'مترجم ألعاب الكونسول';
+  static const thaiName = 'ตัวแปลเกมคอนโซล';
+  static const hungarianName = 'Konzoljáték-fordító';
   static const internationalIcon = 'assets/branding/app_icon_all.png';
   static const turkishIcon = 'assets/branding/app_icon_tr.png';
 
@@ -14,7 +17,13 @@ class AppBranding {
       : internationalIcon;
 
   static String nameOf(BuildContext context) =>
-      _deviceLocale(context).languageCode == 'tr' ? turkishName : englishName;
+      switch (_deviceLocale(context).languageCode) {
+        'tr' => turkishName,
+        'ar' => arabicName,
+        'th' => thaiName,
+        'hu' => hungarianName,
+        _ => englishName,
+      };
 
   static Locale resolveLocale(
     Locale? locale,

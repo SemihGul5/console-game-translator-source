@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gametranslate/l10n/app_localizations.dart';
 import 'package:gametranslate/l10n/app_language.dart';
 import 'package:gametranslate/l10n/messages_ar.dart';
+import 'package:gametranslate/l10n/messages_th.dart';
+import 'package:gametranslate/l10n/messages_hu.dart';
 import 'package:gametranslate/l10n/messages_en.dart';
 import 'package:gametranslate/main.dart';
 import 'package:gametranslate/models/subtitle_settings.dart';
@@ -132,7 +134,7 @@ void main() {
               return nativeRunning;
             case 'getTranslationLanguageModels':
               return [
-                for (final code in ['en', 'tr', 'ar', 'de'])
+                for (final code in ['en', 'tr', 'ar', 'th', 'hu', 'de'])
                   {
                     'code': code,
                     'name': code,
@@ -591,6 +593,184 @@ void main() {
       );
       expect(
         find.text('Dil tercihi kaydedilemedi. Tekrar dene.'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  test('Thai covers all messages with matching placeholders', () {
+    expect(thaiMessages.keys.toSet(), englishMessages.keys.toSet());
+    final pattern = RegExp(r'\{\d+\}');
+    for (final entry in thaiMessages.entries) {
+      expect(entry.value.trim(), isNotEmpty, reason: entry.key);
+      expect(
+        pattern.allMatches(entry.value).map((m) => m[0]).toList()..sort(),
+        pattern.allMatches(entry.key).map((m) => m[0]).toList()..sort(),
+        reason: entry.key,
+      );
+    }
+    expect(AppLanguage.resolve(const Locale('th', 'TH')), const Locale('th'));
+    const thai = AppLocalizations(Locale('th'));
+    expect(
+      thai.message('Ghost of Tsushima seçili'),
+      'เลือก Ghost of Tsushima แล้ว',
+    );
+    expect(thai.message('Çeviri başarısız (503)'), 'แปลไม่สำเร็จ (503)');
+    expect(thai.text('{0} seçili', [r'$game {1}']), r'เลือก $game {1} แล้ว');
+  });
+
+  testWidgets(
+    'Thai system locale uses Thai branding, LTR navigation and Model B target',
+    (tester) async {
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      await _open(tester, const Locale('th', 'TH'));
+      expect(find.text('ตัวแปลเกมคอนโซล'), findsOneWidget);
+      for (final label in ['คำบรรยาย', 'หน้าหลัก', 'โปรไฟล์']) {
+        expect(
+          find.widgetWithText(NavigationDestination, label),
+          findsOneWidget,
+        );
+      }
+      expect(find.text('เริ่มแปล'), findsOneWidget);
+      expect(savedSettings.targetLanguageCode, 'th');
+      expect(
+        Directionality.of(tester.element(find.byType(HomeScreen))),
+        TextDirection.ltr,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'Thai selection persists and fits small screens with large text',
+    (tester) async {
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await _open(tester, const Locale('en'));
+      await _pickLanguage(tester, 'th');
+      expect(savedLanguage, 'th');
+      expect(savedSettings.targetLanguageCode, 'th');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _open(tester, const Locale('en'));
+      expect(
+        find.widgetWithText(NavigationDestination, 'โปรไฟล์'),
+        findsOneWidget,
+      );
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+      await tester.pumpAndSettle();
+      await _tab(tester, 'โปรไฟล์');
+      await _revealProfile(tester, 'คำถามที่พบบ่อย');
+      await tester.tap(find.text('คำถามที่พบบ่อย'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('ไม่พบ PS5 หรือเชื่อมต่อไม่ได้ ควรทำอย่างไร?'),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.text('ไม่พบ PS5 หรือเชื่อมต่อไม่ได้ ควรทำอย่างไร?'),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          'โทรศัพท์และ PS5 ต้องอยู่ในเครือข่ายท้องถิ่นเดียวกัน',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  test(
+    'Hungarian covers all messages and preserves placeholders and dynamic text',
+    () {
+      expect(hungarianMessages.keys.toSet(), englishMessages.keys.toSet());
+      final pattern = RegExp(r'\{\d+\}');
+      for (final entry in hungarianMessages.entries) {
+        expect(entry.value.trim(), isNotEmpty, reason: entry.key);
+        expect(
+          pattern.allMatches(entry.value).map((m) => m[0]).toList()..sort(),
+          pattern.allMatches(entry.key).map((m) => m[0]).toList()..sort(),
+          reason: entry.key,
+        );
+      }
+      expect(AppLanguage.resolve(const Locale('hu', 'HU')), const Locale('hu'));
+      const hu = AppLocalizations(Locale('hu'));
+      expect(
+        hu.message('Ghost of Tsushima seçili'),
+        'Ghost of Tsushima kiválasztva',
+      );
+      expect(
+        hu.message('Çeviri başarısız (503)'),
+        'A fordítás sikertelen (503)',
+      );
+      expect(hu.text('{0} seçili', [r'$game {1}']), r'$game {1} kiválasztva');
+    },
+  );
+
+  testWidgets(
+    'Hungarian system language selects localized branding and Model B target',
+    (tester) async {
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      await _open(tester, const Locale('hu', 'HU'));
+      expect(find.text('Konzoljáték-fordító'), findsOneWidget);
+      for (final label in ['Feliratok', 'Kezdőlap', 'Profil']) {
+        expect(
+          find.widgetWithText(NavigationDestination, label),
+          findsOneWidget,
+        );
+      }
+      expect(find.text('FORDÍTÁS INDÍTÁSA'), findsOneWidget);
+      expect(savedSettings.targetLanguageCode, 'hu');
+      expect(
+        Directionality.of(tester.element(find.byType(HomeScreen))),
+        TextDirection.ltr,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'Hungarian choice persists and help fits a small screen with large text',
+    (tester) async {
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await _open(tester, const Locale('en'));
+      await _pickLanguage(tester, 'hu');
+      expect(savedLanguage, 'hu');
+      expect(savedSettings.targetLanguageCode, 'hu');
+      expect(savedEngine, 'mlkit');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _open(tester, const Locale('en'));
+      expect(
+        find.widgetWithText(NavigationDestination, 'Kezdőlap'),
+        findsOneWidget,
+      );
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 640);
+      tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+      await tester.pumpAndSettle();
+      await _tab(tester, 'Profil');
+      await _revealProfile(tester, 'Gyakori kérdések');
+      await tester.tap(find.text('Gyakori kérdések'));
+      await tester.pumpAndSettle();
+      final question = find.text(
+        'Nem található a PS5, vagy nem csatlakozik. Mit tegyek?',
+      );
+      await tester.tap(question);
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          'A telefonnak és a PS5-nek ugyanazon a helyi hálózaton kell lennie',
+        ),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);

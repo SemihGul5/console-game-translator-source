@@ -41,25 +41,40 @@ void main() {
       Locale('de', 'DE'),
       Locale('az', 'AZ'),
       Locale('ar', 'SA'),
+      Locale('ar', 'EG'),
+      Locale('ar', 'AE'),
+      Locale('th', 'TH'),
+      Locale('hu', 'HU'),
+      Locale('hu'),
+      Locale('th'),
       Locale('tr', 'TR'),
     ]) {
       tester.platformDispatcher.localesTestValue = [locale];
       await tester.pumpAndSettle();
       final turkish = locale.languageCode == 'tr';
-      expect(
-        find.text(turkish ? 'Oyun Çevirmeni' : 'Console Game Translator'),
-        findsOneWidget,
-      );
+      final expectedName = switch (locale.languageCode) {
+        'tr' => 'Oyun Çevirmeni',
+        'ar' => 'مترجم ألعاب الكونسول',
+        'th' => 'ตัวแปลเกมคอนโซล',
+        'hu' => 'Konzoljáték-fordító',
+        _ => 'Console Game Translator',
+      };
+      expect(find.text(expectedName), findsOneWidget);
       expect(
         find.image(
           AssetImage('assets/branding/app_icon_${turkish ? 'tr' : 'all'}.png'),
         ),
         findsOneWidget,
       );
-      expect(
-        find.text(turkish ? 'Console Game Translator' : 'Oyun Çevirmeni'),
-        findsNothing,
-      );
+      for (final otherName in [
+        'Oyun Çevirmeni',
+        'Console Game Translator',
+        'مترجم ألعاب الكونسول',
+        'ตัวแปลเกมคอนโซล',
+        'Konzoljáték-fordító',
+      ].where((name) => name != expectedName)) {
+        expect(find.text(otherName), findsNothing);
+      }
       expect(tester.takeException(), isNull);
     }
     await tester.pumpWidget(const SizedBox.shrink());

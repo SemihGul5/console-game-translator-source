@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Konzoljáték-fordító</string>
+    <string name="launcher_name">Konzoljáték-fordító</string>
+    <string name="battery_optimization_message">A kikapcsolt képernyő melletti folyamatos fordításhoz kiveheted a(z) %1$s alkalmazást az akkumulátor-optimalizálásból. Megnyitod most az akkumulátor beállításait?</string>
+    <string name="local_translation_status">Lefordítva · %1$s helyi</string>
+</resources>
